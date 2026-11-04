@@ -1,0 +1,736 @@
+[
+  {
+    "file": "WhatsApp Image 2026-10-15 at 2.50.22 PM.jpeg",
+    "category": "common",
+    "roomType": null,
+    "roomGroup": null,
+    "suggestedUse": [
+      "gallery"
+    ],
+    "orientation": "portrait",
+    "width": 960,
+    "height": 1280,
+    "quality": "needs-edit",
+    "people": true,
+    "altEs": "Mostrador de recepción con casillero de llaves numerado en madera y una planta decorativa",
+    "notes": "Monitor de cámaras de seguridad visible y personas reflejadas en el espejo del fondo; recortar o desenfocar antes de publicar."
+  },
+  {
+    "file": "WhatsApp Image 2026-10-15 at 2.50.23 PM (1).jpeg",
+    "category": "room",
+    "roomType": "couple",
+    "roomGroup": "R-A",
+    "suggestedUse": [
+      "gallery"
+    ],
+    "orientation": "portrait",
+    "width": 960,
+    "height": 1280,
+    "quality": "needs-edit",
+    "people": false,
+    "altEs": "Habitación con cama doble de lencería blanca, ventilador de pared y puerta de madera con vidrio",
+    "notes": "Manchas visibles en el techo; recortar techo. roomType inferido (una cama doble)."
+  },
+  {
+    "file": "WhatsApp Image 2026-10-15 at 2.50.23 PM.jpeg",
+    "category": "room",
+    "roomType": "couple",
+    "roomGroup": "R-B",
+    "suggestedUse": [
+      "gallery"
+    ],
+    "orientation": "portrait",
+    "width": 960,
+    "height": 1280,
+    "quality": "needs-edit",
+    "people": false,
+    "altEs": "Habitación con cama doble, televisor de pared, silla blanca y cortina verde",
+    "notes": "Gran angular con distorsión fuerte; la cama ocupa la mitad del encuadre."
+  },
+  {
+    "file": "WhatsApp Image 2026-10-15 at 2.50.24 PM (1).jpeg",
+    "category": "room",
+    "roomType": null,
+    "roomGroup": "R-C",
+    "suggestedUse": [
+      "gallery"
+    ],
+    "orientation": "portrait",
+    "width": 960,
+    "height": 1280,
+    "quality": "needs-edit",
+    "people": false,
+    "altEs": "Habitación con dos camas sencillas, televisor de pared, ventilador y silla blanca",
+    "notes": "Zapatos visibles en el piso; preferir la toma sin zapatos (2.50.24 PM)."
+  },
+  {
+    "file": "WhatsApp Image 2026-10-15 at 2.50.24 PM (2).jpeg",
+    "category": "room",
+    "roomType": null,
+    "roomGroup": null,
+    "suggestedUse": [
+      "gallery"
+    ],
+    "orientation": "portrait",
+    "width": 960,
+    "height": 1280,
+    "quality": "ok",
+    "people": false,
+    "altEs": "Baño privado con ducha con cortina, sanitario y lavamanos en baldosa clara",
+    "notes": "Único baño fotografiado; no se sabe a qué habitación corresponde."
+  },
+  {
+    "file": "WhatsApp Image 2026-10-15 at 2.50.24 PM.jpeg",
+    "category": "room",
+    "roomType": null,
+    "roomGroup": "R-C",
+    "suggestedUse": [
+      "card",
+      "gallery"
+    ],
+    "orientation": "portrait",
+    "width": 960,
+    "height": 1280,
+    "quality": "ok",
+    "people": false,
+    "altEs": "Habitación con dos camas sencillas de lencería blanca, televisor y ventilador de pared",
+    "notes": ""
+  },
+  {
+    "file": "WhatsApp Image 2026-10-15 at 2.50.25 PM (1).jpeg",
+    "category": "room",
+    "roomType": null,
+    "roomGroup": "R-D",
+    "suggestedUse": [
+      "gallery"
+    ],
+    "orientation": "portrait",
+    "width": 960,
+    "height": 1280,
+    "quality": "needs-edit",
+    "people": true,
+    "altEs": "Habitación con dos camas sencillas, espejo y cortina color mostaza",
+    "notes": "Persona (fotógrafo) reflejada en el espejo; recortar o desenfocar."
+  },
+  {
+    "file": "WhatsApp Image 2026-10-15 at 2.50.25 PM.jpeg",
+    "category": "room",
+    "roomType": null,
+    "roomGroup": "R-D",
+    "suggestedUse": [
+      "card",
+      "gallery"
+    ],
+    "orientation": "portrait",
+    "width": 960,
+    "height": 1280,
+    "quality": "ok",
+    "people": false,
+    "altEs": "Habitación con dos camas, cortina color mostaza, televisor y ventilador de pared",
+    "notes": ""
+  },
+  {
+    "file": "WhatsApp Image 2026-10-15 at 2.50.26 PM.jpeg",
+    "category": "common",
+    "roomType": null,
+    "roomGroup": null,
+    "suggestedUse": [
+      "about",
+      "gallery",
+      "hero"
+    ],
+    "orientation": "portrait",
+    "width": 960,
+    "height": 1280,
+    "quality": "ok",
+    "people": false,
+    "altEs": "Pasillo del segundo piso con baranda de madera torneada, puertas de madera y cuadros",
+    "notes": "Una de las tomas más cálidas; vertical, sirve como hero solo en móvil."
+  },
+  {
+    "file": "WhatsApp Image 2026-10-15 at 2.50.27 PM (1).jpeg",
+    "category": "room",
+    "roomType": "couple",
+    "roomGroup": "R-E",
+    "suggestedUse": [],
+    "orientation": "portrait",
+    "width": 960,
+    "height": 1280,
+    "quality": "discard",
+    "people": true,
+    "altEs": "Habitación con cama doble de cubrecama verde y una persona de pie",
+    "notes": "Persona identificable; usar la toma equivalente sin persona (2.50.27 PM)."
+  },
+  {
+    "file": "WhatsApp Image 2026-10-15 at 2.50.27 PM.jpeg",
+    "category": "room",
+    "roomType": "couple",
+    "roomGroup": "R-E",
+    "suggestedUse": [
+      "card",
+      "gallery",
+      "hero"
+    ],
+    "orientation": "portrait",
+    "width": 960,
+    "height": 1280,
+    "quality": "ok",
+    "people": false,
+    "altEs": "Habitación con cama doble de cubrecama verde, televisor, ventilador de pie y cortina mostaza",
+    "notes": "Bien iluminada y coherente con la paleta verde; candidata a tarjeta principal."
+  },
+  {
+    "file": "WhatsApp Image 2026-10-15 at 2.50.29 PM (1).jpeg",
+    "category": "room",
+    "roomType": null,
+    "roomGroup": "R-F",
+    "suggestedUse": [
+      "gallery"
+    ],
+    "orientation": "portrait",
+    "width": 960,
+    "height": 1280,
+    "quality": "needs-edit",
+    "people": false,
+    "altEs": "Habitación con dos camas de cubrecama floral, ventilador de pared y armario de madera",
+    "notes": "Almohada en primer plano muy cerca de la cámara."
+  },
+  {
+    "file": "WhatsApp Image 2026-10-15 at 2.50.29 PM.jpeg",
+    "category": "common",
+    "roomType": null,
+    "roomGroup": null,
+    "suggestedUse": [
+      "about",
+      "gallery"
+    ],
+    "orientation": "portrait",
+    "width": 960,
+    "height": 1280,
+    "quality": "ok",
+    "people": false,
+    "altEs": "Pasillo de la planta baja con escalera de baranda de madera y puerta de madera al fondo",
+    "notes": ""
+  },
+  {
+    "file": "WhatsApp Image 2026-10-15 at 2.50.30 PM.jpeg",
+    "category": "room",
+    "roomType": "couple",
+    "roomGroup": "R-G",
+    "suggestedUse": [
+      "card",
+      "gallery"
+    ],
+    "orientation": "portrait",
+    "width": 960,
+    "height": 1280,
+    "quality": "ok",
+    "people": false,
+    "altEs": "Habitación con cama doble de lencería blanca, espejo, ventilador de pie y silla",
+    "notes": "Habitación alargada; buena profundidad."
+  },
+  {
+    "file": "WhatsApp Image 2026-10-15 at 2.50.31 PM (1).jpeg",
+    "category": "room",
+    "roomType": null,
+    "roomGroup": "R-H",
+    "suggestedUse": [
+      "card",
+      "gallery"
+    ],
+    "orientation": "portrait",
+    "width": 960,
+    "height": 1280,
+    "quality": "ok",
+    "people": false,
+    "altEs": "Habitación con dos camas de cubrecama verde, cortina roja, televisor y ventilador de pared",
+    "notes": ""
+  },
+  {
+    "file": "WhatsApp Image 2026-10-15 at 2.50.31 PM.jpeg",
+    "category": "room",
+    "roomType": null,
+    "roomGroup": "R-H",
+    "suggestedUse": [
+      "gallery"
+    ],
+    "orientation": "portrait",
+    "width": 960,
+    "height": 1280,
+    "quality": "ok",
+    "people": false,
+    "altEs": "Habitación con dos camas de cubrecama verde, cortina roja y lámpara de mesa encendida",
+    "notes": "Casi igual a 2.50.31 PM (1)."
+  },
+  {
+    "file": "WhatsApp Image 2026-10-15 at 2.50.32 PM.jpeg",
+    "category": "room",
+    "roomType": "couple",
+    "roomGroup": "R-I",
+    "suggestedUse": [
+      "gallery"
+    ],
+    "orientation": "portrait",
+    "width": 960,
+    "height": 1280,
+    "quality": "needs-edit",
+    "people": false,
+    "altEs": "Habitación con cama doble de lencería blanca, cortina roja, televisor y ventilador de pie",
+    "notes": "Cama muy cerca de la cámara; recortar."
+  },
+  {
+    "file": "WhatsApp Image 2026-10-15 at 2.50.33 PM (1).jpeg",
+    "category": "room",
+    "roomType": null,
+    "roomGroup": "R-H",
+    "suggestedUse": [
+      "gallery"
+    ],
+    "orientation": "portrait",
+    "width": 960,
+    "height": 1280,
+    "quality": "ok",
+    "people": false,
+    "altEs": "Habitación con dos camas de cubrecama verde, cortina roja, televisor y espejo",
+    "notes": ""
+  },
+  {
+    "file": "WhatsApp Image 2026-10-15 at 2.50.33 PM (2).jpeg",
+    "category": "room",
+    "roomType": null,
+    "roomGroup": "R-H",
+    "suggestedUse": [],
+    "orientation": "portrait",
+    "width": 960,
+    "height": 1280,
+    "quality": "discard",
+    "people": false,
+    "altEs": "Habitación con dos camas de cubrecama verde y cortina roja con poca luz",
+    "notes": "Subexpuesta con dominante rosada."
+  },
+  {
+    "file": "WhatsApp Image 2026-10-15 at 2.50.33 PM.jpeg",
+    "category": "detail",
+    "roomType": null,
+    "roomGroup": "R-H",
+    "suggestedUse": [
+      "card",
+      "gallery"
+    ],
+    "orientation": "portrait",
+    "width": 960,
+    "height": 1280,
+    "quality": "ok",
+    "people": false,
+    "altEs": "Detalle de camas con cubrecama verde, toalla doblada y lámpara de mesa encendida",
+    "notes": ""
+  },
+  {
+    "file": "WhatsApp Image 2026-10-15 at 2.50.34 PM (1).jpeg",
+    "category": "room",
+    "roomType": null,
+    "roomGroup": "R-J",
+    "suggestedUse": [
+      "card",
+      "gallery"
+    ],
+    "orientation": "portrait",
+    "width": 960,
+    "height": 1280,
+    "quality": "ok",
+    "people": false,
+    "altEs": "Habitación con dos camas sencillas de lencería blanca, mesa de madera, espejo y televisor",
+    "notes": ""
+  },
+  {
+    "file": "WhatsApp Image 2026-10-15 at 2.50.34 PM.jpeg",
+    "category": "room",
+    "roomType": null,
+    "roomGroup": "R-J",
+    "suggestedUse": [],
+    "orientation": "portrait",
+    "width": 960,
+    "height": 1280,
+    "quality": "discard",
+    "people": true,
+    "altEs": "Habitación con dos camas sencillas y parte de una persona en el borde",
+    "notes": "Parte de una persona en la esquina inferior izquierda; usar 2.50.34 PM (1)."
+  },
+  {
+    "file": "WhatsApp Image 2026-10-15 at 2.50.35 PM (1).jpeg",
+    "category": "room",
+    "roomType": null,
+    "roomGroup": "R-K",
+    "suggestedUse": [
+      "gallery"
+    ],
+    "orientation": "portrait",
+    "width": 960,
+    "height": 1280,
+    "quality": "needs-edit",
+    "people": false,
+    "altEs": "Habitación con dos camas sencillas, ventana pequeña, ventilador de pared y mesa de madera",
+    "notes": "Silla plástica en primer plano; recortar."
+  },
+  {
+    "file": "WhatsApp Image 2026-10-15 at 2.50.35 PM.jpeg",
+    "category": "room",
+    "roomType": null,
+    "roomGroup": "R-J",
+    "suggestedUse": [
+      "gallery"
+    ],
+    "orientation": "portrait",
+    "width": 960,
+    "height": 1280,
+    "quality": "ok",
+    "people": false,
+    "altEs": "Habitación con dos camas sencillas de lencería blanca, mesa de madera y espejo",
+    "notes": "Similar a 2.50.34 PM (1)."
+  },
+  {
+    "file": "WhatsApp Image 2026-10-15 at 2.50.36 PM (1).jpeg",
+    "category": "room",
+    "roomType": null,
+    "roomGroup": "R-L",
+    "suggestedUse": [
+      "gallery"
+    ],
+    "orientation": "portrait",
+    "width": 960,
+    "height": 1280,
+    "quality": "needs-edit",
+    "people": false,
+    "altEs": "Habitación con dos camas de lencería blanca, televisor de pared y puerta de madera",
+    "notes": "Almohada en primer plano."
+  },
+  {
+    "file": "WhatsApp Image 2026-10-15 at 2.50.36 PM (2).jpeg",
+    "category": "room",
+    "roomType": null,
+    "roomGroup": "R-M",
+    "suggestedUse": [
+      "card",
+      "gallery"
+    ],
+    "orientation": "portrait",
+    "width": 960,
+    "height": 1280,
+    "quality": "ok",
+    "people": false,
+    "altEs": "Habitación con dos camas de cubrecama a rayas azul y verde y armario de madera abierto",
+    "notes": ""
+  },
+  {
+    "file": "WhatsApp Image 2026-10-15 at 2.50.36 PM.jpeg",
+    "category": "room",
+    "roomType": null,
+    "roomGroup": "R-L",
+    "suggestedUse": [
+      "gallery"
+    ],
+    "orientation": "portrait",
+    "width": 960,
+    "height": 1280,
+    "quality": "ok",
+    "people": false,
+    "altEs": "Habitación con dos camas de lencería blanca, televisor de pared y silla azul",
+    "notes": ""
+  },
+  {
+    "file": "WhatsApp Image 2026-10-15 at 2.50.37 PM.jpeg",
+    "category": "room",
+    "roomType": null,
+    "roomGroup": "R-M",
+    "suggestedUse": [
+      "gallery"
+    ],
+    "orientation": "portrait",
+    "width": 960,
+    "height": 1280,
+    "quality": "ok",
+    "people": false,
+    "altEs": "Habitación alargada con dos camas de cubrecama a rayas, armario y ventilador de pared",
+    "notes": ""
+  },
+  {
+    "file": "WhatsApp Image 2026-10-15 at 2.50.38 PM (1).jpeg",
+    "category": "detail",
+    "roomType": null,
+    "roomGroup": null,
+    "suggestedUse": [
+      "gallery"
+    ],
+    "orientation": "portrait",
+    "width": 960,
+    "height": 1280,
+    "quality": "ok",
+    "people": false,
+    "altEs": "Espejo de marco dorado ornamentado que refleja la escalera, junto a un zapatero metálico",
+    "notes": ""
+  },
+  {
+    "file": "WhatsApp Image 2026-10-15 at 2.50.38 PM (2).jpeg",
+    "category": "detail",
+    "roomType": null,
+    "roomGroup": null,
+    "suggestedUse": [],
+    "orientation": "portrait",
+    "width": 960,
+    "height": 1280,
+    "quality": "needs-edit",
+    "people": false,
+    "altEs": "Placa con el número de habitación 107 sobre una puerta",
+    "notes": "Poco valor visual; posible uso decorativo pequeño."
+  },
+  {
+    "file": "WhatsApp Image 2026-10-15 at 2.50.38 PM.jpeg",
+    "category": "room",
+    "roomType": null,
+    "roomGroup": "R-M",
+    "suggestedUse": [
+      "gallery"
+    ],
+    "orientation": "portrait",
+    "width": 960,
+    "height": 1280,
+    "quality": "ok",
+    "people": false,
+    "altEs": "Habitación con dos camas de cubrecama a rayas azul y verde y cabecero gris",
+    "notes": "Similar a 2.50.37 PM."
+  },
+  {
+    "file": "WhatsApp Image 2026-10-15 at 2.50.39 PM (1).jpeg",
+    "category": "room",
+    "roomType": null,
+    "roomGroup": "R-N",
+    "suggestedUse": [
+      "gallery"
+    ],
+    "orientation": "portrait",
+    "width": 960,
+    "height": 1280,
+    "quality": "ok",
+    "people": false,
+    "altEs": "Habitación con dos camas de lencería blanca, televisor de pared, ventilador de pie y repisas",
+    "notes": ""
+  },
+  {
+    "file": "WhatsApp Image 2026-10-15 at 2.50.40 PM (1).jpeg",
+    "category": "room",
+    "roomType": null,
+    "roomGroup": "R-O",
+    "suggestedUse": [
+      "card",
+      "gallery"
+    ],
+    "orientation": "portrait",
+    "width": 960,
+    "height": 1280,
+    "quality": "ok",
+    "people": false,
+    "altEs": "Habitación con dos camas de lencería blanca, cabeceros grises, espejo y ventana con visillo",
+    "notes": "Buena luz natural."
+  },
+  {
+    "file": "WhatsApp Image 2026-10-15 at 2.50.40 PM.jpeg",
+    "category": "room",
+    "roomType": null,
+    "roomGroup": "R-O",
+    "suggestedUse": [
+      "card",
+      "gallery"
+    ],
+    "orientation": "landscape",
+    "width": 1280,
+    "height": 960,
+    "quality": "ok",
+    "people": false,
+    "altEs": "Habitación con dos camas de lencería blanca, mesa de madera y ventilador de pie",
+    "notes": "Única foto horizontal del lote."
+  },
+  {
+    "file": "WhatsApp Image 2026-10-15 at 2.50.41 PM (1).jpeg",
+    "category": "signage",
+    "roomType": null,
+    "roomGroup": null,
+    "suggestedUse": [
+      "hero",
+      "og",
+      "about",
+      "gallery"
+    ],
+    "orientation": "portrait",
+    "width": 960,
+    "height": 1280,
+    "quality": "needs-edit",
+    "people": false,
+    "altEs": "Letrero vertical verde con la palabra HOTEL y el nombre Bambú sobre fachada de ladrillo",
+    "notes": "Letrero real (fuente del verde de marca). Foto con HDR y saturación fuertes y cables delante; usar con tratamiento sobrio."
+  },
+  {
+    "file": "WhatsApp Image 2026-10-15 at 2.50.41 PM.jpeg",
+    "category": "exterior",
+    "roomType": null,
+    "roomGroup": null,
+    "suggestedUse": [
+      "about",
+      "gallery"
+    ],
+    "orientation": "portrait",
+    "width": 960,
+    "height": 1280,
+    "quality": "needs-edit",
+    "people": false,
+    "altEs": "Entrada del hotel con letrero iluminado HOTEL sobre la puerta y escalera de acceso, fachada de ladrillo",
+    "notes": "Afiches comerciales de terceros a los lados; recortar. Única foto de la fachada (parcial)."
+  },
+  {
+    "file": "WhatsApp Image 2026-10-15 at 2.50.42 PM.jpeg",
+    "category": "common",
+    "roomType": null,
+    "roomGroup": null,
+    "suggestedUse": [
+      "about",
+      "gallery"
+    ],
+    "orientation": "portrait",
+    "width": 960,
+    "height": 1280,
+    "quality": "ok",
+    "people": false,
+    "altEs": "Sala de espera con sillón beige, sofá rojo, cuadro de paisaje, reloj y planta",
+    "notes": "Zona común mejor iluminada."
+  },
+  {
+    "file": "WhatsApp Image 2026-10-15 at 2.50.43 PM (1).jpeg",
+    "category": "common",
+    "roomType": null,
+    "roomGroup": null,
+    "suggestedUse": [
+      "about"
+    ],
+    "orientation": "portrait",
+    "width": 960,
+    "height": 1280,
+    "quality": "needs-edit",
+    "people": true,
+    "altEs": "Recepción con mostrador de madera y una persona del equipo del hotel detrás",
+    "notes": "Persona identificable: requiere autorización escrita."
+  },
+  {
+    "file": "WhatsApp Image 2026-10-15 at 2.50.43 PM.jpeg",
+    "category": "common",
+    "roomType": null,
+    "roomGroup": null,
+    "suggestedUse": [
+      "about",
+      "gallery"
+    ],
+    "orientation": "portrait",
+    "width": 960,
+    "height": 1280,
+    "quality": "needs-edit",
+    "people": true,
+    "altEs": "Recepción amplia con mostrador de madera, plantas y una persona del equipo del hotel",
+    "notes": "Persona identificable: requiere autorización escrita."
+  },
+  {
+    "file": "WhatsApp Image 2026-11-04 at 3.39.54 PM.jpeg",
+    "category": "room",
+    "roomType": "couple",
+    "roomGroup": "R-E",
+    "suggestedUse": [],
+    "orientation": "portrait",
+    "width": 960,
+    "height": 1280,
+    "quality": "discard",
+    "people": false,
+    "altEs": "Habitación con cama doble de cubrecama verde, televisor y cortina mostaza",
+    "notes": "Duplicado exacto de 2.50.27 PM."
+  },
+  {
+    "file": "WhatsApp Image 2026-11-04 at 3.39.56 PM.jpeg",
+    "category": "common",
+    "roomType": null,
+    "roomGroup": null,
+    "suggestedUse": [],
+    "orientation": "portrait",
+    "width": 960,
+    "height": 1280,
+    "quality": "discard",
+    "people": false,
+    "altEs": "Pasillo del segundo piso con baranda de madera y cuadros",
+    "notes": "Duplicado exacto de 2.50.26 PM."
+  },
+  {
+    "file": "WhatsApp Image 2026-11-04 at 3.40.18 PM.jpeg",
+    "category": "room",
+    "roomType": "couple",
+    "roomGroup": "R-I",
+    "suggestedUse": [],
+    "orientation": "portrait",
+    "width": 960,
+    "height": 1280,
+    "quality": "discard",
+    "people": false,
+    "altEs": "Habitación con cama doble de lencería blanca y cortina roja",
+    "notes": "Duplicado exacto de 2.50.32 PM."
+  },
+  {
+    "file": "WhatsApp Image 2026-11-04 at 3.40.20 PM.jpeg",
+    "category": "room",
+    "roomType": "couple",
+    "roomGroup": "R-G",
+    "suggestedUse": [],
+    "orientation": "portrait",
+    "width": 960,
+    "height": 1280,
+    "quality": "discard",
+    "people": false,
+    "altEs": "Habitación alargada con cama doble de lencería blanca y ventilador de pie",
+    "notes": "Duplicado exacto de 2.50.30 PM."
+  },
+  {
+    "file": "foto marco mision.jpeg",
+    "category": "signage",
+    "roomType": null,
+    "roomGroup": null,
+    "suggestedUse": [],
+    "orientation": "portrait",
+    "width": 960,
+    "height": 1280,
+    "quality": "discard",
+    "people": false,
+    "altEs": "Cuadro enmarcado con la misión del Hotel Bambú Plaza e ilustración de bambú",
+    "notes": "Fuente de texto (misión, eslogan, dirección, teléfono, RNT); no publicar como imagen."
+  },
+  {
+    "file": "foto marco registro nacional de turismo.jpeg",
+    "category": "signage",
+    "roomType": null,
+    "roomGroup": null,
+    "suggestedUse": [],
+    "orientation": "portrait",
+    "width": 960,
+    "height": 1280,
+    "quality": "discard",
+    "people": false,
+    "altEs": "Certificado del Registro Nacional de Turismo enmarcado",
+    "notes": "Contiene datos personales del titular; no publicar. Fuente del número RNT."
+  },
+  {
+    "file": "foto marco vision.jpeg",
+    "category": "signage",
+    "roomType": null,
+    "roomGroup": null,
+    "suggestedUse": [],
+    "orientation": "portrait",
+    "width": 960,
+    "height": 1280,
+    "quality": "discard",
+    "people": false,
+    "altEs": "Cuadro enmarcado con la visión del Hotel Bambú Plaza e ilustración de bambú",
+    "notes": "Fuente de texto (visión); no publicar como imagen."
+  }
+]
