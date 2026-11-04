@@ -1,0 +1,292 @@
+/*
+ * Public site styles that need state selectors or keyframes (direction A, docs/design/motion-spec.md).
+ * Everything else is Tailwind utilities on the tokens. Every animation is gated by
+ * `prefers-reduced-motion: no-preference`; start states apply only under `.js-motion` (set after
+ * hydration by MotionBoot), so the content is visible without JS.
+ */
+
+/* In the `components` layer so Tailwind utilities (e.g. `md:hidden`) can override these. */
+@layer components {
+  :root {
+    --header-h: 4.5rem;
+    --reveal-y: 1.5rem;
+  }
+
+  html {
+    scroll-padding-top: calc(var(--header-h) + 1rem);
+  }
+
+  /* ─── Skip link ─────────────────────────────────────────────────────────── */
+  .skip-link {
+    position: fixed;
+    top: 0.75rem;
+    left: 0.75rem;
+    z-index: var(--z-overlay);
+    transform: translateY(-200%);
+    border-radius: var(--radius-pill);
+    background: var(--color-bamboo-900);
+    color: var(--color-sand-50);
+    padding: 0.75rem 1.25rem;
+    font-weight: 600;
+  }
+  .skip-link:focus {
+    transform: none;
+  }
+
+  /* ─── Header ────────────────────────────────────────────────────────────── */
+  .site-header {
+    position: fixed;
+    inset: 0 0 auto;
+    z-index: var(--z-header);
+    height: var(--header-h);
+    color: var(--color-bamboo-900);
+    background-color: rgb(247 243 234 / 0.92);
+    border-bottom: 1px solid var(--color-sand-200);
+    backdrop-filter: blur(12px);
+    transition:
+      background-color var(--duration-base) var(--ease-standard),
+      border-color var(--duration-base) var(--ease-standard),
+      color var(--duration-base) var(--ease-standard);
+  }
+  .site-header .logo-on-dark {
+    display: none;
+  }
+
+  /* Transparent over the home hero on small screens until the visitor scrolls. */
+  @media (max-width: 63.999rem) {
+    .site-header[data-overlay='true'][data-scrolled='false'] {
+      color: var(--color-sand-50);
+      background-color: transparent;
+      border-color: transparent;
+      backdrop-filter: none;
+    }
+    .site-header[data-overlay='true'][data-scrolled='false'] .logo-default {
+      display: none;
+    }
+    .site-header[data-overlay='true'][data-scrolled='false'] .logo-on-dark {
+      display: block;
+    }
+  }
+
+  .menu-button:hover {
+    background-color: rgb(26 31 28 / 0.08);
+  }
+
+  .nav-link {
+    display: inline-flex;
+    min-height: 2.75rem;
+    align-items: center;
+    border-radius: var(--radius-pill);
+    padding: 0 0.875rem;
+    font-size: var(--text-sm);
+    font-weight: 600;
+    color: var(--color-bamboo-900);
+    transition: background-color var(--duration-fast) var(--ease-standard);
+  }
+  .nav-link:hover {
+    background-color: var(--color-sand-100);
+  }
+  .nav-link[aria-current='page'] {
+    background-color: var(--color-bamboo-100);
+  }
+
+  .mobile-menu {
+    width: 100%;
+    max-width: 100%;
+    height: 100dvh;
+    max-height: 100dvh;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: var(--color-sand-50);
+    color: var(--color-bamboo-900);
+  }
+  .mobile-menu::backdrop {
+    background: rgb(18 57 43 / 0.4);
+  }
+  .mobile-nav-link {
+    display: flex;
+    min-height: 3.5rem;
+    align-items: center;
+    border-bottom: 1px solid var(--color-sand-200);
+    font-family: var(--font-display);
+    font-size: var(--text-2xl);
+    color: var(--color-bamboo-900);
+  }
+  .mobile-nav-link[aria-current='page'] {
+    color: var(--color-bamboo-700);
+  }
+
+  /* ─── Hero ──────────────────────────────────────────────────────────────── */
+  .hero-scrim {
+    background:
+      linear-gradient(to bottom, rgb(18 57 43 / 0.55), transparent 22%),
+      linear-gradient(to top, rgb(18 57 43 / 0.9) 0%, rgb(18 57 43 / 0.45) 35%, transparent 60%);
+  }
+  .hero-slide {
+    opacity: 0;
+  }
+  .hero-slide[data-active='true'] {
+    opacity: 1;
+  }
+  .story-image {
+    opacity: 0;
+  }
+  .story-image[data-active='true'] {
+    opacity: 1;
+  }
+
+  /* ─── Floating WhatsApp ─────────────────────────────────────────────────── */
+  .whatsapp-fab {
+    position: fixed;
+    right: max(1rem, env(safe-area-inset-right));
+    bottom: max(1rem, env(safe-area-inset-bottom));
+    z-index: var(--z-whatsapp-fab);
+    opacity: 0;
+    transform: translateY(1rem) scale(0.9);
+    pointer-events: none;
+  }
+  .whatsapp-fab[data-visible='true'] {
+    opacity: 1;
+    transform: none;
+    pointer-events: auto;
+  }
+
+  /* ─── Gallery ───────────────────────────────────────────────────────────── */
+  .gallery-grid {
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 16rem), 1fr));
+  }
+  .gallery-item {
+    aspect-ratio: 3 / 4;
+  }
+
+  .snap-row {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: min(78%, 20rem);
+    gap: 1rem;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    overscroll-behavior-x: contain;
+    padding-bottom: 0.5rem;
+    scrollbar-width: thin;
+  }
+  .snap-row > * {
+    scroll-snap-align: start;
+  }
+
+  .lightbox {
+    width: 100%;
+    max-width: 100%;
+    height: 100dvh;
+    max-height: 100dvh;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: rgb(18 57 43 / 0.96);
+    color: var(--color-sand-50);
+  }
+  .lightbox::backdrop {
+    background: rgb(0 0 0 / 0.6);
+  }
+  .lightbox-btn {
+    position: absolute;
+    display: inline-flex;
+    width: 2.75rem;
+    height: 2.75rem;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-pill);
+    background: rgb(247 243 234 / 0.12);
+    color: var(--color-sand-50);
+  }
+  .lightbox-btn:hover {
+    background: rgb(247 243 234 / 0.24);
+  }
+
+  .map-placeholder {
+    background-color: var(--color-sand-100);
+    background-image:
+      linear-gradient(var(--color-sand-200) 1px, transparent 1px),
+      linear-gradient(90deg, var(--color-sand-200) 1px, transparent 1px);
+    background-size: 2.5rem 2.5rem;
+  }
+
+  /* FAQ accordion marker */
+  .faq-item summary {
+    list-style: none;
+  }
+  .faq-item summary::-webkit-details-marker {
+    display: none;
+  }
+  .faq-item[open] .faq-icon {
+    transform: rotate(45deg);
+  }
+
+  /* ─── Motion (no-preference only) ───────────────────────────────────────── */
+  @media (prefers-reduced-motion: no-preference) {
+    .hero-slide,
+    .story-image {
+      transition: opacity var(--duration-slower) var(--ease-in-out-soft);
+    }
+
+    .whatsapp-fab {
+      transition:
+        opacity var(--duration-base) var(--ease-out-soft),
+        transform var(--duration-base) var(--ease-out-soft);
+    }
+
+    .room-card-img {
+      transition: transform var(--duration-base) var(--ease-standard);
+    }
+    @media (hover: hover) {
+      .group:hover .room-card-img,
+      .group:focus-within .room-card-img {
+        transform: scale(1.03);
+      }
+    }
+
+    .faq-icon {
+      transition: transform var(--duration-base) var(--ease-standard);
+    }
+
+    /* Fade-up reveals; cards stagger with --i (0.08 s, 0.04 s on small screens). */
+    .js-motion [data-reveal]:not(.is-visible) {
+      opacity: 0;
+      transform: translateY(var(--reveal-y));
+    }
+    .js-motion [data-reveal] {
+      transition:
+        opacity var(--duration-slow) var(--ease-out-soft),
+        transform var(--duration-slow) var(--ease-out-soft);
+      transition-delay: calc(var(--i, 0) * 40ms);
+    }
+    @media (min-width: 48rem) {
+      .js-motion [data-reveal] {
+        transition-delay: calc(var(--i, 0) * 80ms);
+      }
+    }
+
+    /* Leaf draws itself beside section kickers. */
+    .js-motion .kicker-leaf path {
+      stroke-dasharray: 1;
+      stroke-dashoffset: 1;
+      transition: stroke-dashoffset var(--duration-slower) var(--ease-out-soft) 150ms;
+    }
+    .js-motion .is-visible .kicker-leaf path {
+      stroke-dashoffset: 0;
+    }
+
+    .lightbox[open] {
+      animation: lightbox-in var(--duration-base) var(--ease-out-soft);
+    }
+  }
+}
+
+@keyframes lightbox-in {
+  from {
+    opacity: 0;
+  }
+}

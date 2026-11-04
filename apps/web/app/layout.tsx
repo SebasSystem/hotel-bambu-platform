@@ -3,14 +3,14 @@ import type { ReactNode } from 'react';
 import '@/styles/globals.css';
 import { fraunces, manrope } from './fonts';
 
+// Public pages are indexable (Phase 3). The admin layout keeps `noindex` and proxy.ts adds
+// `X-Robots-Tag` for /admin. Canonical URLs, sitemap, robots.txt and JSON-LD arrive in T7.
 export const metadata: Metadata = {
   title: {
     default: 'Hotel Bambú Plaza',
     template: '%s · Hotel Bambú Plaza',
   },
-  description: 'Hotel Bambú Plaza. Sitio web en construcción.',
-  // Placeholder site: keep it out of search engines until Phase 3/4 (requirement 24).
-  robots: { index: false, follow: false },
+  description: 'Hotel Bambú Plaza: habitaciones, servicios, ubicación y contacto por WhatsApp.',
 };
 
 export const viewport: Viewport = {

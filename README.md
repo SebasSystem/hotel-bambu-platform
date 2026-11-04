@@ -98,6 +98,7 @@ docker compose --profile web up web               # Next.js dev on http://localh
 WEB_COMMAND=build docker compose --profile web run --rm --no-deps web   # production build check
 ```
 
+- On-demand revalidation: start the API with `WEB_INTERNAL_URL=http://localhost:3000` and the same `REVALIDATE_SECRET` (≥ 32 chars) that the `web` container receives (Compose passes `REVALIDATE_SECRET` through). Public site: [docs/public-site.md](docs/public-site.md).
 - Overrides: `WEB_API_INTERNAL_URL` (default `http://host.docker.internal:4000`), `WEB_PORT` (default `3000`).
 - File watching uses polling (`WATCHPACK_POLLING`) because bind mounts from Windows do not deliver file events.
 - Lint, typecheck and Vitest run fine on the host (`pnpm lint`, `pnpm typecheck`, `pnpm test`).

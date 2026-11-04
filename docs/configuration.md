@@ -72,7 +72,7 @@ All configuration comes from environment variables. In development a single root
 | Variable | Notes |
 |---|---|
 | `API_INTERNAL_URL` | Where Next.js rewrites `/api/v1/*` and fetches server-side (e.g. `http://localhost:4000`). |
-| `REVALIDATE_SECRET` | Same value as the API's; the `/api/revalidate` route handler must compare it in constant time. |
+| `REVALIDATE_SECRET` | Same value as the API's. `POST /api/revalidate` compares it in constant time; 401 wrong/missing, 400 invalid body, 503 when unset (content then refreshes only by TTL). See [ADR 0011](adr/0011-public-rendering-and-images.md). |
 
 ## Tests and CI
 
