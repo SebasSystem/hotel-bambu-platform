@@ -1,5 +1,7 @@
 // Prisma 7: connection URL lives in prisma.config.ts; the client uses the pg driver adapter.
-// Domain models arrive in Phase 2 (task T3, requirement section 14).
+// Data model: requirement section 14. Decisions (ids, money, i18n, constraints): docs/adr/0006-data-model.md.
+// Database-level CHECK constraints and partial unique indexes Prisma cannot express are appended
+// as raw SQL to the migrations (search for "CHECK" in prisma/migrations).
 
 generator client {
   provider            = "prisma-client"
@@ -11,4 +13,458 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+}
+
+// ─── Enums ──────────────────────────────────────────────────────────────────
+
+enum AdminRole {
+  ADMIN
+  EDITOR
+}
+
+/// Extensible: add values with a migration when the hotel confirms new room types.
+enum RoomType {
+  INDIVIDUAL
+  COUPLE
+  TWIN
+  FAMILY
+}
+
+enum PublicationStatus {
+  DRAFT
+  PUBLISHED
+  INACTIVE
+}
+
+enum PriceUnit {
+  PER_NIGHT
+  PER_PERSON_PER_NIGHT
+  OTHER
+}
+
+enum MediaKind {
+  IMAGE
+  VIDEO
+}
+
+enum MediaStatus {
+  UPLOADING
+  PROCESSING
+  READY
+  FAILED
+}
+
+enum GalleryCategory {
+  ROOMS
+  COMMON_AREAS
+  EXTERIOR
+  FOOD
+  SURROUNDINGS
+  DETAILS
+}
+
+/// Fixed landing sections (requirement 4.2 / 9.8). The code owns layout; admins edit fields only.
+enum LandingSectionKey {
+  HERO
+  ABOUT
+  ROOMS
+  SERVICES
+  GALLERY
+  LOCATION
+  FAQ
+  CONTACT
+}
+
+enum SocialPlatform {
+  FACEBOOK
+  INSTAGRAM
+  TIKTOK
+  YOUTUBE
+  X
+  TRIPADVISOR
+  GOOGLE_BUSINESS
+  OTHER
+}
+
+enum WhatsAppTemplateKey {
+  GENERAL
+  ROOM
+  PROMOTION
+}
+
+// ─── Administration ─────────────────────────────────────────────────────────
+
+model AdminUser {
+  id                String     @id @default(uuid(7)) @db.Uuid
+  /// Stored lowercase and trimmed (normalized by the application).
+  email             String     @unique
+  name              String?
+  /// Argon2id PHC string. Never plaintext.
+  passwordHash      String
+  role              AdminRole  @default(ADMIN)
+  active            Boolean    @default(true)
+  failedAttempts    Int        @default(0)
+  lockedUntil       DateTime?  @db.Timestamptz(3)
+  lastLoginAt       DateTime?  @db.Timestamptz(3)
+  passwordChangedAt DateTime   @default(now()) @db.Timestamptz(3)
+  createdAt         DateTime   @default(now()) @db.Timestamptz(3)
+  updatedAt         DateTime   @updatedAt @db.Timestamptz(3)
+  sessions          Session[]
+  auditLogs         AuditLog[]
+}
+
+/// Server-side session. Only the SHA-256 hash of the opaque token is stored.
+model Session {
+  id            String    @id @default(uuid(7)) @db.Uuid
+  tokenHash     String    @unique
+  adminUserId   String    @db.Uuid
+  adminUser     AdminUser @relation(fields: [adminUserId], references: [id], onDelete: Cascade)
+  /// Absolute expiry; idle expiry is computed from lastSeenAt.
+  expiresAt     DateTime  @db.Timestamptz(3)
+  lastSeenAt    DateTime  @default(now()) @db.Timestamptz(3)
+  /// Optional keyed hashes (never raw IP / user agent).
+  ipHash        String?
+  userAgentHash String?
+  createdAt     DateTime  @default(now()) @db.Timestamptz(3)
+
+  @@index([adminUserId])
+  @@index([expiresAt])
+}
+
+/// Administrative action trail. `summary` must never contain secrets or personal data.
+model AuditLog {
+  id          String     @id @default(uuid(7)) @db.Uuid
+  adminUserId String?    @db.Uuid
+  adminUser   AdminUser? @relation(fields: [adminUserId], references: [id], onDelete: SetNull)
+  action      String
+  entity      String
+  entityId    String?
+  summary     Json?
+  createdAt   DateTime   @default(now()) @db.Timestamptz(3)
+
+  @@index([createdAt])
+  @@index([entity, entityId])
+  @@index([adminUserId])
+}
+
+// ─── Hotel ──────────────────────────────────────────────────────────────────
+
+/// Singleton (id is always 1, enforced by a CHECK constraint). Contact data lives here.
+model HotelProfile {
+  id                Int         @id @default(1)
+  name              String
+  legalName         String?
+  /// Registro Nacional de Turismo (req. 17.6). Optional: hidden on the site when empty.
+  rntNumber         String?
+  /// ESCNNA prevention notice text approved by the hotel (req. 17.6). Optional.
+  escnnaNotice      String?
+  shortDescription  String?
+  description       String?
+  address           String?
+  municipality      String?
+  department        String?
+  latitude          Decimal?    @db.Decimal(9, 6)
+  longitude         Decimal?    @db.Decimal(9, 6)
+  mapUrl            String?
+  directions        String?
+  nearbyAttractions String?
+  phone             String?
+  /// E.164 digits without "+", validated by @hotel-bambu/shared whatsAppPhoneSchema.
+  whatsappNumber    String?
+  email             String?
+  /// Attention hours, e.g. [{ "days": "Lunes a domingo", "hours": "24 horas" }].
+  openingHours      Json?
+  /// Local time "HH:MM" (America/Bogota).
+  checkInTime       String?
+  checkOutTime      String?
+  logoMediaId       String?     @db.Uuid
+  logoMedia         MediaAsset? @relation("HotelLogo", fields: [logoMediaId], references: [id], onDelete: SetNull)
+  heroMediaId       String?     @db.Uuid
+  heroMedia         MediaAsset? @relation("HotelHero", fields: [heroMediaId], references: [id], onDelete: SetNull)
+  heroVideoMediaId  String?     @db.Uuid
+  heroVideoMedia    MediaAsset? @relation("HotelHeroVideo", fields: [heroVideoMediaId], references: [id], onDelete: SetNull)
+  createdAt         DateTime    @default(now()) @db.Timestamptz(3)
+  updatedAt         DateTime    @updatedAt @db.Timestamptz(3)
+}
+
+model WhatsAppTemplate {
+  id               String              @id @default(uuid(7)) @db.Uuid
+  key              WhatsAppTemplateKey @unique
+  label            String
+  /// Message text with `{{variable}}` placeholders limited to `allowedVariables` (req. 5.2).
+  body             String
+  allowedVariables String[]
+  createdAt        DateTime            @default(now()) @db.Timestamptz(3)
+  updatedAt        DateTime            @updatedAt @db.Timestamptz(3)
+}
+
+model SocialLink {
+  id        String         @id @default(uuid(7)) @db.Uuid
+  platform  SocialPlatform
+  /// https only (validated by the application).
+  url       String
+  sortOrder Int            @default(0)
+  active    Boolean        @default(true)
+  createdAt DateTime       @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime       @updatedAt @db.Timestamptz(3)
+
+  @@index([active, sortOrder])
+}
+
+// ─── Rooms ──────────────────────────────────────────────────────────────────
+
+model Room {
+  id               String             @id @default(uuid(7)) @db.Uuid
+  slug             String             @unique
+  name             String
+  type             RoomType
+  status           PublicationStatus  @default(DRAFT)
+  shortDescription String?
+  description      String?
+  capacity         Int
+  /// Bed configuration, e.g. [{ "type": "DOUBLE", "count": 1 }].
+  beds             Json?
+  areaM2           Decimal?           @db.Decimal(6, 2)
+  /// Informative "from" rate in whole Colombian pesos, taxes per `taxesIncluded`. Null = not published.
+  basePrice        Int?
+  currency         String             @default("COP") @db.Char(3)
+  priceUnit        PriceUnit          @default(PER_NIGHT)
+  taxesIncluded    Boolean            @default(true)
+  priceNotes       String?
+  sortOrder        Int                @default(0)
+  seoTitle         String?
+  seoDescription   String?
+  createdAt        DateTime           @default(now()) @db.Timestamptz(3)
+  updatedAt        DateTime           @updatedAt @db.Timestamptz(3)
+  images           RoomImage[]
+  amenities        RoomAmenity[]
+  slugRedirects    RoomSlugRedirect[]
+  promotions       Promotion[]
+
+  @@index([status, sortOrder])
+}
+
+/// Old slug → room, for 301 redirects after a published room is renamed.
+model RoomSlugRedirect {
+  id        String   @id @default(uuid(7)) @db.Uuid
+  oldSlug   String   @unique
+  roomId    String   @db.Uuid
+  room      Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+
+  @@index([roomId])
+}
+
+/// At most one cover per room (partial unique index in SQL).
+model RoomImage {
+  id           String     @id @default(uuid(7)) @db.Uuid
+  roomId       String     @db.Uuid
+  room         Room       @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  mediaAssetId String     @db.Uuid
+  mediaAsset   MediaAsset @relation(fields: [mediaAssetId], references: [id], onDelete: Restrict)
+  sortOrder    Int        @default(0)
+  isCover      Boolean    @default(false)
+  createdAt    DateTime   @default(now()) @db.Timestamptz(3)
+  updatedAt    DateTime   @updatedAt @db.Timestamptz(3)
+
+  @@unique([roomId, mediaAssetId])
+  @@index([roomId, sortOrder])
+  @@index([mediaAssetId])
+}
+
+/// Room-level comfort catalog (private bathroom, TV, fan, Wi-Fi...).
+model Amenity {
+  id          String        @id @default(uuid(7)) @db.Uuid
+  name        String        @unique
+  description String?
+  /// Key from the controlled icon catalog (@hotel-bambu/shared ICON_KEYS).
+  iconKey     String
+  active      Boolean       @default(true)
+  showOnHome  Boolean       @default(false)
+  sortOrder   Int           @default(0)
+  createdAt   DateTime      @default(now()) @db.Timestamptz(3)
+  updatedAt   DateTime      @updatedAt @db.Timestamptz(3)
+  rooms       RoomAmenity[]
+
+  @@index([active, sortOrder])
+}
+
+model RoomAmenity {
+  roomId    String   @db.Uuid
+  room      Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  amenityId String   @db.Uuid
+  amenity   Amenity  @relation(fields: [amenityId], references: [id], onDelete: Restrict)
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+
+  @@id([roomId, amenityId])
+  @@index([amenityId])
+}
+
+/// Hotel-level features (solar panels, water reserve, internet on all floors...).
+model Service {
+  id           String      @id @default(uuid(7)) @db.Uuid
+  name         String      @unique
+  description  String?
+  iconKey      String?
+  mediaAssetId String?     @db.Uuid
+  mediaAsset   MediaAsset? @relation(fields: [mediaAssetId], references: [id], onDelete: SetNull)
+  active       Boolean     @default(true)
+  /// Shown in the home "Experiencia / servicios" section.
+  highlighted  Boolean     @default(false)
+  sortOrder    Int         @default(0)
+  createdAt    DateTime    @default(now()) @db.Timestamptz(3)
+  updatedAt    DateTime    @updatedAt @db.Timestamptz(3)
+
+  @@index([active, sortOrder])
+}
+
+model Promotion {
+  id          String            @id @default(uuid(7)) @db.Uuid
+  title       String
+  description String?
+  conditions  String?
+  startsAt    DateTime          @db.Timestamptz(3)
+  endsAt      DateTime          @db.Timestamptz(3)
+  roomId      String?           @db.Uuid
+  room        Room?             @relation(fields: [roomId], references: [id], onDelete: SetNull)
+  status      PublicationStatus @default(DRAFT)
+  sortOrder   Int               @default(0)
+  createdAt   DateTime          @default(now()) @db.Timestamptz(3)
+  updatedAt   DateTime          @updatedAt @db.Timestamptz(3)
+
+  @@index([status, startsAt, endsAt])
+  @@index([roomId])
+}
+
+// ─── Media ──────────────────────────────────────────────────────────────────
+
+model MediaAsset {
+  id            String           @id @default(uuid(7)) @db.Uuid
+  /// Random storage prefix; variants live under `<storageKey>/<width>.<format>`.
+  storageKey    String           @unique
+  kind          MediaKind        @default(IMAGE)
+  /// Validated from magic bytes, not from the extension.
+  mimeType      String
+  /// SHA-256 of the original bytes: deduplication and idempotent imports.
+  checksum      String           @unique
+  sizeBytes     Int
+  width         Int?
+  height        Int?
+  /// [{ "width": 640, "height": 853, "format": "webp", "key": "...", "sizeBytes": 1234 }, ...]
+  variants      Json             @default("[]")
+  blurDataUrl   String?
+  dominantColor String?          @db.VarChar(7)
+  /// Required before the asset can be published.
+  altText       String?
+  caption       String?
+  status        MediaStatus      @default(UPLOADING)
+  createdAt     DateTime         @default(now()) @db.Timestamptz(3)
+  updatedAt     DateTime         @updatedAt @db.Timestamptz(3)
+  roomImages    RoomImage[]
+  galleryItems  GalleryItem[]
+  services      Service[]
+  sections      LandingSection[]
+  hotelLogos    HotelProfile[]   @relation("HotelLogo")
+  hotelHeroes   HotelProfile[]   @relation("HotelHero")
+  hotelVideos   HotelProfile[]   @relation("HotelHeroVideo")
+
+  @@index([status])
+  @@index([createdAt])
+}
+
+model GalleryItem {
+  id           String          @id @default(uuid(7)) @db.Uuid
+  mediaAssetId String          @unique @db.Uuid
+  mediaAsset   MediaAsset      @relation(fields: [mediaAssetId], references: [id], onDelete: Cascade)
+  category     GalleryCategory
+  sortOrder    Int             @default(0)
+  published    Boolean         @default(false)
+  /// Shown in the home gallery selection.
+  featured     Boolean         @default(false)
+  createdAt    DateTime        @default(now()) @db.Timestamptz(3)
+  updatedAt    DateTime        @updatedAt @db.Timestamptz(3)
+
+  @@index([published, category, sortOrder])
+}
+
+/// Failed external deletions, retried by a scheduled job (req. 10).
+model PendingStorageDeletion {
+  id         String   @id @default(uuid(7)) @db.Uuid
+  storageKey String
+  attempts   Int      @default(0)
+  lastError  String?
+  createdAt  DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt  DateTime @updatedAt @db.Timestamptz(3)
+
+  @@index([createdAt])
+}
+
+// ─── Content ────────────────────────────────────────────────────────────────
+
+model LandingSection {
+  id           String            @id @default(uuid(7)) @db.Uuid
+  key          LandingSectionKey @unique
+  title        String?
+  subtitle     String?
+  /// Plain text or the controlled, sanitized subset (bold, links, lists). Never raw HTML.
+  body         String?
+  ctaLabel     String?
+  mediaAssetId String?           @db.Uuid
+  mediaAsset   MediaAsset?       @relation(fields: [mediaAssetId], references: [id], onDelete: SetNull)
+  enabled      Boolean           @default(false)
+  sortOrder    Int               @default(0)
+  createdAt    DateTime          @default(now()) @db.Timestamptz(3)
+  updatedAt    DateTime          @updatedAt @db.Timestamptz(3)
+}
+
+model Faq {
+  id         String   @id @default(uuid(7)) @db.Uuid
+  question   String
+  answer     String
+  sortOrder  Int      @default(0)
+  published  Boolean  @default(false)
+  showOnHome Boolean  @default(false)
+  createdAt  DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt  DateTime @updatedAt @db.Timestamptz(3)
+
+  @@index([published, sortOrder])
+}
+
+model HotelPolicy {
+  id        String   @id @default(uuid(7)) @db.Uuid
+  title     String
+  content   String
+  sortOrder Int      @default(0)
+  published Boolean  @default(false)
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
+
+  @@index([published, sortOrder])
+}
+
+// ─── Privacy & metrics ──────────────────────────────────────────────────────
+
+/// Cookie consent evidence (req. 17.5.9): random id, categories, policy version, timestamp. No IP.
+model ConsentRecord {
+  id            String   @id @default(uuid(7)) @db.Uuid
+  consentId     String   @unique
+  /// { "functional": true, "analytics": false, "marketing": false }
+  categories    Json
+  policyVersion String
+  createdAt     DateTime @default(now()) @db.Timestamptz(3)
+
+  @@index([createdAt])
+}
+
+/// Aggregated interaction counts (no per-visitor rows). `entityId` is '' when not applicable.
+model AnalyticsDailyCount {
+  id        String   @id @default(uuid(7)) @db.Uuid
+  date      DateTime @db.Date
+  type      String
+  source    String   @default("")
+  entityId  String   @default("")
+  count     Int      @default(0)
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
+
+  @@unique([date, type, source, entityId])
 }

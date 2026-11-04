@@ -12,6 +12,8 @@ export default defineConfig({
   schema: 'prisma/schema.prisma',
   migrations: {
     path: 'prisma/migrations',
+    // `prisma db seed` runs the idempotent base seed (migrate dev no longer seeds automatically).
+    seed: 'tsx src/scripts/seed-base.ts',
   },
   datasource: {
     // `prisma generate` does not need a live URL; migrate/db commands do.

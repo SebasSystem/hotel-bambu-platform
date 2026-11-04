@@ -46,6 +46,36 @@ The single root `.env` is read by Docker Compose, the API and Next.js. Never com
 
 Prisma commands run from the API package, e.g. `pnpm --filter @hotel-bambu/api prisma migrate dev`.
 
+## Data (database, seeds, admin, media)
+
+Scripts live in the API package: run them as `pnpm --filter @hotel-bambu/api <script>`. Model and seed rules: [ADR 0006](docs/adr/0006-data-model.md).
+
+| Script              | Environments        | Does                                                                                                     |
+| ------------------- | ------------------- | -------------------------------------------------------------------------------------------------------- |
+| `db:migrate`        | local               | `prisma migrate dev` (then `db:generate`: Prisma 7 no longer generates or seeds automatically)           |
+| `db:migrate:deploy` | staging, production | Applies pending migrations only                                                                          |
+| `db:seed:base`      | all (idempotent)    | Hotel profile (name only, rest `TODO(hotel)`), landing sections, WhatsApp templates, amenities, services |
+| `db:seed:demo`      | local, staging      | 16 `[DEMO]` rooms, demo FAQ and policies. Refuses when `NODE_ENV` or `APP_ENV` is `production`           |
+| `media:import`      | local, staging      | Processes `assets-source/photos` per `docs/assets/assets-manifest.json`, uploads variants, links media   |
+| `admin:create`      | all                 | Creates an admin, interactively or one-shot with `ADMIN_EMAIL` + `ADMIN_PASSWORD`                        |
+
+First run on a fresh database:
+
+```bash
+pnpm db:up
+pnpm --filter @hotel-bambu/api db:migrate
+pnpm --filter @hotel-bambu/api db:seed:base
+pnpm --filter @hotel-bambu/api db:seed:demo
+pnpm --filter @hotel-bambu/api media:import   # needs S3_ACCESS_KEY / S3_SECRET_KEY (S3_ENDPOINT defaults to http://localhost:9000)
+pnpm --filter @hotel-bambu/api admin:create   # prompts for email and password (min 12 characters)
+```
+
+- Order matters: `db:seed:demo` needs the amenity catalog from `db:seed:base`; `media:import` attaches room photos to the demo rooms and publishes the ones that get a cover image.
+- `media:import` skips `discard` photos and photos already imported (SHA-256), strips EXIF/GPS, and writes AVIF + WebP variants (640/960/1280/1920, never upscaled) under random keys. Re-running it is safe.
+- One-shot admin: `ADMIN_EMAIL=you@example.com ADMIN_PASSWORD='a long passphrase' pnpm --filter @hotel-bambu/api admin:create`, then clear it from your shell history. There are no default credentials. Add `-- --reset-password` to reset an existing admin (unlocks it and revokes its sessions).
+- From a build (e.g. inside the API container): `node dist/scripts/admin-create.js` (also `seed-base`, `seed-demo`, `media-import`).
+- `sharp` and `@node-rs/argon2` use prebuilt binaries and run on Windows, macOS and Linux hosts; no container is needed for these scripts.
+
 ## Media originals
 
 Original hotel photos live in `assets-source/` and are **never committed** (see requirements 15.1).
