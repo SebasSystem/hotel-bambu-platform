@@ -67,6 +67,53 @@ services:
         echo "Bucket $$BUCKET ready"
     restart: 'no'
 
+  # Next.js dev server in Linux (profile `web`, opt-in: `docker compose --profile web up web`).
+  # Needed on hosts where native binaries cannot run (e.g. Windows Application Control blocks
+  # Tailwind's oxide binary). The repo is bind-mounted; node_modules and .next live in named
+  # volumes so Linux binaries are installed inside the container. The API keeps running on the
+  # host (`pnpm --filter @hotel-bambu/api dev`) and is reached via host.docker.internal.
+  web:
+    profiles: ['web']
+    image: node:24-bookworm-slim
+    working_dir: /repo
+    environment:
+      COREPACK_ENABLE_DOWNLOAD_PROMPT: '0'
+      CI: 'true' # non-interactive pnpm install
+      NEXT_TELEMETRY_DISABLED: '1'
+      WATCHPACK_POLLING: 'true' # bind mounts from Windows/macOS do not deliver inotify events
+      API_INTERNAL_URL: ${WEB_API_INTERNAL_URL:-http://host.docker.internal:4000}
+      REVALIDATE_SECRET: ${REVALIDATE_SECRET:-}
+      WEB_COMMAND: ${WEB_COMMAND:-dev}
+    extra_hosts:
+      - 'host.docker.internal:host-gateway'
+    command:
+      - /bin/sh
+      - -c
+      - |
+        set -e
+        corepack enable
+        pnpm install --frozen-lockfile --filter @hotel-bambu/web... --filter hotel-bambu-platform
+        pnpm --filter @hotel-bambu/shared build
+        if [ "$$WEB_COMMAND" = "build" ]; then
+          pnpm --filter @hotel-bambu/web build
+        else
+          pnpm --filter @hotel-bambu/web exec next dev --hostname 0.0.0.0 --port 3000
+        fi
+    ports:
+      - '127.0.0.1:${WEB_PORT:-3000}:3000'
+    volumes:
+      - .:/repo
+      - web-root-modules:/repo/node_modules
+      - web-app-modules:/repo/apps/web/node_modules
+      - web-shared-modules:/repo/packages/shared/node_modules
+      - web-next:/repo/apps/web/.next
+      - web-pnpm-store:/root/.local/share/pnpm
+
 volumes:
   postgres-data:
   storage-data:
+  web-root-modules:
+  web-app-modules:
+  web-shared-modules:
+  web-next:
+  web-pnpm-store:

@@ -1,0 +1,338 @@
+'use client';
+
+import { Pencil, Plus, Trash2 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { useState, type ReactNode } from 'react';
+import { Controller, useForm, type FieldValues } from 'react-hook-form';
+import type { z } from 'zod';
+import { browserApi } from '@/lib/api/browser';
+import { applyApiError } from '@/lib/forms/form-errors';
+import { asNullableString, formResolver } from '@/lib/forms/resolver';
+import { useConfirm, useToast } from './feedback';
+import { CheckboxField, FormAlert, SelectField, TextAreaField, TextField } from './fields';
+import { useAction, useUnsavedChangesWarning } from './hooks';
+import { MediaField } from './media-picker';
+import { ReorderButtons, moveItem } from './reorder-buttons';
+import { Button, EmptyState } from './ui';
+
+export interface FieldConfig {
+  name: string;
+  label: string;
+  hint?: string;
+  kind: 'text' | 'textarea' | 'url' | 'checkbox' | 'select' | 'datetime' | 'media';
+  required?: boolean;
+  rows?: number;
+  options?: readonly { value: string; label: string }[];
+  /** Select: empty option label; the empty value is sent as null. */
+  emptyOption?: string;
+  /** Full-width in the two-column grid. */
+  wide?: boolean;
+}
+
+export interface ResourceManagerProps<T extends { id: string }> {
+  endpoint: string;
+  items: T[];
+  /** Singular noun for buttons and messages, e.g. "pregunta". */
+  noun: string;
+  createSchema: z.ZodType;
+  updateSchema: z.ZodType;
+  fields: readonly FieldConfig[];
+  emptyValues: FieldValues;
+  toFormValues: (item: T) => FieldValues;
+  itemLabel: (item: T) => string;
+  renderSummary: (item: T) => ReactNode;
+  /** Boolean fields toggled from the list (PATCH { [name]: !value }). */
+  toggles?: readonly { name: keyof T & string; on: string; off: string }[];
+  reorderable?: boolean;
+  /** Preview data for media fields of an item. */
+  mediaPreview?: (
+    item: T | null,
+    field: string,
+  ) => { variants: unknown; altText: string | null } | null;
+  deleteDescription?: string;
+}
+
+/**
+ * Generic list + inline form for simple admin resources (FAQ, policies, social links, amenities,
+ * services, promotions). Validation reuses the shared Zod schemas; the API stays the authority.
+ */
+export function ResourceManager<T extends { id: string }>(props: ResourceManagerProps<T>) {
+  const { items, noun, endpoint, reorderable, toggles = [] } = props;
+  const [editing, setEditing] = useState<T | 'new' | null>(null);
+  const { run, busy } = useAction();
+  const confirm = useConfirm();
+
+  const move = (from: number, to: number) => {
+    const ids = moveItem(items, from, to).map((item) => item.id);
+    void run('order', () => browserApi.put(`${endpoint}/order`, { ids }), 'Orden actualizado.');
+  };
+
+  const remove = async (item: T) => {
+    const ok = await confirm({
+      title: `¿Eliminar ${noun}?`,
+      description:
+        props.deleteDescription ?? `«${props.itemLabel(item)}» se eliminará definitivamente.`,
+      confirmLabel: 'Eliminar',
+      destructive: true,
+    });
+    if (!ok) return;
+    await run(`delete:${item.id}`, () => browserApi.delete(`${endpoint}/${item.id}`), 'Eliminado.');
+  };
+
+  return (
+    <div className="flex flex-col gap-4">
+      <div>
+        <Button onClick={() => setEditing('new')} disabled={editing === 'new'}>
+          <Plus aria-hidden="true" className="size-4" /> Agregar {noun}
+        </Button>
+      </div>
+
+      {editing === 'new' ? (
+        <ResourceForm {...props} item={null} onDone={() => setEditing(null)} />
+      ) : null}
+
+      {items.length === 0 ? <EmptyState>Todavía no hay elementos.</EmptyState> : null}
+
+      <ul className="flex flex-col gap-3">
+        {items.map((item, index) => (
+          <li key={item.id} className="rounded-md border border-border bg-card p-4 shadow-xs">
+            {editing !== 'new' && editing?.id === item.id ? (
+              <ResourceForm {...props} item={item} onDone={() => setEditing(null)} />
+            ) : (
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div className="min-w-0 flex-1">{props.renderSummary(item)}</div>
+                <div className="flex flex-wrap items-center gap-2">
+                  {toggles.map((toggle) => {
+                    const value = Boolean(item[toggle.name]);
+                    return (
+                      <Button
+                        key={toggle.name}
+                        variant="secondary"
+                        size="sm"
+                        aria-pressed={value}
+                        loading={busy === `${toggle.name}:${item.id}`}
+                        onClick={() =>
+                          void run(
+                            `${toggle.name}:${item.id}`,
+                            () =>
+                              browserApi.patch(`${endpoint}/${item.id}`, { [toggle.name]: !value }),
+                            'Cambios guardados.',
+                          )
+                        }
+                      >
+                        {value ? toggle.on : toggle.off}
+                      </Button>
+                    );
+                  })}
+                  {reorderable ? (
+                    <ReorderButtons
+                      index={index}
+                      count={items.length}
+                      label={props.itemLabel(item)}
+                      onMove={move}
+                      disabled={busy !== null}
+                    />
+                  ) : null}
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => setEditing(item)}
+                    aria-label={`Editar ${props.itemLabel(item)}`}
+                  >
+                    <Pencil aria-hidden="true" className="size-4" /> Editar
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => void remove(item)}
+                    loading={busy === `delete:${item.id}`}
+                    aria-label={`Eliminar ${props.itemLabel(item)}`}
+                  >
+                    <Trash2 aria-hidden="true" className="size-4" />
+                  </Button>
+                </div>
+              </div>
+            )}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+function ResourceForm<T extends { id: string }>({
+  item,
+  onDone,
+  endpoint,
+  noun,
+  createSchema,
+  updateSchema,
+  fields,
+  emptyValues,
+  toFormValues,
+  mediaPreview,
+}: ResourceManagerProps<T> & { item: T | null; onDone: () => void }) {
+  const toast = useToast();
+  const router = useRouter();
+  const [formError, setFormError] = useState<string | null>(null);
+  const [previews, setPreviews] = useState<
+    Record<string, { variants: unknown; altText: string | null } | null>
+  >({});
+  const form = useForm<FieldValues, unknown, FieldValues>({
+    resolver: formResolver(item ? updateSchema : createSchema) as never,
+    defaultValues: item ? toFormValues(item) : emptyValues,
+  });
+  const {
+    register,
+    handleSubmit,
+    control,
+    setError,
+    formState: { errors, isSubmitting, isDirty },
+  } = form;
+  useUnsavedChangesWarning(isDirty);
+
+  const onSubmit = handleSubmit(async (values) => {
+    setFormError(null);
+    try {
+      if (item) await browserApi.patch(`${endpoint}/${item.id}`, values);
+      else await browserApi.post(endpoint, values);
+    } catch (error) {
+      const result = applyApiError(
+        error,
+        setError,
+        fields.map((f) => f.name),
+      );
+      setFormError(result.message);
+      return;
+    }
+    toast.success(item ? 'Cambios guardados.' : `Se agregó ${noun}.`);
+    router.refresh();
+    onDone();
+  });
+
+  const errorOf = (name: string) => errors[name] as { message?: string } | undefined;
+
+  return (
+    <form
+      onSubmit={onSubmit}
+      noValidate
+      className="flex flex-col gap-4"
+      aria-label={item ? `Editar ${noun}` : `Nuevo: ${noun}`}
+    >
+      <FormAlert message={formError} />
+      <div className="grid gap-4 md:grid-cols-2">
+        {fields.map((field) => {
+          const wide = field.wide || field.kind === 'textarea' ? 'md:col-span-2' : undefined;
+          switch (field.kind) {
+            case 'textarea':
+              return (
+                <TextAreaField
+                  key={field.name}
+                  className={wide}
+                  label={field.label}
+                  hint={field.hint}
+                  required={field.required}
+                  rows={field.rows}
+                  error={errorOf(field.name)}
+                  registration={register(field.name)}
+                />
+              );
+            case 'checkbox':
+              return (
+                <CheckboxField
+                  key={field.name}
+                  label={field.label}
+                  hint={field.hint}
+                  error={errorOf(field.name)}
+                  registration={register(field.name)}
+                />
+              );
+            case 'select':
+              return (
+                <SelectField
+                  key={field.name}
+                  className={wide}
+                  label={field.label}
+                  hint={field.hint}
+                  required={field.required}
+                  options={field.options ?? []}
+                  placeholder={field.emptyOption}
+                  error={errorOf(field.name)}
+                  registration={register(
+                    field.name,
+                    field.emptyOption !== undefined ? { setValueAs: asNullableString } : undefined,
+                  )}
+                />
+              );
+            case 'media':
+              return (
+                <div key={field.name} className="md:col-span-2">
+                  <Controller
+                    control={control}
+                    name={field.name}
+                    render={({ field: controlled, fieldState }) => (
+                      <MediaField
+                        label={field.label}
+                        hint={field.hint}
+                        value={controlled.value as string | null}
+                        preview={
+                          field.name in previews
+                            ? previews[field.name]
+                            : (mediaPreview?.(item, field.name) ?? null)
+                        }
+                        error={fieldState.error?.message}
+                        onChange={(id, media) => {
+                          controlled.onChange(id);
+                          setPreviews((p) => ({
+                            ...p,
+                            [field.name]: media
+                              ? { variants: media.variants, altText: media.altText }
+                              : null,
+                          }));
+                        }}
+                      />
+                    )}
+                  />
+                </div>
+              );
+            default:
+              return (
+                <TextField
+                  key={field.name}
+                  className={wide}
+                  label={field.label}
+                  hint={field.hint}
+                  required={field.required}
+                  type={
+                    field.kind === 'datetime'
+                      ? 'datetime-local'
+                      : field.kind === 'url'
+                        ? 'url'
+                        : 'text'
+                  }
+                  inputMode={field.kind === 'url' ? 'url' : undefined}
+                  error={errorOf(field.name)}
+                  registration={register(field.name)}
+                />
+              );
+          }
+        })}
+      </div>
+      <div className="flex gap-2">
+        <Button type="submit" loading={isSubmitting}>
+          {item ? 'Guardar cambios' : 'Agregar'}
+        </Button>
+        <Button variant="secondary" onClick={onDone}>
+          Cancelar
+        </Button>
+      </div>
+    </form>
+  );
+}
+
+/** ISO date → value for <input type="datetime-local"> in the browser's time zone. */
+export function toDateTimeLocal(iso: string): string {
+  const date = new Date(iso);
+  const offset = date.getTimezoneOffset() * 60_000;
+  return new Date(date.getTime() - offset).toISOString().slice(0, 16);
+}

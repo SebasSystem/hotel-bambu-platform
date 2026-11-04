@@ -10,6 +10,9 @@ allowBuilds:
   # esbuild (via tsx) ships platform binaries as optional deps; its postinstall is only a check.
   esbuild: false
 
+minimumReleaseAgeExclude:
+  - lucide-react@1.68.0
+
 # eslint-config-next bundles plugins (react, jsx-a11y, import) whose peer ranges do not list
 # ESLint 10 yet; Next.js documents ESLint 10 support since eslint-config-next 16.4.
 peerDependencyRules:
