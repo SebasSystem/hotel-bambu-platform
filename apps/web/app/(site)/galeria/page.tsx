@@ -6,6 +6,7 @@ import { PageHeader } from '@/components/site/page-header';
 import { container } from '@/components/site/styles';
 import { GALLERY_CATEGORY_LABELS } from '@/lib/labels';
 import { ui } from '@/lib/i18n/es';
+import { pageMetadata } from '@/lib/seo/metadata';
 import { getGallery, getSite } from '@/lib/public/api';
 import { routes } from '@/lib/public/navigation';
 import { sectionOf } from '@/lib/public/site';
@@ -15,10 +16,12 @@ type Category = (typeof GALLERY_CATEGORIES)[number];
 export async function generateMetadata(): Promise<Metadata> {
   const site = await getSite();
   const section = sectionOf(site, 'GALLERY');
-  return {
+  return pageMetadata({
+    path: routes.gallery,
+    siteName: site.hotel.name,
     title: section?.title ?? ui.nav.gallery,
     description: section?.subtitle ?? `Fotografías reales de ${site.hotel.name}.`,
-  };
+  });
 }
 
 export default async function GalleryPage({ searchParams }: PageProps<'/galeria'>) {
@@ -38,6 +41,7 @@ export default async function GalleryPage({ searchParams }: PageProps<'/galeria'
   return (
     <>
       <PageHeader
+        path={routes.gallery}
         title={section?.title ?? ui.nav.gallery}
         kicker={section?.subtitle}
         intro={section?.body}

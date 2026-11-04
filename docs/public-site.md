@@ -10,7 +10,9 @@ Spanish (es-CO) public pages for visitors. Requirements 4, 5, 8, 17.5–17.6 and
 | `/habitaciones` | All published rooms, filterable with `?tipo=individual\|pareja\|doble\|familiar` |
 | `/habitaciones/[slug]` | Detail: photos + lightbox, rate box, WhatsApp message that names the room, beds/area, amenities, current promotions, other rooms. Old slug → 308 to the current one; unknown → 404 |
 | `/servicios`, `/galeria` (`?categoria=`), `/ubicacion`, `/preguntas-frecuentes`, `/politicas-del-hotel`, `/contacto` | Inner pages |
-| `/legal/{tratamiento-de-datos,aviso-de-privacidad,cookies}` | Placeholders marked `noindex` (final texts come in T7) |
+| `/legal/{tratamiento-de-datos,aviso-de-privacidad,cookies}` | Legal templates filled from the hotel profile; draft banner and `noindex` until `LEGAL_APPROVED=true` ([legal-checklist.md](legal-checklist.md)) |
+| `/robots.txt`, `/sitemap.xml` | Per request: `Disallow: /` unless `SITE_INDEXABLE=true`; sitemap lists public pages + published rooms (`lastModified`) |
+| any other URL | Branded 404 inside the site shell (rooms, WhatsApp), via `app/(site)/[...missing]` |
 | `POST /api/revalidate` | On-demand revalidation (see ADR 0011) |
 
 ## Data and caching
@@ -21,7 +23,7 @@ Spanish (es-CO) public pages for visitors. Requirements 4, 5, 8, 17.5–17.6 and
 
 - `lib/public/whatsapp.ts#whatsAppLink(site, context)` renders the admin template for the given context (`GENERAL`, `ROOM` with `{{habitacion}}`, `PROMOTION` with `{{promocion}}`). It then calls the shared `buildWhatsAppUrl`. When no valid number is configured it returns `null`, and every CTA (header, hero, cards, detail, contact, floating button) is hidden.
 - Links open in a new tab with `rel="noopener noreferrer"`. Button text is dark on `#25D366`.
-- `WHATSAPP_CLICK` (and `MAP_CLICK`) events are sent only when `hasConsent('analytics')` is true. `lib/consent/consent.ts` is a stub that reads the `hb_consent` cookie. Nothing writes that cookie until T7, so no events are sent.
+- `WHATSAPP_CLICK`, `MAP_CLICK`, `PAGE_VIEW` and `ROOM_VIEW` events are sent only when `hasConsent('analytics')` is true (see Cookie consent).
 
 ## Rates
 
@@ -29,7 +31,32 @@ Spanish (es-CO) public pages for visitors. Requirements 4, 5, 8, 17.5–17.6 and
 
 ## Map
 
-`MapEmbed` shows a static placeholder until the visitor clicks "Cargar mapa"; the Google Maps iframe may set third-party cookies (requirement 17.5). "Cómo llegar" always links to Google Maps, using the admin `mapUrl` or a directions URL.
+`MapEmbed` shows a static placeholder until the visitor clicks "Cargar mapa", or loads directly when functional consent exists (server-rendered from the cookie). Withdrawing that consent unloads it. The Google Maps iframe may set third-party cookies (requirement 17.5). "Cómo llegar" always links to Google Maps, using the admin `mapUrl` or a directions URL.
+
+## Cookie consent (requirement 17.5)
+
+`components/consent/consent-manager.tsx` (in-house, no CMP; [ADR 0012](adr/0012-consent-csp-and-quality-gates.md)):
+
+- **Banner.** On a first visit, a server-rendered banner offers three buttons of identical style: "Aceptar todas", "Rechazar no esenciales" and "Configurar preferencias". It links to the cookie and data policies.
+- **Preferences dialog.** A native `<dialog>` with switches: necessary (always on), functional (the map) and analytics (the aggregated counter). Marketing is prepared but never granted: there is no marketing technology.
+- **Storage.** The decision is saved in `hb_consent` (versioned JSON, 180 days, `SameSite=Lax`, `Secure` over https). Evidence goes to `POST /api/v1/public/consents` with a random id, the categories and the version. No IP is sent.
+- **Asking again.** Changing `CONSENT_POLICY_VERSION` in `lib/consent/consent.ts` shows the banner again to everyone.
+- **Footer.** "Configurar cookies" in the footer and on `/legal/cookies` reopens the dialog.
+
+## SEO (requirement 19)
+
+- **Per-page metadata.** Every page builds its canonical, Open Graph and Twitter card with `lib/seo/metadata.ts#pageMetadata`. Room pages use the room cover; other pages use `public/brand/og-default.png` (1200×630, generated from the brand).
+- **JSON-LD** (`lib/seo/json-ld.ts`, only fields the hotel filled in):
+  - `Hotel` on `/` and `/ubicacion`
+  - `HotelRoom` on room pages, wrapped in an `Offer` only when a rate exists
+  - `BreadcrumbList` on inner pages (`PageHeader path`)
+  - `FAQPage` on `/preguntas-frecuentes`
+- **Old room slugs** answer 308, a permanent redirect ([ADR 0011](adr/0011-public-rendering-and-images.md)).
+- **Errors.** Error pages are in Spanish and branded: `(site)/error.tsx` and `app/global-error.tsx`.
+
+## Security headers
+
+A per-request CSP nonce comes from `proxy.ts`. Static headers come from `next.config.ts`. See [security.md](security.md).
 
 ## Motion
 
@@ -49,4 +76,25 @@ Spanish (es-CO) public pages for visitors. Requirements 4, 5, 8, 17.5–17.6 and
 
 ## Tests
 
-Vitest covers price formatting, WhatsApp messages with room/promotion context, the revalidation handler (401/400/503/200, constant-time compare), consent parsing, media `srcset`, map links and room-type grouping.
+Vitest covers:
+
+- price formatting
+- WhatsApp messages with room/promotion context
+- the revalidation handler (401/400/503/200, constant-time compare)
+- consent cookie versioning and serialization
+- the CSP builder and the proxy
+- JSON-LD builders and escaping
+- media `srcset`, map links and room-type grouping
+
+Playwright (`e2e/`, `pnpm e2e`) covers:
+
+- home, rooms and room detail
+- the WhatsApp CTA (number and room name)
+- consent (reject leaves no map, functional consent loads it, analytics events only with consent)
+- admin FAQ edit → visible on the public site
+- admin redirect
+- reduced motion
+- 404, headers, robots/sitemap, and legal `noindex`
+- axe on 11 pages plus the consent UI
+
+Lighthouse CI: `pnpm lighthouse`, budgets in `lighthouserc.json`.

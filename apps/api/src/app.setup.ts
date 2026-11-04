@@ -39,7 +39,20 @@ export async function configureApp(
   env: HttpEnv = DEFAULT_HTTP_ENV,
 ): Promise<void> {
   app.setGlobalPrefix(API_PREFIX);
-  await app.register(helmet);
+  // JSON-only API (requirement 16.6): nothing may load, frame or submit from its responses.
+  // HSTS stays on (browsers ignore it over plain http); the public site sets its own CSP.
+  await app.register(helmet, {
+    contentSecurityPolicy: {
+      useDefaults: false,
+      directives: {
+        defaultSrc: ["'none'"],
+        baseUri: ["'none'"],
+        formAction: ["'none'"],
+        frameAncestors: ["'none'"],
+      },
+    },
+    frameguard: { action: 'deny' },
+  });
   await app.register(cookie);
   await app.register(multipart, {
     limits: { fileSize: env.UPLOAD_MAX_BYTES, files: 1, fields: 10, fieldSize: 4096, parts: 11 },

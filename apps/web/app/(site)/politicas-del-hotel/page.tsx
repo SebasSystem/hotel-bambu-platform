@@ -3,14 +3,18 @@ import { TextBlock } from '@/components/site/blocks';
 import { PageHeader } from '@/components/site/page-header';
 import { container } from '@/components/site/styles';
 import { ui } from '@/lib/i18n/es';
+import { pageMetadata } from '@/lib/seo/metadata';
+import { routes } from '@/lib/public/navigation';
 import { getPolicies, getSite } from '@/lib/public/api';
 
 export async function generateMetadata(): Promise<Metadata> {
   const site = await getSite();
-  return {
+  return pageMetadata({
+    path: routes.policies,
+    siteName: site.hotel.name,
     title: ui.nav.policies,
     description: `Check-in, check-out y políticas de ${site.hotel.name}.`,
-  };
+  });
 }
 
 /** Hotel policies (requirement 4.1): check-in/out times, published policies, ESCNNA notice. */
@@ -21,7 +25,7 @@ export default async function PoliciesPage() {
 
   return (
     <>
-      <PageHeader title={ui.nav.policies} />
+      <PageHeader path={routes.policies} title={ui.nav.policies} />
       <div className={`${container} py-16`}>
         <div className="grid max-w-4xl gap-12">
           {hasTimes ? (

@@ -19,6 +19,7 @@ function room(
     priceUnit: 'PER_NIGHT',
     taxesIncluded: true,
     cover: null,
+    updatedAt: '2026-11-01T00:00:00.000Z',
     amenities: [
       { name: 'Wi-Fi', iconKey: 'wifi' },
       ...(slug.endsWith('tv') ? [{ name: 'Televisor', iconKey: 'tv' }] : []),

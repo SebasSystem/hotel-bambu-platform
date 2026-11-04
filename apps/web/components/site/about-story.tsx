@@ -1,43 +1,49 @@
 'use client';
 
-import { useGSAP } from '@gsap/react';
-import gsap from 'gsap';
-import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { useRef, useState, type ReactNode } from 'react';
-
-gsap.registerPlugin(useGSAP, ScrollTrigger);
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 
 /**
  * Sticky "Sobre nosotros" (motion spec): on desktop the photo column stays in place (CSS sticky)
  * while the text advances; ScrollTrigger swaps the photo as each paragraph reaches the centre.
  * Mobile and reduced motion: no ScrollTrigger, text and first photo stacked statically.
+ * GSAP is imported dynamically, only on desktop with motion allowed (requirement 20.2).
  */
 export function AboutStory({ paragraphs, images }: { paragraphs: string[]; images: ReactNode[] }) {
   const scope = useRef<HTMLDivElement>(null);
   const [active, setActive] = useState(0);
 
-  useGSAP(
-    () => {
-      if (images.length < 2) return;
-      const mm = gsap.matchMedia();
-      mm.add('(min-width: 64rem) and (prefers-reduced-motion: no-preference)', () => {
-        const blocks = gsap.utils.toArray<HTMLElement>('[data-story-step]');
-        blocks.forEach((block, index) => {
-          ScrollTrigger.create({
-            trigger: block,
-            start: 'top center',
-            end: 'bottom center',
-            onToggle: (self) => {
-              if (self.isActive) setActive(Math.min(index, images.length - 1));
-            },
+  useEffect(() => {
+    const root = scope.current;
+    const query = '(min-width: 64rem) and (prefers-reduced-motion: no-preference)';
+    if (!root || images.length < 2 || !window.matchMedia(query).matches) return;
+    let cancelled = false;
+    let revert: (() => void) | undefined;
+    void Promise.all([import('gsap'), import('gsap/ScrollTrigger')]).then(
+      ([{ gsap }, { ScrollTrigger }]) => {
+        if (cancelled) return;
+        gsap.registerPlugin(ScrollTrigger);
+        const mm = gsap.matchMedia();
+        mm.add(query, () => {
+          root.querySelectorAll<HTMLElement>('[data-story-step]').forEach((block, index) => {
+            ScrollTrigger.create({
+              trigger: block,
+              start: 'top center',
+              end: 'bottom center',
+              onToggle: (self) => {
+                if (self.isActive) setActive(Math.min(index, images.length - 1));
+              },
+            });
           });
+          return () => setActive(0);
         });
-        return () => setActive(0);
-      });
-      return () => mm.revert();
-    },
-    { scope, dependencies: [images.length] },
-  );
+        revert = () => mm.revert();
+      },
+    );
+    return () => {
+      cancelled = true;
+      revert?.();
+    };
+  }, [images.length]);
 
   return (
     <div ref={scope} className="grid gap-10 lg:grid-cols-12 lg:gap-16">

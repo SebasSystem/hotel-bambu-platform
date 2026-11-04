@@ -23,7 +23,7 @@ export function Kicker({ children, onDark = false }: { children: ReactNode; onDa
     <p
       data-reveal
       className={`flex items-center gap-3 text-xs font-semibold tracking-kicker uppercase ${
-        onDark ? 'text-cane-500' : 'text-cane-700'
+        onDark ? 'text-cane-500' : 'kicker-light text-cane-700'
       }`}
     >
       <Leaf />

@@ -9,7 +9,10 @@ import { Kicker } from '@/components/site/section';
 import { button, container } from '@/components/site/styles';
 import { WhatsAppLink } from '@/components/site/whatsapp-link';
 import { BED_TYPE_LABELS } from '@/lib/labels';
+import { JsonLd } from '@/components/seo/json-ld';
 import { ui } from '@/lib/i18n/es';
+import { breadcrumbJsonLd, roomJsonLd } from '@/lib/seo/json-ld';
+import { pageMetadata } from '@/lib/seo/metadata';
 import { getRoom, getRooms, getSite } from '@/lib/public/api';
 import { routes } from '@/lib/public/navigation';
 import { otherRooms, roomTypeLabel } from '@/lib/public/rooms';
@@ -27,13 +30,17 @@ export async function generateMetadata({
   const result = await getRoom(slug);
   if (result.kind !== 'room') return {};
   const { room } = result;
-  return {
+  const { hotel } = await getSite();
+  return pageMetadata({
+    path: routes.room(room.slug),
+    siteName: hotel.name,
     title: room.seoTitle ?? room.name,
     description:
       room.seoDescription ??
       room.shortDescription ??
       `${room.name}: ${ui.rooms.capacity(room.capacity)}. ${ui.rooms.confirm}`,
-  };
+    image: room.cover ?? room.images[0] ?? null,
+  });
 }
 
 /** Room detail (requirement 4.3). An old slug answers a permanent redirect to the current one. */
@@ -52,6 +59,14 @@ export default async function RoomPage({ params }: PageProps<'/habitaciones/[slu
 
   return (
     <>
+      <JsonLd data={roomJsonLd(room, site.hotel)} />
+      <JsonLd
+        data={breadcrumbJsonLd([
+          { name: ui.nav.home, path: routes.home },
+          { name: ui.nav.rooms, path: routes.rooms },
+          { name: room.name, path: routes.room(room.slug) },
+        ])}
+      />
       <div className={`${container} pt-8 sm:pt-10`}>
         <nav aria-label="Ruta de navegación" className="text-sm text-muted-foreground">
           <ol className="flex flex-wrap items-center gap-2">

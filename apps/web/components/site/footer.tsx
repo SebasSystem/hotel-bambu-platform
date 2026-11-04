@@ -1,5 +1,6 @@
 import Image from 'next/image';
 import Link from 'next/link';
+import { CookieSettingsButton } from '@/components/consent/consent-manager';
 import { SOCIAL_PLATFORM_LABELS } from '@/lib/labels';
 import { ui } from '@/lib/i18n/es';
 import { footerNav, legalNav } from '@/lib/public/navigation';
@@ -140,10 +141,7 @@ export function Footer({ site, whatsappUrl }: { site: PublicSite; whatsappUrl: s
                 </li>
               ))}
               <li>
-                {/* T7: replaced by the consent manager's "Configurar cookies" button. */}
-                <Link href={`${legalNav[2].href}#configurar`} className={footerLink}>
-                  {ui.footer.cookies}
-                </Link>
+                <CookieSettingsButton className={`${footerLink} cursor-pointer`} />
               </li>
             </ul>
           </nav>

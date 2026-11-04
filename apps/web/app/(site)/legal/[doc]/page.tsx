@@ -1,23 +1,39 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
+import { LegalDocument, legalTodos, type LegalDocKey } from '@/components/legal/legal-documents';
+import { DraftBanner } from '@/components/legal/legal-parts';
 import { PageHeader } from '@/components/site/page-header';
 import { container } from '@/components/site/styles';
 import { ui } from '@/lib/i18n/es';
+import { getSite } from '@/lib/public/api';
+import { isLegalApproved } from '@/lib/seo/config';
+import { pageMetadata } from '@/lib/seo/metadata';
 
 /**
- * Legal documents (requirement 17.3). STUB: the texts, the cookie inventory and the consent
- * manager ("Configurar cookies") arrive in T7 and must be reviewed by the hotel's legal adviser.
+ * Legal documents (requirement 17.3): data-processing policy, privacy notice and cookie policy,
+ * filled from the hotel profile. Until `LEGAL_APPROVED=true` they show a draft banner with the
+ * missing items, answer `noindex` and stay out of the sitemap. A lawyer must review the texts.
  */
-const DOCS = {
-  'tratamiento-de-datos': ui.legal.data,
-  'aviso-de-privacidad': ui.legal.privacy,
-  cookies: ui.legal.cookies,
-} as const;
+const DOCS: Record<LegalDocKey, { title: string; description: string }> = {
+  'tratamiento-de-datos': {
+    title: 'Política de tratamiento de datos personales',
+    description:
+      'Cómo tratamos los datos personales, tus derechos y cómo ejercerlos (Ley 1581 de 2012).',
+  },
+  'aviso-de-privacidad': {
+    title: ui.legal.privacy,
+    description:
+      'Aviso de privacidad: responsable, finalidades y derechos sobre tus datos personales.',
+  },
+  cookies: {
+    title: ui.legal.cookies,
+    description:
+      'Qué cookies y tecnologías usa el sitio, para qué y cómo cambiar tu consentimiento.',
+  },
+};
 
-type DocKey = keyof typeof DOCS;
-
-function titleOf(doc: string): string | null {
-  return doc in DOCS ? DOCS[doc as DocKey] : null;
+function docOf(doc: string): LegalDocKey | null {
+  return doc in DOCS ? (doc as LegalDocKey) : null;
 }
 
 export function generateStaticParams() {
@@ -27,21 +43,30 @@ export function generateStaticParams() {
 export const dynamicParams = false;
 
 export async function generateMetadata({ params }: PageProps<'/legal/[doc]'>): Promise<Metadata> {
-  const title = titleOf((await params).doc);
-  // Not indexable until the final, approved text is published (T7).
-  return title ? { title, robots: { index: false, follow: true } } : {};
+  const doc = docOf((await params).doc);
+  if (!doc) return {};
+  const { hotel } = await getSite();
+  const meta = pageMetadata({ path: `/legal/${doc}`, ...DOCS[doc], siteName: hotel.name });
+  return isLegalApproved() ? meta : { ...meta, robots: { index: false, follow: true } };
 }
 
 export default async function LegalPage({ params }: PageProps<'/legal/[doc]'>) {
-  const title = titleOf((await params).doc);
-  if (!title) notFound();
+  const doc = docOf((await params).doc);
+  if (!doc) notFound();
+  const { hotel } = await getSite();
+  const approved = isLegalApproved();
+  const context = { hotel, effectiveDate: process.env.LEGAL_EFFECTIVE_DATE ?? null };
+
   return (
     <>
-      <PageHeader title={title} />
-      <div id="configurar" className={`${container} py-16`}>
-        <p className="max-w-2xl text-lg leading-normal text-muted-foreground">
-          Documento en preparación. Publicaremos aquí el texto aprobado por el hotel.
-        </p>
+      <PageHeader title={DOCS[doc].title} path={`/legal/${doc}`} />
+      <div className={`${container} py-14`}>
+        <div className="max-w-3xl text-base text-foreground/90">
+          {approved ? null : <DraftBanner todos={legalTodos(doc, context)} />}
+          <div className={approved ? '' : 'mt-10'}>
+            <LegalDocument doc={doc} context={context} />
+          </div>
+        </div>
       </div>
     </>
   );

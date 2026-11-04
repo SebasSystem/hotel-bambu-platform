@@ -387,6 +387,8 @@ export class RoomsService {
       priceUnit: room.priceUnit,
       taxesIncluded: room.taxesIncluded,
       cover: toPublicMedia(cover?.mediaAsset, this.publicBaseUrl),
+      /** Sitemap `lastModified` (requirement 19.1). */
+      updatedAt: room.updatedAt,
       amenities: room.amenities
         .map((a) => a.amenity)
         .sort((a, b) => a.sortOrder - b.sortOrder)
@@ -432,7 +434,6 @@ export class RoomsService {
         priceNotes: room.priceNotes,
         seoTitle: room.seoTitle,
         seoDescription: room.seoDescription,
-        updatedAt: room.updatedAt,
         images: room.images
           .map((image) => toPublicMedia(image.mediaAsset, this.publicBaseUrl))
           .filter((media) => media !== null),

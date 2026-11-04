@@ -67,7 +67,9 @@ services:
         echo "Bucket $$BUCKET ready"
     restart: 'no'
 
-  # Next.js dev server in Linux (profile `web`, opt-in: `docker compose --profile web up web`).
+  # Next.js in Linux (profile `web`, opt-in: `docker compose --profile web up web`).
+  # WEB_COMMAND: `dev` (default, hot reload), `build` (production build only) or `start`
+  # (production build + `next start`, used by the e2e and Lighthouse runs).
   # Needed on hosts where native binaries cannot run (e.g. Windows Application Control blocks
   # Tailwind's oxide binary). The repo is bind-mounted; node_modules and .next live in named
   # volumes so Linux binaries are installed inside the container. The API keeps running on the
@@ -84,6 +86,11 @@ services:
       API_INTERNAL_URL: ${WEB_API_INTERNAL_URL:-http://host.docker.internal:4000}
       REVALIDATE_SECRET: ${REVALIDATE_SECRET:-}
       WEB_COMMAND: ${WEB_COMMAND:-dev}
+      # Deployment flags (docs/configuration.md): CSP media origin, canonical origin, indexing.
+      S3_PUBLIC_URL: ${S3_PUBLIC_URL:-http://localhost:9000/hotel-media}
+      SITE_URL: ${SITE_URL:-http://localhost:3000}
+      SITE_INDEXABLE: ${SITE_INDEXABLE:-false}
+      LEGAL_APPROVED: ${LEGAL_APPROVED:-false}
     extra_hosts:
       - 'host.docker.internal:host-gateway'
     command:
@@ -96,6 +103,9 @@ services:
         pnpm --filter @hotel-bambu/shared build
         if [ "$$WEB_COMMAND" = "build" ]; then
           pnpm --filter @hotel-bambu/web build
+        elif [ "$$WEB_COMMAND" = "start" ]; then
+          pnpm --filter @hotel-bambu/web build
+          pnpm --filter @hotel-bambu/web exec next start --hostname 0.0.0.0 --port 3000
         else
           pnpm --filter @hotel-bambu/web exec next dev --hostname 0.0.0.0 --port 3000
         fi
@@ -109,6 +119,38 @@ services:
       - web-next:/repo/apps/web/.next
       - web-pnpm-store:/root/.local/share/pnpm
 
+  # End-to-end, accessibility and Lighthouse checks in the official Playwright image (profile
+  # `e2e`): `pnpm e2e` / `pnpm lighthouse`. Host networking so the browser reaches the web
+  # (localhost:3000) and the media bucket (localhost:9000) at the same URLs as a visitor would,
+  # and so the consent/CSRF Origin check sees http://localhost:3000. Expects the web
+  # (WEB_COMMAND=start) and the API to be running.
+  e2e:
+    profiles: ['e2e']
+    image: mcr.microsoft.com/playwright:v1.64.1-noble
+    network_mode: host
+    working_dir: /repo
+    ipc: host
+    environment:
+      COREPACK_ENABLE_DOWNLOAD_PROMPT: '0'
+      CI: ${CI:-true}
+      E2E_BASE_URL: ${E2E_BASE_URL:-http://localhost:3000}
+      E2E_ADMIN_EMAIL: ${E2E_ADMIN_EMAIL:-admin@example.test}
+      E2E_ADMIN_PASSWORD: ${E2E_ADMIN_PASSWORD:-Bambu-local-dev-2026!}
+      E2E_COMMAND: ${E2E_COMMAND:-e2e}
+    command:
+      - /bin/sh
+      - -c
+      - |
+        set -e
+        npm install -g pnpm@11.24.0 >/dev/null 2>&1
+        pnpm install --frozen-lockfile --filter @hotel-bambu/e2e
+        pnpm --filter @hotel-bambu/e2e "$$E2E_COMMAND"
+    volumes:
+      - .:/repo
+      - e2e-root-modules:/repo/node_modules
+      - e2e-modules:/repo/e2e/node_modules
+      - e2e-pnpm-store:/root/.local/share/pnpm
+
 volumes:
   postgres-data:
   storage-data:
@@ -117,3 +159,6 @@ volumes:
   web-shared-modules:
   web-next:
   web-pnpm-store:
+  e2e-root-modules:
+  e2e-modules:
+  e2e-pnpm-store:

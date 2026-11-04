@@ -13,7 +13,6 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@gsap/react": "^2.1.2",
     "@hookform/resolvers": "^7.0.2",
     "@hotel-bambu/shared": "workspace:*",
     "@next/env": "16.4.5",

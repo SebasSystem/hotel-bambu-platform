@@ -1,10 +1,13 @@
 import type { Metadata } from 'next';
+import { cookies } from 'next/headers';
 import type { ReactNode } from 'react';
 import '@/styles/site.css';
+import { ConsentProvider } from '@/components/consent/consent-manager';
 import { Footer } from '@/components/site/footer';
 import { Header } from '@/components/site/header';
 import { MotionBoot } from '@/components/site/motion-boot';
 import { WhatsAppFab } from '@/components/site/whatsapp-fab';
+import { CONSENT_COOKIE, parseConsentValue } from '@/lib/consent/consent';
 import { ui } from '@/lib/i18n/es';
 import { getSite } from '@/lib/public/api';
 import { whatsAppLink } from '@/lib/public/whatsapp';
@@ -17,13 +20,18 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-/** Public site shell: skip link, header, main landmark, footer, floating WhatsApp. */
+/**
+ * Public site shell: skip link, header, main landmark, footer, floating WhatsApp and the cookie
+ * consent manager. The consent cookie is read on the server so the map can render already
+ * loaded for visitors who granted functional cookies (no flash, no banner flicker).
+ */
 export default async function SiteLayout({ children }: { children: ReactNode }) {
-  const site = await getSite();
+  const [site, cookieStore] = await Promise.all([getSite(), cookies()]);
   const whatsappUrl = whatsAppLink(site, { kind: 'general' });
+  const consent = parseConsentValue(cookieStore.get(CONSENT_COOKIE)?.value);
 
   return (
-    <>
+    <ConsentProvider initial={consent}>
       <a href="#contenido" className="skip-link">
         {ui.skipToContent}
       </a>
@@ -34,6 +42,6 @@ export default async function SiteLayout({ children }: { children: ReactNode }) 
       <Footer site={site} whatsappUrl={whatsappUrl} />
       {whatsappUrl ? <WhatsAppFab href={whatsappUrl} /> : null}
       <MotionBoot />
-    </>
+    </ConsentProvider>
   );
 }

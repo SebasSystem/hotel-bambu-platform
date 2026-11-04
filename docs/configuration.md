@@ -73,6 +73,20 @@ All configuration comes from environment variables. In development a single root
 |---|---|
 | `API_INTERNAL_URL` | Where Next.js rewrites `/api/v1/*` and fetches server-side (e.g. `http://localhost:4000`). |
 | `REVALIDATE_SECRET` | Same value as the API's. `POST /api/revalidate` compares it in constant time; 401 wrong/missing, 400 invalid body, 503 when unset (content then refreshes only by TTL). See [ADR 0011](adr/0011-public-rendering-and-images.md). |
+| `SITE_URL` | Public origin, e.g. `https://www.example.com` (default `http://localhost:3000`). Used for canonical URLs, Open Graph, `sitemap.xml` and JSON-LD. An `https://` value also adds `upgrade-insecure-requests` to the CSP. |
+| `SITE_INDEXABLE` | `true` lets search engines index the site. Any other value (default) answers `noindex` on every page and `Disallow: /` in `robots.txt`. **Set `true` only in production**; staging stays unset. |
+| `S3_PUBLIC_URL` | Same value as the API's. Its origin is the only external image source allowed by the CSP (`img-src`). |
+| `LEGAL_APPROVED` | `true` once the hotel and its lawyer approved the legal texts. Until then `/legal/*` shows a draft banner, stays `noindex` and is left out of the sitemap ([legal-checklist.md](legal-checklist.md)). |
+| `LEGAL_EFFECTIVE_DATE` | `YYYY-MM-DD` effective date printed in the legal documents. |
+
+These flags are read per request, so changing them needs a restart, not a rebuild. `NODE_ENV=production` (every `next build`/`next start`) adds HSTS; see [security.md](security.md).
+
+## End-to-end and Lighthouse (`pnpm e2e`, `pnpm lighthouse`)
+
+| Variable | Default | Notes |
+|---|---|---|
+| `E2E_BASE_URL` | `http://localhost:3000` | Web origin under test (production build, `WEB_COMMAND=start`). |
+| `E2E_ADMIN_EMAIL` / `E2E_ADMIN_PASSWORD` | local dev admin | Admin used by setup and the FAQ test. Tests restore every change they make. |
 
 ## Tests and CI
 

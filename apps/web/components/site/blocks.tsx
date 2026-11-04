@@ -189,7 +189,12 @@ export function AmenityChips({
 export function GalleryTeaser({ images }: { images: PublicMedia[] }) {
   return (
     <>
-      <ul className="snap-row -mx-(--gutter) px-(--gutter) md:hidden" aria-label={ui.nav.gallery}>
+      {/* Focusable so keyboard users can scroll the row (WCAG 2.1.1, axe scrollable-region). */}
+      <ul
+        className="snap-row -mx-(--gutter) px-(--gutter) md:hidden"
+        aria-label={ui.nav.gallery}
+        tabIndex={0}
+      >
         {images.map((media) => (
           <li key={media.id} className="aspect-[3/4] overflow-hidden rounded-lg bg-sand-100">
             <Picture

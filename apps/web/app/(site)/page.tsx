@@ -16,7 +16,10 @@ import { Hero } from '@/components/site/hero';
 import { Picture } from '@/components/site/picture';
 import { SectionHeading } from '@/components/site/section';
 import { container, link } from '@/components/site/styles';
+import { JsonLd } from '@/components/seo/json-ld';
 import { ui } from '@/lib/i18n/es';
+import { hotelJsonLd } from '@/lib/seo/json-ld';
+import { pageMetadata } from '@/lib/seo/metadata';
 import { getFaqs, getGallery, getRooms, getSite } from '@/lib/public/api';
 import { paragraphs } from '@/lib/public/format';
 import { routes } from '@/lib/public/navigation';
@@ -27,10 +30,18 @@ import { whatsAppLink } from '@/lib/public/whatsapp';
 
 export async function generateMetadata(): Promise<Metadata> {
   const { hotel } = await getSite();
-  return {
-    title: { absolute: hotel.municipality ? `${hotel.name} · ${hotel.municipality}` : hotel.name },
-    description: hotel.shortDescription ?? undefined,
-  };
+  const title = hotel.municipality ? `${hotel.name} · ${hotel.municipality}` : hotel.name;
+  const meta = pageMetadata({
+    path: routes.home,
+    siteName: hotel.name,
+    title,
+    // Generic fallback until the hotel writes its short description (no invented facts).
+    description:
+      hotel.shortDescription ??
+      `${hotel.name}: habitaciones, servicios, ubicación y contacto directo por WhatsApp.`,
+    image: hotel.hero,
+  });
+  return { ...meta, title: { absolute: title } };
 }
 
 /**
@@ -238,6 +249,7 @@ export default async function HomePage() {
 
   return (
     <>
+      <JsonLd data={hotelJsonLd(site, rooms)} />
       <Hero
         title={hero?.title ?? hotel.name}
         kicker={location}

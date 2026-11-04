@@ -4,6 +4,7 @@ import { PageHeader } from '@/components/site/page-header';
 import { RoomCard } from '@/components/site/room-card';
 import { container } from '@/components/site/styles';
 import { ui } from '@/lib/i18n/es';
+import { pageMetadata } from '@/lib/seo/metadata';
 import { getRooms, getSite } from '@/lib/public/api';
 import { routes } from '@/lib/public/navigation';
 import { ROOM_TYPES_PUBLIC, roomTypeFromParam, type RoomTypeKey } from '@/lib/public/rooms';
@@ -13,12 +14,14 @@ import { whatsAppLink } from '@/lib/public/whatsapp';
 export async function generateMetadata(): Promise<Metadata> {
   const [site, rooms] = await Promise.all([getSite(), getRooms()]);
   const section = sectionOf(site, 'ROOMS');
-  return {
+  return pageMetadata({
+    path: routes.rooms,
+    siteName: site.hotel.name,
     title: section?.title ?? ui.nav.rooms,
     description:
       section?.subtitle ??
       `${ui.rooms.countLabel(rooms.length)} en ${site.hotel.name}: fotos, capacidad, servicios incluidos y tarifa informativa. Consulta disponibilidad por WhatsApp.`,
-  };
+  });
 }
 
 export default async function RoomsPage({ searchParams }: PageProps<'/habitaciones'>) {
@@ -35,6 +38,7 @@ export default async function RoomsPage({ searchParams }: PageProps<'/habitacion
   return (
     <>
       <PageHeader
+        path={routes.rooms}
         title={section?.title ?? ui.nav.rooms}
         kicker={ui.rooms.countLabel(rooms.length)}
         intro={section?.subtitle ?? section?.body}

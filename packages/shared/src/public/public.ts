@@ -145,6 +145,8 @@ export interface PublicRoomSummary {
   priceUnit: string;
   taxesIncluded: boolean;
   cover: PublicMedia | null;
+  /** ISO 8601; last edit of the room (sitemap `lastModified`). */
+  updatedAt: string;
   amenities: { name: string; iconKey: string }[];
 }
 

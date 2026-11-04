@@ -97,7 +97,6 @@ export interface PublicRoomDetail extends PublicRoomSummary {
   priceNotes: string | null;
   seoTitle: string | null;
   seoDescription: string | null;
-  updatedAt: string;
   images: PublicMedia[];
   promotions: PublicPromotion[];
 }

@@ -125,6 +125,17 @@ describe.skipIf(!databaseUrl)('API integration (hotel_test database)', () => {
     expect(site.json().hotel.name).toBe('Hotel Bambú Plaza');
   });
 
+  it('sends locked-down security headers on JSON responses', async () => {
+    const res = await call('GET', '/health');
+    expect(res.headers['content-security-policy']).toBe(
+      "default-src 'none';base-uri 'none';form-action 'none';frame-ancestors 'none'",
+    );
+    expect(res.headers['x-frame-options']).toBe('DENY');
+    expect(res.headers['x-content-type-options']).toBe('nosniff');
+    expect(res.headers['referrer-policy']).toBe('no-referrer');
+    expect(res.headers['x-powered-by']).toBeUndefined();
+  });
+
   it('denies admin routes without a session (401) and marks them no-store', async () => {
     const res = await call('GET', '/admin/rooms');
     expect(res.statusCode).toBe(401);

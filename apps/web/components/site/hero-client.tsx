@@ -1,13 +1,8 @@
 'use client';
 
-import { useGSAP } from '@gsap/react';
-import gsap from 'gsap';
-import { SplitText } from 'gsap/SplitText';
 import { Pause, Play } from 'lucide-react';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { ui } from '@/lib/i18n/es';
-
-gsap.registerPlugin(useGSAP, SplitText);
 
 const ROTATE_MS = 6000;
 
@@ -77,6 +72,8 @@ export function HeroSlides({ slides }: { slides: ReactNode[] }) {
 /**
  * Hero title revealed line by line (GSAP SplitText, masks). Runs only with
  * `prefers-reduced-motion: no-preference`; the server HTML always contains the full text.
+ * GSAP is imported dynamically (requirement 20.2: animation libraries only where used, outside
+ * the initial JavaScript budget).
  */
 export function HeroTitle({
   children,
@@ -89,41 +86,40 @@ export function HeroTitle({
 }) {
   const ref = useRef<HTMLHeadingElement>(null);
 
-  useGSAP(
-    () => {
-      const mm = gsap.matchMedia();
-      mm.add('(prefers-reduced-motion: no-preference)', () => {
-        let split: SplitText | undefined;
-        let cancelled = false;
-        const fontsReady = Promise.race([
-          document.fonts.ready,
-          new Promise((resolve) => window.setTimeout(resolve, 300)),
-        ]);
-        void fontsReady.then(() => {
-          if (cancelled || !ref.current) return;
-          const desktop = window.matchMedia('(min-width: 64rem)').matches;
-          split = SplitText.create(ref.current, {
-            type: 'lines',
-            mask: 'lines',
-            autoSplit: true,
-            onSplit: (self) =>
-              gsap.from(self.lines, {
-                yPercent: 105,
-                duration: desktop ? 1.1 : 0.8,
-                ease: 'power3.out',
-                stagger: 0.08,
-              }),
-          });
+  useEffect(() => {
+    const node = ref.current;
+    if (!node || !window.matchMedia('(prefers-reduced-motion: no-preference)').matches) return;
+    let cancelled = false;
+    let revert: (() => void) | undefined;
+    const fontsReady = Promise.race([
+      document.fonts.ready,
+      new Promise((resolve) => window.setTimeout(resolve, 300)),
+    ]);
+    void Promise.all([import('gsap'), import('gsap/SplitText'), fontsReady]).then(
+      ([{ gsap }, { SplitText }]) => {
+        if (cancelled) return;
+        gsap.registerPlugin(SplitText);
+        const desktop = window.matchMedia('(min-width: 64rem)').matches;
+        const split = SplitText.create(node, {
+          type: 'lines',
+          mask: 'lines',
+          autoSplit: true,
+          onSplit: (self) =>
+            gsap.from(self.lines, {
+              yPercent: 105,
+              duration: desktop ? 1.1 : 0.8,
+              ease: 'power3.out',
+              stagger: 0.08,
+            }),
         });
-        return () => {
-          cancelled = true;
-          split?.revert();
-        };
-      });
-      return () => mm.revert();
-    },
-    { scope: ref },
-  );
+        revert = () => split.revert();
+      },
+    );
+    return () => {
+      cancelled = true;
+      revert?.();
+    };
+  }, []);
 
   return (
     <h1 ref={ref} id={id} className={className}>

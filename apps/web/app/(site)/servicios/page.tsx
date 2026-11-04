@@ -3,18 +3,22 @@ import { AmenityChips, ServiceList } from '@/components/site/blocks';
 import { PageHeader } from '@/components/site/page-header';
 import { container } from '@/components/site/styles';
 import { ui } from '@/lib/i18n/es';
+import { pageMetadata } from '@/lib/seo/metadata';
+import { routes } from '@/lib/public/navigation';
 import { getAmenities, getServices, getSite } from '@/lib/public/api';
 import { sectionOf } from '@/lib/public/site';
 
 export async function generateMetadata(): Promise<Metadata> {
   const site = await getSite();
   const section = sectionOf(site, 'SERVICES');
-  return {
+  return pageMetadata({
+    path: routes.services,
+    siteName: site.hotel.name,
     title: section?.title ?? ui.nav.services,
     description:
       section?.subtitle ??
       `Servicios y comodidades confirmados de ${site.hotel.name} y lo que incluyen todas las habitaciones.`,
-  };
+  });
 }
 
 export default async function ServicesPage() {
@@ -24,6 +28,7 @@ export default async function ServicesPage() {
   return (
     <>
       <PageHeader
+        path={routes.services}
         title={section?.title ?? ui.nav.services}
         kicker={section?.subtitle}
         intro={section?.body}

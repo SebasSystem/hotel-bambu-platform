@@ -4,16 +4,22 @@ import { PageHeader } from '@/components/site/page-header';
 import { button, container } from '@/components/site/styles';
 import { WhatsAppLink } from '@/components/site/whatsapp-link';
 import { ui } from '@/lib/i18n/es';
+import { pageMetadata } from '@/lib/seo/metadata';
+import { faqJsonLd } from '@/lib/seo/json-ld';
+import { JsonLd } from '@/components/seo/json-ld';
+import { routes } from '@/lib/public/navigation';
 import { getFaqs, getSite } from '@/lib/public/api';
 import { sectionOf } from '@/lib/public/site';
 import { whatsAppLink } from '@/lib/public/whatsapp';
 
 export async function generateMetadata(): Promise<Metadata> {
   const site = await getSite();
-  return {
+  return pageMetadata({
+    path: routes.faq,
+    siteName: site.hotel.name,
     title: ui.nav.faq,
     description: `Respuestas a las preguntas más frecuentes sobre ${site.hotel.name}.`,
-  };
+  });
 }
 
 export default async function FaqPage() {
@@ -23,7 +29,13 @@ export default async function FaqPage() {
 
   return (
     <>
-      <PageHeader title={ui.nav.faq} kicker={section?.subtitle} intro={section?.body} />
+      {faqs.length > 0 ? <JsonLd data={faqJsonLd(faqs)} /> : null}
+      <PageHeader
+        path={routes.faq}
+        title={ui.nav.faq}
+        kicker={section?.subtitle}
+        intro={section?.body}
+      />
       <div className={`${container} grid gap-12 py-16 lg:grid-cols-12`}>
         <div className="lg:col-span-8">
           {faqs.length > 0 ? (

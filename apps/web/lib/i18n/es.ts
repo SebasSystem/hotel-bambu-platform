@@ -96,6 +96,38 @@ export const ui = {
     amenitiesTitle: 'En todas las habitaciones',
     faqAll: 'Ver todas las preguntas',
   },
+  consent: {
+    bannerLabel: 'Aviso de cookies',
+    bannerTitle: 'Tu privacidad',
+    bannerText:
+      'Usamos cookies necesarias para que el sitio funcione. Con tu permiso cargamos el mapa de Google (funcionales) y contamos visitas sin identificarte (analíticas).',
+    acceptAll: 'Aceptar todas',
+    rejectAll: 'Rechazar no esenciales',
+    configure: 'Configurar preferencias',
+    dialogTitle: 'Preferencias de cookies',
+    dialogIntro:
+      'Elige qué categorías permites. Rechazar las no esenciales no te impide usar el sitio ni contactarnos.',
+    save: 'Guardar preferencias',
+    close: 'Cerrar',
+    alwaysOn: 'Siempre activas',
+    categories: {
+      necessary: {
+        title: 'Necesarias',
+        text: 'Guardan tu decisión sobre cookies y, solo en el panel administrativo, la sesión del personal del hotel. No se pueden desactivar.',
+      },
+      functional: {
+        title: 'Funcionales',
+        text: 'Cargan automáticamente el mapa de Google Maps, que puede instalar sus propias cookies de terceros.',
+      },
+      analytics: {
+        title: 'Analíticas',
+        text: 'Cuentan visitas y clics en WhatsApp como totales diarios, sin cookies de seguimiento, sin IP y sin identificarte.',
+      },
+    },
+    policyLinks: 'Más información en la',
+    and: 'y la',
+    saved: 'Preferencias guardadas.',
+  },
   empty: {
     location: 'Pronto publicaremos la dirección y las indicaciones para llegar al hotel.',
     contact: 'Pronto publicaremos los datos de contacto del hotel.',

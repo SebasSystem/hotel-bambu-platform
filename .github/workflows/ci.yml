@@ -66,3 +66,75 @@ jobs:
 
       - name: Build
         run: pnpm build
+
+  # End-to-end + axe (requirement 23) against a production build: Postgres and S3 storage from
+  # docker compose, API and web on the runner, Playwright in its official image (host network).
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    needs: verify
+    env:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://hotel:change-me-local-only@localhost:5432/hotel_bambu?schema=public
+      S3_ACCESS_KEY: hotel-local-access
+      S3_SECRET_KEY: change-me-local-only-secret
+      S3_PUBLIC_URL: http://localhost:9000/hotel-media
+      SESSION_SECRET: ci-only-session-secret-0123456789abcdefghijkl
+      REVALIDATE_SECRET: ci-only-revalidate-secret-0123456789abcdef
+      WEB_INTERNAL_URL: http://localhost:3000
+      WEB_ORIGINS: http://localhost:3000
+      COOKIE_SECURE: 'false'
+      API_INTERNAL_URL: http://localhost:4000
+      SITE_URL: http://localhost:3000
+      NEXT_TELEMETRY_DISABLED: '1'
+      TURBO_TELEMETRY_DISABLED: '1'
+      ADMIN_EMAIL: admin@example.test
+      ADMIN_PASSWORD: Bambu-ci-only-2026!
+      E2E_ADMIN_EMAIL: admin@example.test
+      E2E_ADMIN_PASSWORD: Bambu-ci-only-2026!
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - name: Install
+        run: pnpm install --frozen-lockfile
+      - name: Start Postgres and storage
+        run: |
+          docker compose up -d --wait postgres storage
+          docker compose run --rm storage-init
+      - name: Build
+        run: pnpm build
+      - name: Migrate, seed and create the admin
+        run: |
+          pnpm --filter @hotel-bambu/api db:migrate:deploy
+          pnpm --filter @hotel-bambu/api db:seed:base
+          APP_ENV=ci NODE_ENV=development pnpm --filter @hotel-bambu/api db:seed:demo
+          pnpm --filter @hotel-bambu/api admin:create
+      - name: Start API and web
+        run: |
+          nohup pnpm --filter @hotel-bambu/api start > api.log 2>&1 &
+          nohup pnpm --filter @hotel-bambu/web start > web.log 2>&1 &
+          for i in $(seq 1 60); do
+            curl -fsS http://localhost:3000/api/v1/health > /dev/null && curl -fsS -o /dev/null http://localhost:3000/ && exit 0
+            sleep 2
+          done
+          cat api.log web.log; exit 1
+      - name: Playwright (official image)
+        run: pnpm e2e
+      - name: Lighthouse CI (budgets, non-blocking)
+        if: always()
+        continue-on-error: true
+        run: pnpm lighthouse
+      - name: Upload reports
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: e2e-reports
+          path: |
+            e2e/test-results
+            api.log
+            web.log
+          retention-days: 7

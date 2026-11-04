@@ -2,6 +2,7 @@
 
 import { MapPin, Navigation } from 'lucide-react';
 import { useState } from 'react';
+import { useConsent } from '@/components/consent/consent-manager';
 import { trackEvent } from '@/lib/analytics/track';
 import { ui } from '@/lib/i18n/es';
 import { button } from './styles';
@@ -15,11 +16,17 @@ interface MapEmbedProps {
 
 /**
  * Google Maps on demand (requirement 17.5): a static placeholder until the visitor clicks
- * "Cargar mapa" (the iframe may set third-party cookies). "Cómo llegar" is always available.
- * T7's consent manager may also load it automatically when functional consent exists.
+ * "Cargar mapa" (the iframe may set third-party cookies), or loaded automatically when the visitor
+ * granted functional cookies. Withdrawing that consent unloads it. "Cómo llegar" is always available.
  */
 export function MapEmbed({ hotelName, embedUrl, directionsUrl, address }: MapEmbedProps) {
-  const [loaded, setLoaded] = useState(false);
+  const { consent } = useConsent();
+  const functional = consent?.functional === true;
+  // The manual click is remembered per consent decision: a new decision without functional
+  // cookies (withdrawal, 17.5.8) unloads the iframe again.
+  const [clickedFor, setClickedFor] = useState<string | null>(null);
+  const decisionKey = consent ? `${consent.id}:${String(consent.functional)}` : 'none';
+  const loaded = functional || clickedFor === decisionKey;
 
   return (
     <div className="overflow-hidden rounded-lg border border-sand-200 bg-sand-100">
@@ -44,7 +51,7 @@ export function MapEmbed({ hotelName, embedUrl, directionsUrl, address }: MapEmb
               type="button"
               className={button.outline}
               onClick={() => {
-                setLoaded(true);
+                setClickedFor(decisionKey);
                 trackEvent({ type: 'MAP_CLICK', source: 'location' });
               }}
             >

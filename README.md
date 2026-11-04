@@ -43,6 +43,8 @@ The single root `.env` is read by Docker Compose, the API and Next.js. Never com
 | `pnpm lint` / `pnpm typecheck` / `pnpm test` | ESLint, `tsc --noEmit`, Vitest in every package                |
 | `pnpm format` / `pnpm format:check`          | Prettier write / check                                         |
 | `pnpm db:up` / `pnpm db:down`                | Start / stop the Docker services (data stays in named volumes) |
+| `pnpm e2e`                                   | Playwright + axe in the official Playwright image (see below)  |
+| `pnpm lighthouse`                            | Lighthouse CI budgets (`lighthouserc.json`) in the same image  |
 
 Prisma commands run from the API package, e.g. `pnpm --filter @hotel-bambu/api prisma migrate dev`.
 
@@ -103,6 +105,29 @@ WEB_COMMAND=build docker compose --profile web run --rm --no-deps web   # produc
 - File watching uses polling (`WATCHPACK_POLLING`) because bind mounts from Windows do not deliver file events.
 - Lint, typecheck and Vitest run fine on the host (`pnpm lint`, `pnpm typecheck`, `pnpm test`).
 - After changing dependencies, restart the container (it runs `pnpm install --frozen-lockfile` on start). To reset its Linux modules, stop it and run `docker volume rm hotel-bambu_web-root-modules hotel-bambu_web-app-modules hotel-bambu_web-shared-modules hotel-bambu_web-next` (avoid `down -v`: it also deletes the database and storage volumes).
+
+## Quality checks: e2e, accessibility, performance
+
+The Playwright suite (`e2e/`) and Lighthouse CI run inside `mcr.microsoft.com/playwright` (Compose profile `e2e`, host network). They run against a **production build** of the web and a running API:
+
+```bash
+pnpm db:up
+pnpm --filter @hotel-bambu/api build && pnpm --filter @hotel-bambu/api start   # API :4000, with WEB_INTERNAL_URL + REVALIDATE_SECRET
+WEB_COMMAND=start docker compose --profile web up -d web                       # next build + next start on :3000
+pnpm e2e            # Playwright + axe; HTML report in e2e/test-results/report
+pnpm lighthouse     # budgets: LCP ≤ 2.5 s, CLS ≤ 0.1, TBT ≤ 300 ms, JS ≤ 170 KB; reports in e2e/test-results/lighthouse
+```
+
+- The tests log in with `E2E_ADMIN_EMAIL` / `E2E_ADMIN_PASSWORD` (default: the local dev admin). They temporarily set a WhatsApp number or coordinates when these are missing, and restore every change.
+- On an empty database (CI), the global setup publishes one demo room with a synthetic cover image.
+- CI (`.github/workflows/ci.yml`, job `e2e`): Postgres and storage from Compose, API and web on the runner, `pnpm e2e` (blocking), `pnpm lighthouse` (non-blocking), reports uploaded as artifacts.
+
+## Security, privacy and SEO
+
+- Security headers, CSP and threat model: [docs/security.md](docs/security.md).
+- Cookie consent, legal pages and SEO: [docs/public-site.md](docs/public-site.md).
+- Legal checklist before publishing: [docs/legal-checklist.md](docs/legal-checklist.md). **The legal texts are templates: a lawyer must review them.**
+- Deployment flags: `SITE_URL`, `SITE_INDEXABLE` (opt-in indexing) and `LEGAL_APPROVED` ([docs/configuration.md](docs/configuration.md)).
 
 ## Media originals
 
