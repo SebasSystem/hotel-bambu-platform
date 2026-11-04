@@ -1,0 +1,12 @@
+node_modules
+dist
+.next
+.turbo
+coverage
+pnpm-lock.yaml
+apps/api/src/generated
+apps/web/next-env.d.ts
+assets-source
+docs/requirements.md
+docs
+odd

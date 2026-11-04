@@ -1,0 +1,15 @@
+packages:
+  - apps/*
+  - packages/*
+
+# pnpm blocks dependency lifecycle scripts by default; allow only the ones the toolchain needs.
+allowBuilds:
+  '@prisma/engines': true
+  '@swc/core': true
+  prisma: true
+
+# eslint-config-next bundles plugins (react, jsx-a11y, import) whose peer ranges do not list
+# ESLint 10 yet; Next.js documents ESLint 10 support since eslint-config-next 16.4.
+peerDependencyRules:
+  allowedVersions:
+    eslint: '10'

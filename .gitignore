@@ -28,3 +28,6 @@ Thumbs.db
 .codegraph/
 playwright-report/
 test-results/
+
+# Next.js generated types
+next-env.d.ts

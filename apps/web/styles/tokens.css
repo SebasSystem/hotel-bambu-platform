@@ -1,0 +1,146 @@
+/*
+ * Design tokens v0.1 — mirror of docs/design/tokens.json (guarded by styles/tokens.test.ts).
+ * Change values in tokens.json first, then here. Pending hotel approval (ADR 0003).
+ */
+
+/* Brand primitives. `static` emits every variable so semantic aliases can reference them. */
+@theme static {
+  --color-*: initial;
+  --color-bamboo-100: #ddeee3;
+  --color-bamboo-300: #8ec3a4;
+  --color-bamboo-500: #3b8f69;
+  --color-bamboo-600: #267a58;
+  --color-bamboo-700: #1d6247;
+  --color-bamboo-800: #174c39;
+  --color-bamboo-900: #12392b;
+  --color-cane-500: #c9a55c;
+  --color-cane-700: #8a6a2b;
+  --color-sand-50: #f7f3ea;
+  --color-sand-100: #eee7d8;
+  --color-sand-200: #d9cfba;
+  --color-earth-600: #a8582f;
+  --color-ink-600: #56605a;
+  --color-ink-900: #1a1f1c;
+  --color-error-600: #b3261e;
+  --color-white: #ffffff;
+  --color-whatsapp: #25d366;
+
+  --text-xs: 0.8125rem;
+  --text-sm: 0.875rem;
+  --text-base: clamp(1rem, 0.96rem + 0.2vw, 1.0625rem);
+  --text-lg: clamp(1.125rem, 1.06rem + 0.3vw, 1.25rem);
+  --text-xl: clamp(1.25rem, 1.12rem + 0.6vw, 1.5rem);
+  --text-2xl: clamp(1.5rem, 1.28rem + 1vw, 2rem);
+  --text-3xl: clamp(1.875rem, 1.5rem + 1.8vw, 2.75rem);
+  --text-4xl: clamp(2.25rem, 1.6rem + 3vw, 3.75rem);
+  --text-5xl: clamp(2.75rem, 1.8rem + 4.5vw, 5rem);
+
+  --leading-tight: 1.1;
+  --leading-snug: 1.25;
+  --leading-normal: 1.6;
+
+  --tracking-display: -0.01em;
+  --tracking-kicker: 0.24em;
+
+  --radius-xs: 0.25rem;
+  --radius-sm: 0.5rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.5rem;
+  --radius-pill: 9999px;
+
+  --shadow-xs: 0 1px 2px rgb(18 57 43 / 0.06);
+  --shadow-sm: 0 2px 8px rgb(18 57 43 / 0.08);
+  --shadow-md: 0 8px 24px rgb(18 57 43 / 0.1);
+  --shadow-lg: 0 16px 48px rgb(18 57 43 / 0.14);
+
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in-out-soft: cubic-bezier(0.65, 0, 0.35, 1);
+  --ease-in: cubic-bezier(0.4, 0, 1, 1);
+
+  --spacing: 0.25rem;
+  --container-site: 80rem;
+}
+
+/* Fonts come from next/font variables set on <html> (app/layout.tsx). */
+@theme inline {
+  --font-display: var(--font-fraunces), ui-serif, Georgia, 'Times New Roman', serif;
+  --font-sans:
+    var(--font-manrope), ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary-hover: var(--primary-hover);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent-decorative: var(--accent-decorative);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-surface-dark: var(--surface-dark);
+  --color-on-surface-dark: var(--on-surface-dark);
+  --color-on-surface-dark-muted: var(--on-surface-dark-muted);
+  --color-promo: var(--promo);
+  --color-promo-foreground: var(--promo-foreground);
+  --color-whatsapp-foreground: var(--whatsapp-foreground);
+}
+
+/* Semantic roles (shadcn/ui variable names) and non-Tailwind tokens. */
+:root {
+  --background: var(--color-sand-50);
+  --foreground: var(--color-ink-900);
+  --card: var(--color-white);
+  --card-foreground: var(--color-ink-900);
+  --popover: var(--color-white);
+  --popover-foreground: var(--color-ink-900);
+  --primary: var(--color-bamboo-700);
+  --primary-foreground: var(--color-white);
+  --primary-hover: var(--color-bamboo-600);
+  --secondary: var(--color-sand-100);
+  --secondary-foreground: var(--color-bamboo-900);
+  --muted: var(--color-sand-100);
+  --muted-foreground: var(--color-ink-600);
+  --accent: var(--color-bamboo-100);
+  --accent-foreground: var(--color-bamboo-900);
+  --accent-decorative: var(--color-cane-500);
+  --destructive: var(--color-error-600);
+  --destructive-foreground: var(--color-white);
+  --border: var(--color-sand-200);
+  --input: var(--color-sand-200);
+  --ring: var(--color-bamboo-600);
+  --surface-dark: var(--color-bamboo-900);
+  --on-surface-dark: var(--color-sand-50);
+  --on-surface-dark-muted: var(--color-bamboo-300);
+  --promo: var(--color-earth-600);
+  --promo-foreground: var(--color-white);
+  --whatsapp: var(--color-whatsapp);
+  --whatsapp-foreground: var(--color-ink-900);
+
+  --duration-instant: 100ms;
+  --duration-fast: 180ms;
+  --duration-base: 320ms;
+  --duration-slow: 600ms;
+  --duration-slower: 900ms;
+  --duration-reveal: 1100ms;
+
+  --section-y: clamp(4rem, 2.5rem + 6vw, 8rem);
+  --gutter: clamp(1rem, 0.5rem + 2.5vw, 2.5rem);
+
+  --z-header: 40;
+  --z-whatsapp-fab: 45;
+  --z-overlay: 50;
+  --z-toast: 60;
+}
