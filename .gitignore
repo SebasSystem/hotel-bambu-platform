@@ -1,0 +1,30 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Builds
+dist/
+build/
+.next/
+out/
+.turbo/
+coverage/
+*.tsbuildinfo
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# Original media (never versioned, see docs/requirements.md section 15.1)
+assets-source/
+
+# Logs and OS
+*.log
+.DS_Store
+Thumbs.db
+
+# Tooling
+.codegraph/
+playwright-report/
+test-results/
