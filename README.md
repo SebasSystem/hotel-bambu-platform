@@ -76,6 +76,13 @@ pnpm --filter @hotel-bambu/api admin:create   # prompts for email and password (
 - From a build (e.g. inside the API container): `node dist/scripts/admin-create.js` (also `seed-base`, `seed-demo`, `media-import`).
 - `sharp` and `@node-rs/argon2` use prebuilt binaries and run on Windows, macOS and Linux hosts; no container is needed for these scripts.
 
+## API
+
+REST under `/api/v1` (endpoint list: [docs/api.md](docs/api.md)). Public reads under `/public/*`, admin CRUD under `/admin/*` behind a server-side session cookie and a CSRF token ([ADR 0008](docs/adr/0008-auth-sessions-csrf.md)). Every environment variable: [docs/configuration.md](docs/configuration.md).
+
+- `pnpm --filter @hotel-bambu/api test` runs unit tests and, when `DATABASE_URL` points to a reachable PostgreSQL, integration tests against a separate `hotel_test` database (created and migrated automatically; the dev database is never touched). Without `DATABASE_URL` they are skipped locally; in CI (`CI=true`) they are mandatory.
+- Admin mutations are written to `AuditLog` and ask Next.js to revalidate cache tags (`POST ${WEB_INTERNAL_URL}/api/revalidate`); failures are logged and never fail the request.
+
 ## Media originals
 
 Original hotel photos live in `assets-source/` and are **never committed** (see requirements 15.1).
