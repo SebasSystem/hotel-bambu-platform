@@ -16,11 +16,11 @@ These appear on framed prints / the RNT certificate in the photo set (`docs/asse
 
 ## B. Business decisions and content (req. 28)
 
-- [ ] Approval of logo, palette and typography (`docs/design/identity.md`) and art direction A (`docs/design/art-direction.md`)
+- [ ] Approval of logo, palette and typography (`docs/design/identity.md`) and the redesign art direction, A or B (`docs/research/art-direction-briefs.md`, which supersedes `docs/design/art-direction.md`)
 - [ ] Domain name
 - [ ] Room list: number, name, type (individual/couple), beds, capacity, specific amenities, and which photos belong to which room
 - [ ] Rates: amount in COP, unit (per night/per person), **taxes included?**, seasonal conditions, special conditions for foreign non-residents (Ley 1480)
-- [ ] Real services list (beyond the known ones): parking? breakfast? reception hours? air conditioning in any room? hot water?
+- [ ] Real services list (beyond the known ones): see section E
 - [ ] WhatsApp number and preferred initial messages
 - [ ] Policies: check-in / check-out times, pets, minors, cancellation, payment methods, deposits, ID requirements
 - [ ] Real FAQ (top questions guests ask)
@@ -62,3 +62,16 @@ Missing photos:
 - [ ] Provider contracts reviewed
 - [ ] Rates shown with taxes included, or conditions approved
 - [ ] Final approval of legal documents
+
+## E. Services and facilities (amenity model, `docs/research/amenity-model.md` § 5)
+
+Until answered, the site claims nothing about these items (no "gratis", no "24 h").
+
+- [ ] Wi-Fi: free for guests? Reaches every room and the common areas?
+- [ ] Hot water in every room's shower?
+- [ ] Air conditioning in any room? Which ones?
+- [ ] Parking: on site or nearby, free or paid, cars and/or motorbikes?
+- [ ] Reception hours (24 h?), late check-in, luggage storage?
+- [ ] Breakfast or food: included, paid, or none? Kitchen or restaurant?
+- [ ] Common areas (lounge, terrace, work corner): which exist and may be shown?
+- [ ] Security: night staff, cameras, safe, controlled entrance (only what may be published)?

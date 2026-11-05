@@ -1,6 +1,8 @@
 # Art direction
 
-Status: **Direction A is the working default, pending hotel approval** (Phase 0 exit, req. 26). Both directions use the same tokens ([`tokens.json`](./tokens.json)) and logo; they differ in layout density, image treatment and motion.
+> **Superseded (v0).** These un-researched directions are replaced by [`docs/research/art-direction-briefs.md`](../research/art-direction-briefs.md) (A "Cuaderno de Mocoa" / B "Letrero y Madera"). Kept for history only.
+
+Status (historical): **Direction A was the working default, pending hotel approval** (Phase 0 exit, req. 26). Both directions use the same tokens ([`tokens.json`](./tokens.json)) and logo; they differ in layout density, image treatment and motion.
 
 ## Constraints from the real material
 

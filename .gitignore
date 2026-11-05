@@ -31,3 +31,6 @@ test-results/
 
 # Next.js generated types
 next-env.d.ts
+
+# Third-party design reference screenshots (research only, never versioned)
+docs/research/refs/

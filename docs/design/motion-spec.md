@@ -1,5 +1,7 @@
 # Motion specification (req. 8.5)
 
+> **v1 baseline.** This is the motion shipped with the v1 site. It is **superseded** by [`docs/research/motion-spec.md`](../research/motion-spec.md) (directions A and B) as soon as the owner chooses a redesign direction. Until then it describes current behaviour.
+
 Baseline: **CSS first, GSAP + ScrollTrigger (+ SplitText) via `@gsap/react` `useGSAP`** for scroll-linked work. **No Lenis, no Motion, no Three.js/R3F by default** (ADR 0004). Admin panel: shadcn/ui + CSS transitions only.
 
 Note: req. 8.5 names `docs/research/motion-spec.md`; this phase places it under `docs/design/` with the other design deliverables.
