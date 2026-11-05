@@ -36,20 +36,21 @@ The hotel has no digital presence. Visitors must find, understand and contact th
 
 ## Tasks
 - [x] T0 Bootstrap repo, copy assets to `assets-source/`, requirements to `docs/requirements.md` — inline
-- [ ] T1 Phase 0: media inventory, video analysis, identity/tokens, art direction, motion spec, ADRs, pending list — delegated (image reading)
-- [ ] T2 Phase 1: monorepo base, web + api skeletons, shared package, Docker dev (Postgres, MinIO), CI — delegated writer
-- [ ] T3 Phase 2a: Prisma schema, migrations, seeds base/demo, admin:create, media:import — delegated writer
-- [ ] T4 Phase 2b: API modules (auth, hotel, rooms, promotions, services, media, gallery, content, faq, policies, social, audit, revalidation) — delegated writer
-- [ ] T5 Phase 2c: admin panel UI — delegated writer
-- [ ] T6 Phase 3: public site — delegated writer
-- [ ] T7 Phase 4: security, consent, legal, SEO, a11y, perf, e2e tests — delegated writer
-- [ ] T8 Production Docker + Cloudflare/VPS deploy guide — delegated writer
+- [x] T1 Phase 0: media inventory, video analysis, identity/tokens, art direction, motion spec, ADRs, pending list — delegated (image reading) — commit 2a79f07
+- [x] T2 Phase 1: monorepo base, web + api skeletons, shared package, Docker dev (Postgres, RustFS S3 — MinIO images no longer published, ADR 0005), CI — delegated writer — commit bff1b40. Known env issue: Windows App Control blocks Tailwind oxide binary → web dev/build hang on host; works in Linux containers.
+- [x] T3 Phase 2a: Prisma schema (20 tables), migration init, seeds base/demo (16 rooms), admin:create (argon2id), media:import (36 assets, EXIF stripped, AVIF/WebP) — delegated writer — commit b595f48
+- [x] T4 Phase 2b: API modules (auth, hotel, rooms, promotions, services, media, gallery, content, faq, policies, social, audit, revalidation) — delegated writer — commit 9a8973c (api 103 tests, shared 36)
+- [x] T5 Phase 2c: admin panel UI (18 routes, proxy.ts guard, web dev container profile) — delegated writer — commit 98871b3. Polish note for T7: admin sidebar not full-height on long pages.
+- [x] T6 Phase 3: public site (home narrative, rooms, services, gallery, location, FAQ, policies, contact, WhatsApp, revalidation) — delegated writer — commit d61c100 (web 144 tests; screenshots reviewed)
+- [x] T7 Phase 4: security, consent, legal, SEO, a11y, perf, e2e tests — delegated writer — commit 9d37d17 (partial: e2e 41/41, axe 0 violations; Lighthouse room-detail LCP 3.6 s and home JS 193 KB over budget — font weight (Fraunces SOFT axis) is a design call)
+- [x] T8 Production Docker + Cloudflare/VPS deploy guide — delegated writer — commit dff3e55. Owner decision: classic ingress (Caddy + Cloudflare Origin CA, Full strict, ufw only Cloudflare IPs) primary; Tunnel optional profile. Prod-like stack verified, backup/restore drill row counts matched (22 tables).
 
 ## Acceptance criteria
 See `docs/requirements.md` section 27 (excluding production-only items owned by the owner).
 
 ## Progress / evidence
 - T0: repo created, 46 photos + 2 videos copied, RDD status off.
+- T1: 46 photos inventoried (42 unique; 45 are 960×1280 WhatsApp-compressed), videos 480p portrait → not used in v1 (ADR 0004). Palette bamboo-700 #1D6247 primary, sand-50 bg; Fraunces + Manrope. Photos reveal (unconfirmed): Mocoa, Putumayo; Calle 8 # 7-10; phone 310 679 8260; RNT 232175 → pending hotel confirmation.
 
 ## Next step
-T1.
+Owner: push to remote, confirm hotel data (docs/pendientes-hotel.md), legal review, deploy per deploy/README.md. Open decision: Fraunces SOFT axis vs room-detail LCP 3.6 s.
