@@ -18,7 +18,14 @@
     "e2e": "docker compose --profile e2e run --rm e2e",
     "lighthouse": "docker compose --profile e2e run --rm -e E2E_COMMAND=lighthouse e2e",
     "db:up": "docker compose up -d",
-    "db:down": "docker compose down"
+    "db:down": "docker compose down",
+    "prod:config": "docker compose -f docker-compose.prod.yml --env-file deploy/.env.production config --quiet",
+    "prod:build": "docker compose -f docker-compose.prod.yml --env-file deploy/.env.production build",
+    "prod:up": "docker compose -f docker-compose.prod.yml --env-file deploy/.env.production up -d --wait",
+    "prod:down": "docker compose -f docker-compose.prod.yml --env-file deploy/.env.production down",
+    "prod:ps": "docker compose -f docker-compose.prod.yml --env-file deploy/.env.production ps -a",
+    "prod:logs": "docker compose -f docker-compose.prod.yml --env-file deploy/.env.production logs -f --tail=200",
+    "prod:backup": "docker compose -f docker-compose.prod.yml --env-file deploy/.env.production exec backup backup.sh"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

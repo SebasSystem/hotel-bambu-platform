@@ -1,0 +1,292 @@
+# Production stack for a single VPS behind Cloudflare (guide: deploy/README.md, ADR 0014).
+#
+#   docker compose -f docker-compose.prod.yml --env-file deploy/.env.production up -d --build
+#
+# Ingress (pick one profile): `caddy` (primary) publishes only 443 with a Cloudflare Origin CA
+# certificate, firewalled to Cloudflare IPs; `tunnel` (alternative) runs cloudflared, which dials
+# out to Cloudflare so the VPS publishes no ports. Either way `web` is the single public entry and
+# proxies /api/v1/* to `api` (same origin). PostgreSQL sits on an internal network only.
+# Profiles (set COMPOSE_PROFILES in deploy/.env.production):
+#   caddy   - Caddy reverse proxy on :443 (production ingress, Cloudflare "Full (strict)")
+#   tunnel  - cloudflared (alternative ingress; do not combine with caddy)
+#   storage - self-hosted RustFS bucket instead of Cloudflare R2 / external S3
+#   backup  - daily pg_dump with retention (+ optional off-site copy)
+# Every value comes from the env file; `:?` marks variables the stack refuses to start without.
+
+name: ${COMPOSE_PROJECT_NAME:-hotel-bambu-prod}
+
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: '10m'
+    max-file: '5'
+
+x-hardening: &hardening
+  security_opt:
+    - no-new-privileges:true
+  cap_drop:
+    - ALL
+
+x-api-env: &api-env
+  NODE_ENV: production
+  LOG_LEVEL: ${LOG_LEVEL:-info}
+  DATABASE_URL: postgresql://${POSTGRES_USER:?}:${POSTGRES_PASSWORD:?}@postgres:5432/${POSTGRES_DB:?}?schema=public
+  TRUST_PROXY: ${TRUST_PROXY:-false}
+  TRUST_CLOUDFLARE: ${TRUST_CLOUDFLARE:-true}
+  WEB_ORIGINS: ${WEB_ORIGINS:?}
+  COOKIE_SECURE: ${COOKIE_SECURE:-true}
+  SESSION_SECRET: ${SESSION_SECRET:?}
+  SESSION_IDLE_MINUTES: ${SESSION_IDLE_MINUTES:-120}
+  SESSION_ABSOLUTE_HOURS: ${SESSION_ABSOLUTE_HOURS:-12}
+  RATE_LIMIT_DEFAULT_PER_MINUTE: ${RATE_LIMIT_DEFAULT_PER_MINUTE:-300}
+  S3_ENDPOINT: ${S3_ENDPOINT:?}
+  S3_REGION: ${S3_REGION:-auto}
+  S3_BUCKET: ${S3_BUCKET:?}
+  S3_ACCESS_KEY: ${S3_ACCESS_KEY:?}
+  S3_SECRET_KEY: ${S3_SECRET_KEY:?}
+  S3_FORCE_PATH_STYLE: ${S3_FORCE_PATH_STYLE:-true}
+  S3_PUBLIC_URL: ${S3_PUBLIC_URL:?}
+  WEB_INTERNAL_URL: http://web:3000
+  REVALIDATE_SECRET: ${REVALIDATE_SECRET:?}
+
+services:
+  postgres:
+    image: postgres:18.6-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:?}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?}
+      POSTGRES_DB: ${POSTGRES_DB:?}
+    volumes:
+      - postgres-data:/var/lib/postgresql
+    networks: [backend]
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U "$${POSTGRES_USER}" -d "$${POSTGRES_DB}"']
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    shm_size: 128mb
+    deploy:
+      resources:
+        limits: { cpus: '1.0', memory: 768M }
+    logging: *logging
+
+  # One-shot: applies pending migrations, then exits. `api` waits for it to succeed.
+  migrate:
+    image: hotel-bambu-api:${IMAGE_TAG:-latest}
+    build: &api-build
+      context: .
+      dockerfile: apps/api/Dockerfile
+    command: ['node_modules/.bin/prisma', 'migrate', 'deploy']
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:?}:${POSTGRES_PASSWORD:?}@postgres:5432/${POSTGRES_DB:?}?schema=public
+    depends_on:
+      postgres: { condition: service_healthy }
+    networks: [backend]
+    restart: 'no'
+    <<: *hardening
+    logging: *logging
+
+  api:
+    image: hotel-bambu-api:${IMAGE_TAG:-latest}
+    build: *api-build
+    restart: unless-stopped
+    environment: *api-env
+    depends_on:
+      postgres: { condition: service_healthy }
+      migrate: { condition: service_completed_successfully }
+      # Only with the storage profile: the bucket exists before the API starts.
+      storage-init: { condition: service_completed_successfully, required: false }
+    # backend: database (no internet). egress: object storage (R2/S3) and revalidation calls.
+    networks: [backend, egress]
+    read_only: true
+    tmpfs: [/tmp]
+    <<: *hardening
+    deploy:
+      resources:
+        limits: { cpus: '1.0', memory: 768M }
+    logging: *logging
+
+  web:
+    image: hotel-bambu-web:${IMAGE_TAG:-latest}
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      args:
+        API_INTERNAL_URL: http://api:4000
+    restart: unless-stopped
+    environment:
+      API_INTERNAL_URL: http://api:4000
+      REVALIDATE_SECRET: ${REVALIDATE_SECRET:?}
+      SITE_URL: ${SITE_URL:?}
+      SITE_INDEXABLE: ${SITE_INDEXABLE:-false}
+      S3_PUBLIC_URL: ${S3_PUBLIC_URL:?}
+      LEGAL_APPROVED: ${LEGAL_APPROVED:-false}
+      LEGAL_EFFECTIVE_DATE: ${LEGAL_EFFECTIVE_DATE:-}
+    depends_on:
+      api: { condition: service_healthy }
+    networks: [backend, egress]
+    read_only: true
+    tmpfs: [/tmp]
+    volumes:
+      - web-cache:/app/apps/web/.next/cache
+    <<: *hardening
+    deploy:
+      resources:
+        limits: { cpus: '1.0', memory: 768M }
+    logging: *logging
+
+  # Primary ingress: TLS with the Cloudflare Origin CA certificate (ORIGIN_CERT_DIR on the host
+  # holds origin.pem + origin.key). Only 443 is published; the firewall admits Cloudflare only.
+  caddy:
+    image: caddy:2.11.8-alpine
+    profiles: ['caddy']
+    restart: unless-stopped
+    environment:
+      SITE_HOST: ${SITE_HOST:?}
+      SITE_REDIRECT_HOST: ${SITE_REDIRECT_HOST:?}
+      MEDIA_HOST: ${MEDIA_HOST:-}
+    ports:
+      - '${CADDY_BIND:-0.0.0.0}:${CADDY_HTTPS_PORT:-443}:443'
+    volumes:
+      - ./deploy/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - ${ORIGIN_CERT_DIR:-/etc/hotel-bambu/certs}:/certs:ro
+      - caddy-data:/data
+    depends_on:
+      web: { condition: service_healthy }
+    networks: [egress]
+    read_only: true
+    tmpfs: [/tmp, /config]
+    security_opt:
+      - no-new-privileges:true
+    cap_drop: [ALL]
+    cap_add: [NET_BIND_SERVICE]
+    deploy:
+      resources:
+        limits: { cpus: '0.5', memory: 256M }
+    logging: *logging
+
+  # Alternative ingress, Cloudflare Tunnel: outbound-only connection; public hostnames are routed in the Cloudflare
+  # dashboard (www/apex -> http://web:3000; optional media host -> http://storage:9000).
+  cloudflared:
+    image: cloudflare/cloudflared:2026.10.7
+    profiles: ['tunnel']
+    command: ['tunnel', '--no-autoupdate', '--metrics', '0.0.0.0:2000', 'run']
+    environment:
+      # Required with the tunnel profile (cloudflared exits with an error without it).
+      TUNNEL_TOKEN: ${TUNNEL_TOKEN:-}
+    depends_on:
+      web: { condition: service_healthy }
+    restart: unless-stopped
+    networks: [egress]
+    read_only: true
+    <<: *hardening
+    healthcheck:
+      test: ['CMD', 'cloudflared', 'tunnel', '--metrics', '127.0.0.1:2000', 'ready']
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    deploy:
+      resources:
+        limits: { cpus: '0.5', memory: 256M }
+    logging: *logging
+
+  # Self-hosted S3 (RustFS) when not using Cloudflare R2. No published ports: the API reaches it
+  # at http://storage:9000; visitors through the tunnel's media hostname (deploy/README.md).
+  storage:
+    image: rustfs/rustfs:1.0.4
+    profiles: ['storage']
+    restart: unless-stopped
+    environment:
+      RUSTFS_VOLUMES: /data
+      RUSTFS_ADDRESS: 0.0.0.0:9000
+      RUSTFS_CONSOLE_ENABLE: 'false'
+      RUSTFS_ACCESS_KEY: ${S3_ACCESS_KEY:?}
+      RUSTFS_SECRET_KEY: ${S3_SECRET_KEY:?}
+    volumes:
+      - storage-data:/data
+    networks: [backend, egress]
+    healthcheck:
+      test: ['CMD-SHELL', 'curl -fsS http://127.0.0.1:9000/health || exit 1']
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    deploy:
+      resources:
+        limits: { cpus: '0.5', memory: 512M }
+    logging: *logging
+
+  # One-shot (profile storage): creates the bucket and allows anonymous GetObject only.
+  storage-init:
+    image: amazon/aws-cli:2.39.3
+    profiles: ['storage']
+    depends_on:
+      storage: { condition: service_healthy }
+    environment:
+      AWS_ACCESS_KEY_ID: ${S3_ACCESS_KEY:?}
+      AWS_SECRET_ACCESS_KEY: ${S3_SECRET_KEY:?}
+      AWS_DEFAULT_REGION: ${S3_REGION:-us-east-1}
+      BUCKET: ${S3_BUCKET:?}
+    entrypoint: ['/bin/sh', '-c']
+    command:
+      - |
+        set -e
+        S3="aws --endpoint-url http://storage:9000 s3api"
+        $$S3 head-bucket --bucket "$$BUCKET" 2>/dev/null || $$S3 create-bucket --bucket "$$BUCKET"
+        $$S3 put-bucket-policy --bucket "$$BUCKET" --policy "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Allow\",\"Principal\":{\"AWS\":[\"*\"]},\"Action\":[\"s3:GetObject\"],\"Resource\":[\"arn:aws:s3:::$$BUCKET/*\"]}]}"
+        echo "Bucket $$BUCKET ready"
+    networks: [backend]
+    restart: 'no'
+    logging: *logging
+
+  # Daily pg_dump with local retention, optional off-site copy and media mirror (profile backup).
+  backup:
+    image: hotel-bambu-backup:${IMAGE_TAG:-latest}
+    build:
+      context: deploy/backup
+    profiles: ['backup']
+    restart: unless-stopped
+    environment:
+      TZ: ${TZ:-America/Bogota}
+      PGHOST: postgres
+      PGUSER: ${POSTGRES_USER:?}
+      PGPASSWORD: ${POSTGRES_PASSWORD:?}
+      PGDATABASE: ${POSTGRES_DB:?}
+      BACKUP_HOUR: ${BACKUP_HOUR:-3}
+      BACKUP_RETENTION_DAYS: ${BACKUP_RETENTION_DAYS:-14}
+      BACKUP_S3_URI: ${BACKUP_S3_URI:-}
+      BACKUP_S3_ENDPOINT: ${BACKUP_S3_ENDPOINT:-}
+      BACKUP_S3_REGION: ${BACKUP_S3_REGION:-auto}
+      BACKUP_S3_ACCESS_KEY: ${BACKUP_S3_ACCESS_KEY:-}
+      BACKUP_S3_SECRET_KEY: ${BACKUP_S3_SECRET_KEY:-}
+      BACKUP_MEDIA: ${BACKUP_MEDIA:-false}
+      S3_ENDPOINT: ${S3_ENDPOINT:?}
+      S3_REGION: ${S3_REGION:-auto}
+      S3_BUCKET: ${S3_BUCKET:?}
+      S3_ACCESS_KEY: ${S3_ACCESS_KEY:?}
+      S3_SECRET_KEY: ${S3_SECRET_KEY:?}
+    volumes:
+      - ${BACKUP_HOST_DIR:-/var/backups/hotel-bambu}:/backups
+    depends_on:
+      postgres: { condition: service_healthy }
+    networks: [backend, egress]
+    deploy:
+      resources:
+        limits: { cpus: '0.5', memory: 256M }
+    logging: *logging
+
+networks:
+  # No route to the internet: PostgreSQL and inter-service traffic only.
+  backend:
+    internal: true
+  # Outbound access (Cloudflare, R2/S3, off-site backups). Nothing is published on the host.
+  egress: {}
+
+volumes:
+  caddy-data:
+  postgres-data:
+  storage-data:
+  web-cache:

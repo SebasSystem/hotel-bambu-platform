@@ -1,6 +1,6 @@
 # Configuration (environment variables)
 
-All configuration comes from environment variables. In development a single root `.env` (copied from `.env.example`) is read by Docker Compose, the API, the scripts and Next.js; real environment variables always win. Production injects real variables (never a committed file). The API validates its variables at startup (`apps/api/src/config/env.ts`) and refuses to start when they are invalid.
+All configuration comes from environment variables. In development a single root `.env` (copied from `.env.example`) is read by Docker Compose, the API, the scripts and Next.js; real environment variables always win. Production injects real variables (never a committed file). On the VPS, they come from `deploy/.env.production`, created from [deploy/env.production.example](../deploy/env.production.example) (see [deploy/README.md](../deploy/README.md)). The API validates its variables at startup (`apps/api/src/config/env.ts`) and refuses to start when they are invalid.
 
 ## API — core
 
@@ -62,6 +62,22 @@ All configuration comes from environment variables. In development a single root
 | `ADMIN_EMAIL`, `ADMIN_PASSWORD`, `ADMIN_NAME` | `admin:create` | One-shot creation; clear them from the shell history afterwards. |
 | `APP_ENV` | `db:seed:demo` | `production`/`prod` blocks demo seeding (as does `NODE_ENV=production`). |
 | `MEDIA_SOURCE_DIR`, `MEDIA_MANIFEST` | `media:import` | Override the photo folder and manifest path. |
+
+## Docker Compose (production, `docker-compose.prod.yml`)
+
+| Variable | Notes |
+|---|---|
+| `COMPOSE_PROFILES` | `caddy` (primary ingress) or `tunnel` (alternative), plus `backup`; add `storage` only for self-hosted RustFS instead of R2. |
+| `SITE_HOST` / `SITE_REDIRECT_HOST` | Canonical host served by Caddy and the host redirected to it. |
+| `ORIGIN_CERT_DIR` | Host folder with the Cloudflare Origin CA `origin.pem` + `origin.key`. |
+| `MEDIA_HOST` | Media hostname served by Caddy (self-hosted storage only). |
+| `TUNNEL_TOKEN` | Cloudflare Tunnel token (`tunnel` profile). |
+| `BACKUP_HOST_DIR`, `BACKUP_HOUR`, `BACKUP_RETENTION_DAYS` | Local dump folder, daily hour (`TZ`) and retention. |
+| `BACKUP_S3_URI`, `BACKUP_S3_ENDPOINT`, `BACKUP_S3_REGION`, `BACKUP_S3_ACCESS_KEY`, `BACKUP_S3_SECRET_KEY` | Optional off-site copy of every dump (private bucket). |
+| `BACKUP_MEDIA` | `true` mirrors the media bucket into the backup folder. |
+| `IMAGE_TAG` | Tag of the locally built images (default `latest`). |
+
+The API's `DATABASE_URL` is built from `POSTGRES_USER`, `POSTGRES_PASSWORD` and `POSTGRES_DB`. Use a hex-only password. `API_INTERNAL_URL` (`http://api:4000`) and `WEB_INTERNAL_URL` (`http://web:3000`) are fixed by the compose file.
 
 ## Docker Compose (development)
 

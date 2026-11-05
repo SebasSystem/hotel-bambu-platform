@@ -6,6 +6,8 @@ import type { NextConfig } from 'next';
 // Next compiles this file to CommonJS, so resolve from the package cwd, not import.meta.
 loadEnvConfig(path.resolve(process.cwd(), '../..'));
 
+// Rewrites are compiled into the build output: the production image bakes this value at build
+// time (Docker build arg API_INTERNAL_URL, default http://api:4000).
 const apiInternalUrl = (process.env.API_INTERNAL_URL ?? 'http://localhost:4000').replace(/\/$/, '');
 
 /**
@@ -30,6 +32,10 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
+  // Self-contained server for the production image (apps/web/Dockerfile). Tracing starts at the
+  // monorepo root so workspace packages (packages/shared) are included.
+  output: 'standalone',
+  outputFileTracingRoot: path.resolve(process.cwd(), '../..'),
   poweredByHeader: false,
   async headers() {
     return [{ source: '/:path*', headers: securityHeaders }];

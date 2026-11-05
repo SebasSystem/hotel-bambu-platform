@@ -129,6 +129,15 @@ pnpm lighthouse     # budgets: LCP ≤ 2.5 s, CLS ≤ 0.1, TBT ≤ 300 ms, JS �
 - Legal checklist before publishing: [docs/legal-checklist.md](docs/legal-checklist.md). **The legal texts are templates: a lawyer must review them.**
 - Deployment flags: `SITE_URL`, `SITE_INDEXABLE` (opt-in indexing) and `LEGAL_APPROVED` ([docs/configuration.md](docs/configuration.md)).
 
+## Production deployment
+
+Production runs from `docker-compose.prod.yml` on a single VPS behind Cloudflare. Caddy is the primary ingress, with a Cloudflare Origin certificate and a firewall that admits only Cloudflare; Cloudflare Tunnel is the alternative. Media is stored in Cloudflare R2. Migrations run as a one-shot job, and backups run daily.
+
+- Step-by-step guide, go-live checklist and restore drill: [deploy/README.md](deploy/README.md).
+- Decision record: [ADR 0014](docs/adr/0014-production-deployment.md).
+- Shortcuts: `make help` on the VPS, or `pnpm prod:config|build|up|down|ps|logs|backup` from a workstation. All of them read `deploy/.env.production`, created from `deploy/env.production.example`.
+- CI builds the production images on every push (job `docker-images`); nothing is pushed to a registry.
+
 ## Media originals
 
 Original hotel photos live in `assets-source/` and are **never committed** (see requirements 15.1).

@@ -1,0 +1,31 @@
+# Build context is the monorepo root (apps/api/Dockerfile, apps/web/Dockerfile).
+# Keep secrets, originals and host build output out of every image.
+.git
+.github
+.codegraph
+.turbo
+.pnpm-store
+**/node_modules
+**/dist
+**/.next
+**/coverage
+**/*.tsbuildinfo
+**/*.log
+
+# Secrets: never sent to the Docker daemon.
+.env
+.env.*
+**/.env
+**/.env.*
+backups
+
+# Media originals (never versioned, never baked into images; mounted for media:import).
+assets-source
+
+# Not needed by the production images.
+e2e/test-results
+e2e/playwright-report
+lighthouserc.json
+odd
+docs/design
+docs/adr

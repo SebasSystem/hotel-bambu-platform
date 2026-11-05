@@ -138,3 +138,39 @@ jobs:
             api.log
             web.log
           retention-days: 7
+
+  # Production images (deploy/README.md): build only, never pushed. Catches Dockerfile, standalone
+  # output and compose breakage. The template env file is enough for interpolation.
+  docker-images:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+      - uses: docker/setup-buildx-action@v4
+      - name: Validate production compose file
+        run: docker compose -f docker-compose.prod.yml --env-file deploy/env.production.example config --quiet
+      - name: Build API image
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: apps/api/Dockerfile
+          push: false
+          tags: hotel-bambu-api:ci
+          cache-from: type=gha,scope=api
+          cache-to: type=gha,mode=max,scope=api
+      - name: Build web image
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: apps/web/Dockerfile
+          build-args: API_INTERNAL_URL=http://api:4000
+          push: false
+          tags: hotel-bambu-web:ci
+          cache-from: type=gha,scope=web
+          cache-to: type=gha,mode=max,scope=web
+      - name: Build backup image
+        uses: docker/build-push-action@v7
+        with:
+          context: deploy/backup
+          push: false
+          tags: hotel-bambu-backup:ci
