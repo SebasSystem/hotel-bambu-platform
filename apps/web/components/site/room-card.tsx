@@ -9,6 +9,7 @@ import { formatRoomPrice } from '@/lib/public/format';
 import { routes } from '@/lib/public/navigation';
 import { bedsText, roomExcerpt, roomTypeLabel } from '@/lib/public/rooms';
 import type { PublicRoomTypeSummary } from '@/lib/public/types';
+import { IMAGE_SIZES } from '@/lib/public/image-sizes';
 import { ContactCtaLink } from './contact-cta';
 import { SiteIcon } from './icon';
 import { Picture } from './picture';
@@ -55,7 +56,7 @@ export function RoomCard({
           <Picture
             media={room.cover}
             priority={priority}
-            sizes="(min-width: 62.5rem) 40vw, (min-width: 47.5rem) 45vw, 92vw"
+            sizes={IMAGE_SIZES.roomCard}
             className="block size-full"
             imgClassName="room-card-img size-full object-cover"
             objectPosition="50% 55%"

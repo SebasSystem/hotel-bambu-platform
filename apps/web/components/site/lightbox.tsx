@@ -7,6 +7,7 @@ import { createPortal } from 'react-dom';
 import { iconButtonClass } from '@/components/ui/button';
 import { trapTab } from '@/lib/a11y/focus-trap';
 import { ui } from '@/lib/i18n/es';
+import { IMAGE_SIZES } from '@/lib/public/image-sizes';
 import { Picture } from './picture';
 
 interface LightboxProps {
@@ -85,7 +86,7 @@ export function Lightbox({ images, index, onIndexChange, onClose }: LightboxProp
         <Picture
           key={current.id}
           media={current}
-          sizes="(min-width: 65rem) 1040px, 94vw"
+          sizes={IMAGE_SIZES.lightbox}
           className="block min-h-0"
           imgClassName="lightbox-img"
         />

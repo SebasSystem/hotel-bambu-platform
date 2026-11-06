@@ -5,6 +5,7 @@ import { Images } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { ui } from '@/lib/i18n/es';
+import { IMAGE_SIZES, stripTileSizes } from '@/lib/public/image-sizes';
 import { Lightbox } from './lightbox';
 import { Picture } from './picture';
 import { usePageLoaded } from './use-page-loaded';
@@ -28,8 +29,6 @@ interface PhotoGalleryProps {
  * 1/1 crop gently around the centre. Explicit ratios fix the mockup's letterboxed tiles (defect 3).
  */
 const MASONRY_RATIOS = ['aspect-[3/4]', 'aspect-[4/5]', 'aspect-square'];
-const MASONRY_SIZES = '(min-width: 47.5rem) 30vw, 92vw';
-const STRIP_SIZES = ['(min-width: 47.5rem) 45vw, 100vw', '(min-width: 47.5rem) 22vw, 50vw'];
 const ROOM_THUMBS = 4;
 
 /** Photo tiles that open the shared lightbox (gallery page, home strip, room detail). */
@@ -107,25 +106,27 @@ export function PhotoGallery({ images, variant, captions = [] }: PhotoGalleryPro
     const [first, ...rest] = images;
     tiles = first ? (
       <div className="relative size-full">
-        {tile(first, 0, 'size-full rounded-none', '(min-width: 62.5rem) 62vw, 100vw')}
+        {tile(first, 0, 'size-full rounded-none', IMAGE_SIZES.roomPhoto)}
         {rest.length > 0 ? (
           <div className="absolute inset-x-4 bottom-4 flex items-end gap-2 tab:inset-x-6 tab:bottom-6">
-            {rest
-              .slice(0, ROOM_THUMBS)
-              .map((media, i) =>
-                tile(
-                  media,
-                  i + 1,
+            {rest.slice(0, ROOM_THUMBS).map((media, i) =>
+              tile(
+                media,
+                i + 1,
+                // Phones show three thumbnails so the "see all" pill stays on one line.
+                [
                   'size-16 rounded-sm border-2 border-white/80 tab:size-20',
-                  '80px',
-                  true,
-                ),
-              )}
+                  i === 3 ? 'hidden tab:block' : '',
+                ].join(' '),
+                IMAGE_SIZES.roomThumb,
+                true,
+              ),
+            )}
             {images.length > ROOM_THUMBS + 1 ? (
               <button
                 type="button"
                 onClick={() => show(0)}
-                className="ml-auto inline-flex min-h-10 items-center gap-2 rounded-pill bg-[rgb(17_31_24/0.68)] px-4 text-chip font-bold text-white backdrop-blur-[8px]"
+                className="ml-auto inline-flex min-h-10 items-center gap-2 rounded-pill whitespace-nowrap bg-[rgb(17_31_24/0.68)] px-4 text-chip font-bold text-white backdrop-blur-[8px]"
               >
                 <Images aria-hidden="true" strokeWidth={1.5} className="size-4" />
                 {ui.gallery.seeAllPhotos(images.length)}
@@ -140,7 +141,7 @@ export function PhotoGallery({ images, variant, captions = [] }: PhotoGalleryPro
       <div className="gallery-strip">
         {images
           .slice(0, 4)
-          .map((media, i) => tile(media, i, 'rounded-md', STRIP_SIZES[i === 0 ? 0 : 1]!))}
+          .map((media, i, strip) => tile(media, i, 'rounded-md', stripTileSizes(i, strip.length)))}
       </div>
     );
   } else {
@@ -148,7 +149,7 @@ export function PhotoGallery({ images, variant, captions = [] }: PhotoGalleryPro
       <ul className="gallery-masonry">
         {images.map((media, i) => (
           <li key={media.id} className="mb-3.5 break-inside-avoid">
-            {tile(media, i, `w-full rounded-md ${MASONRY_RATIOS[i % 3]}`, MASONRY_SIZES)}
+            {tile(media, i, `w-full rounded-md ${MASONRY_RATIOS[i % 3]}`, IMAGE_SIZES.galleryTile)}
           </li>
         ))}
       </ul>

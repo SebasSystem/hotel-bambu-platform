@@ -4,8 +4,16 @@ import { collapseActivity, describeAction, isContentChange, timeAgo } from './ac
 describe('audit activity wording', () => {
   it('describes content changes in Spanish', () => {
     expect(describeAction('roomType.status')).toBe('Tipo de habitación: estado cambiado');
-    expect(describeAction('social_link.create')).toBe('Red social: creado');
-    expect(describeAction('hotel.update')).toBe('Datos del hotel: actualizado');
+    expect(describeAction('social_link.create')).toBe('Red social: creada');
+    expect(describeAction('hotel.update')).toBe('Datos del hotel: actualizados');
+  });
+
+  it('agrees in gender and number with the entity', () => {
+    expect(describeAction('room.delete')).toBe('Habitación: eliminada');
+    expect(describeAction('faq.update')).toBe('Pregunta frecuente: actualizada');
+    expect(describeAction('roomType.create')).toBe('Tipo de habitación: creado');
+    expect(describeAction('nearbyPlace.delete')).toBe('Lugar cercano: eliminado');
+    expect(describeAction('media.upload')).toBe('Foto: subida');
   });
 
   it('leaves sign-ins and migrations out of the activity list', () => {

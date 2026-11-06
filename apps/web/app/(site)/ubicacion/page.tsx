@@ -16,6 +16,7 @@ import { getNearbyPlaces, getRoomTypes, getSite, getSiteImages } from '@/lib/pub
 import { contactCta } from '@/lib/public/cta';
 import { routes } from '@/lib/public/navigation';
 import { telHref } from '@/lib/public/site';
+import { IMAGE_SIZES } from '@/lib/public/image-sizes';
 
 export async function generateMetadata(): Promise<Metadata> {
   const [site, nearby, images] = await Promise.all([getSite(), getNearbyPlaces(), getSiteImages()]);
@@ -72,6 +73,11 @@ export default async function LocationPage() {
             {hasContact(hotel, whatsappUrl) ? (
               <ContactList hotel={hotel} whatsappUrl={whatsappUrl} showAddress={false} />
             ) : null}
+            {nearby.length === 0 && !hotel.directions && cta ? (
+              <p className="mt-6 max-w-[36ch] text-muted-foreground">
+                {ui.location.askDirections(cta.kind)}
+              </p>
+            ) : null}
           </LocationBlock>
         ) : (
           <p className={`${cardClass('panel')} max-w-2xl text-lg text-muted-foreground`}>
@@ -116,7 +122,7 @@ export default async function LocationPage() {
             <div className="relative aspect-[4/3] overflow-hidden rounded-lg bg-paper desk:aspect-auto desk:h-full desk:min-h-[360px]">
               <Picture
                 media={photo}
-                sizes="(min-width: 62.5rem) 45vw, 92vw"
+                sizes={IMAGE_SIZES.locationPhoto}
                 className="absolute inset-0 block size-full"
                 imgClassName="size-full object-cover"
               />

@@ -8,14 +8,14 @@ import {
   UnprocessableEntityException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { CACHE_TAGS, type MediaUpdateInput, type MediaUploadFields } from '@hotel-bambu/shared';
+import type { MediaUpdateInput, MediaUploadFields } from '@hotel-bambu/shared';
 import type { Env } from '../../config/env.js';
 import { PrismaService } from '../../prisma/prisma.service.js';
 import { AdminChangesService } from '../audit/admin-changes.service.js';
 import { changedFields } from '../audit/audit.service.js';
 import { ImageValidationError, processImage } from './image-pipeline.js';
 import { storeProcessedImage } from './media-storage.js';
-import { storedVariants, variantUrl } from './media-url.js';
+import { MEDIA_CACHE_TAGS, storedVariants, variantUrl } from './media-url.js';
 import type { ObjectStorage } from './object-storage.js';
 
 export const OBJECT_STORAGE = Symbol('OBJECT_STORAGE');
@@ -35,9 +35,6 @@ export class UnconfiguredStorage implements ObjectStorage {
     return this.fail();
   }
 }
-
-/** Tags of every public page that can show a media asset. */
-const MEDIA_TAGS = [CACHE_TAGS.site, CACHE_TAGS.rooms, CACHE_TAGS.gallery];
 
 @Injectable()
 export class MediaService {
@@ -181,7 +178,7 @@ export class MediaService {
         entityId: id,
         summary: { fields: changedFields(input) },
       },
-      MEDIA_TAGS,
+      MEDIA_CACHE_TAGS,
     );
     return this.present(asset);
   }
@@ -223,7 +220,7 @@ export class MediaService {
     await this.changes.record(
       actorId,
       { action: 'media.delete', entity: 'MediaAsset', entityId: id },
-      MEDIA_TAGS,
+      MEDIA_CACHE_TAGS,
     );
   }
 

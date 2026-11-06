@@ -1,24 +1,32 @@
 /** Spanish wording for the audit log (`<entity>.<verb>`, apps/api/src/modules/audit). */
 
-const ENTITIES: Record<string, string> = {
-  amenity: 'Comodidad',
-  content: 'Sección de la portada',
-  faq: 'Pregunta frecuente',
-  gallery: 'Foto de la galería',
-  heroSlide: 'Diapositiva del carrusel',
-  hotel: 'Datos del hotel',
-  media: 'Foto',
-  nearbyPlace: 'Lugar cercano',
-  policy: 'Política',
-  room: 'Habitación',
-  roomType: 'Tipo de habitación',
-  social_link: 'Red social',
+/** Grammatical gender and number of each entity label, for the participle agreement. */
+type Agreement = 'm' | 'f' | 'mp';
+
+const ENTITIES: Record<string, [label: string, agreement: Agreement]> = {
+  amenity: ['Comodidad', 'f'],
+  content: ['Sección de la portada', 'f'],
+  faq: ['Pregunta frecuente', 'f'],
+  gallery: ['Foto de la galería', 'f'],
+  heroSlide: ['Diapositiva del carrusel', 'f'],
+  hotel: ['Datos del hotel', 'mp'],
+  media: ['Foto', 'f'],
+  nearbyPlace: ['Lugar cercano', 'm'],
+  policy: ['Política', 'f'],
+  room: ['Habitación', 'f'],
+  roomType: ['Tipo de habitación', 'm'],
+  social_link: ['Red social', 'f'],
 };
 
+/** Participles agree with the entity ("Habitación: eliminada"); the other changes are fixed. */
+const PARTICIPLES: Record<string, string> = {
+  create: 'cread',
+  update: 'actualizad',
+  delete: 'eliminad',
+};
+const ENDINGS: Record<Agreement, string> = { m: 'o', f: 'a', mp: 'os' };
+
 const VERBS: Record<string, string> = {
-  create: 'creado',
-  update: 'actualizado',
-  delete: 'eliminado',
   reorder: 'orden cambiado',
   status: 'estado cambiado',
   images: 'fotos actualizadas',
@@ -33,8 +41,9 @@ export function isContentChange(action: string): boolean {
 
 export function describeAction(action: string): string {
   const [entity = '', verb = ''] = action.split('.');
-  const subject = ENTITIES[entity] ?? entity;
-  const change = VERBS[verb] ?? verb;
+  const [subject, agreement] = ENTITIES[entity] ?? [entity, 'm'];
+  const stem = PARTICIPLES[verb];
+  const change = stem ? stem + ENDINGS[agreement] : (VERBS[verb] ?? verb);
   return change ? `${subject}: ${change}` : subject;
 }
 

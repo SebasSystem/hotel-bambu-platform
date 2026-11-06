@@ -21,7 +21,8 @@
     "db:seed:base": "tsx src/scripts/seed-base.ts",
     "db:seed:demo": "tsx src/scripts/seed-demo.ts",
     "admin:create": "tsx src/scripts/admin-create.ts",
-    "media:import": "tsx src/scripts/media-import.ts"
+    "media:import": "tsx src/scripts/media-import.ts",
+    "media:variants": "tsx src/scripts/media-variants.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1162.0",

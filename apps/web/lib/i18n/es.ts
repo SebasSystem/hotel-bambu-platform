@@ -51,6 +51,7 @@ export const ui = {
     back: 'Todas las habitaciones',
     filter: 'Filtrar por tipo de habitación',
     capacityLabel: 'Capacidad',
+    guestsLabel: 'Huéspedes',
     description: 'Descripción',
     rate: 'Tarifa',
     schedule: 'Horarios',
@@ -67,7 +68,6 @@ export const ui = {
     notice:
       'El mapa se carga desde Google Maps, un servicio externo que puede instalar sus propias cookies.',
     directions: 'Cómo llegar',
-    open: 'Abrir en Google Maps',
     title: (name: string) => `Mapa de ubicación de ${name}`,
   },
   gallery: {
@@ -124,6 +124,13 @@ export const ui = {
     /** Mockup "Ubicación y contacto" heading, true for the hotel. */
     title: (city: string) => `Estamos en ${city}.`,
     titleFallback: 'Dónde estamos',
+    /** Home link to /ubicacion (the map card's "Cómo llegar" opens Google Maps). */
+    seePage: 'Ver ubicación',
+    /** Shown when no nearby places are listed yet: an invitation, not a fact. */
+    askDirections: (kind: 'whatsapp' | 'phone') =>
+      kind === 'whatsapp'
+        ? 'Escríbenos y te indicamos cómo llegar.'
+        : 'Llámanos y te indicamos cómo llegar.',
     distance: 'Distancia',
     time: 'Tiempo',
     contactTitle: (city: string) => `Cuéntanos cuándo vienes a ${city}.`,
@@ -152,7 +159,7 @@ export const ui = {
       city ? `Hospitalidad cálida en el corazón de ${city}.` : 'Hospitalidad cálida.',
     policiesKicker: 'Antes de llegar',
     policiesTitle: 'Políticas del hotel',
-    policiesAll: 'Ver políticas y preguntas frecuentes',
+    policiesAll: 'Ver políticas y preguntas',
     galleryKicker: 'Una mirada al hotel',
     galleryTitle: 'Espacios para sentirte a gusto.',
     reviewsKicker: 'Opiniones de huéspedes',

@@ -19,7 +19,7 @@ export interface FieldConfig {
   name: string;
   label: string;
   hint?: string;
-  kind: 'text' | 'textarea' | 'url' | 'checkbox' | 'select' | 'datetime' | 'media';
+  kind: 'text' | 'textarea' | 'url' | 'checkbox' | 'select' | 'media';
   required?: boolean;
   rows?: number;
   options?: readonly { value: string; label: string }[];
@@ -314,13 +314,7 @@ function ResourceForm<T extends { id: string }>({
                   label={field.label}
                   hint={field.hint}
                   required={field.required}
-                  type={
-                    field.kind === 'datetime'
-                      ? 'datetime-local'
-                      : field.kind === 'url'
-                        ? 'url'
-                        : 'text'
-                  }
+                  type={field.kind === 'url' ? 'url' : 'text'}
                   inputMode={field.kind === 'url' ? 'url' : undefined}
                   error={errorOf(field.name)}
                   registration={register(field.name)}
@@ -339,11 +333,4 @@ function ResourceForm<T extends { id: string }>({
       </div>
     </form>
   );
-}
-
-/** ISO date → value for <input type="datetime-local"> in the browser's time zone. */
-export function toDateTimeLocal(iso: string): string {
-  const date = new Date(iso);
-  const offset = date.getTimezoneOffset() * 60_000;
-  return new Date(date.getTime() - offset).toISOString().slice(0, 16);
 }

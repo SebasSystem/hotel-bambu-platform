@@ -18,6 +18,7 @@ import type {
   PublicPolicy,
   PublicRoomTypeSummary,
 } from '@/lib/public/types';
+import { IMAGE_SIZES } from '@/lib/public/image-sizes';
 import { LocationBlock, TextBlock } from './blocks';
 import { ContactCtaLink } from './contact-cta';
 import { PhotoGallery } from './photo-gallery';
@@ -160,6 +161,11 @@ export function LocationSection({
               </dd>
             </dl>
           ) : null}
+          {nearby.length === 0 && cta ? (
+            <p className="mb-7 max-w-[36ch] text-muted-foreground">
+              {ui.location.askDirections(cta.kind)}
+            </p>
+          ) : null}
           <div className="mt-auto flex flex-wrap gap-3 pt-2">
             {cta ? (
               <ContactCtaLink
@@ -172,8 +178,8 @@ export function LocationSection({
               />
             ) : null}
             <Link href={routes.location} className={buttonClass('ghost')}>
-              {ui.map.directions}
-              <span className="sr-only"> a {hotel.name}</span>
+              {ui.location.seePage}
+              <span className="sr-only"> de {hotel.name}</span>
             </Link>
           </div>
         </LocationBlock>
@@ -212,7 +218,7 @@ export function AboutSection({
           >
             <Picture
               media={media}
-              sizes="(min-width: 62.5rem) 40vw, 92vw"
+              sizes={IMAGE_SIZES.aboutPhoto}
               className="absolute inset-0 block size-full"
               imgClassName="size-full object-cover"
             />
@@ -381,7 +387,7 @@ export function CtaPanel({
         {media ? (
           <Picture
             media={media}
-            sizes="(min-width: 90rem) 1256px, 94vw"
+            sizes={IMAGE_SIZES.ctaPanel}
             className="absolute inset-0 block size-full"
             imgClassName="size-full object-cover"
             decorative

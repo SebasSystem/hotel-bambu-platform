@@ -92,9 +92,6 @@ export default async function RoomsPage({ searchParams }: PageProps<'/habitacion
         ) : (
           <p className="text-lg text-muted-foreground">{ui.empty.generic}</p>
         )}
-        <p className="mt-16 max-w-2xl text-sm leading-normal text-muted-foreground">
-          {ui.pricesDisclaimer}
-        </p>
       </section>
     </>
   );

@@ -1,5 +1,6 @@
 import {
   DeleteObjectsCommand,
+  GetObjectCommand,
   ListObjectsV2Command,
   PutObjectCommand,
   S3Client,
@@ -53,6 +54,15 @@ export class S3ObjectStorage implements ObjectStorage {
         CacheControl: IMMUTABLE_CACHE_CONTROL,
       }),
     );
+  }
+
+  /** Whole object as bytes (media:variants reads a stored variant to derive new widths). */
+  async getObject(key: string): Promise<Buffer> {
+    const result = await this.client.send(
+      new GetObjectCommand({ Bucket: this.env.S3_BUCKET, Key: key }),
+    );
+    if (!result.Body) throw new Error(`Object ${key} has no body`);
+    return Buffer.from(await result.Body.transformToByteArray());
   }
 
   async deleteObjects(keys: readonly string[]): Promise<void> {

@@ -336,6 +336,26 @@ describe.skipIf(!databaseUrl)('API integration (hotel_test database)', () => {
     expect(detail.promotions).toBeUndefined();
   });
 
+  it('includes the 480 px variant for phones and thumbnails (D7)', async () => {
+    const [type] = (await call('GET', '/public/room-types')).json();
+    const widths = [...new Set(type.cover.variants.map((v: { width: number }) => v.width))];
+    // 700 px source: the standard widths below it, then the source width itself.
+    expect(widths).toEqual([480, 640, 700]);
+  });
+
+  it('lists beds and area in the public room-type list (null until set, then the values)', async () => {
+    const [before] = (await call('GET', '/public/room-types')).json();
+    expect(before).toMatchObject({ beds: null, areaM2: null });
+
+    const res = await call('PATCH', `/admin/room-types/${typeId}`, {
+      body: { beds: [{ type: 'DOUBLE', count: 1 }], areaM2: 18.5 },
+    });
+    expect(res.statusCode).toBe(200);
+    const [after] = (await call('GET', '/public/room-types')).json();
+    expect(after).toMatchObject({ beds: [{ type: 'DOUBLE', count: 1 }], areaM2: 18.5 });
+    expect(typeof after.areaM2).toBe('number');
+  });
+
   it('keeps the old URL alive with a redirect after renaming a published type', async () => {
     const res = await call('PATCH', `/admin/room-types/${typeId}`, {
       body: { slug: 'suite-prueba' },

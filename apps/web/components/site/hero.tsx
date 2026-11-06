@@ -4,6 +4,7 @@ import { Eyebrow } from '@/components/ui/eyebrow';
 import { ui } from '@/lib/i18n/es';
 import { routes } from '@/lib/public/navigation';
 import type { PublicMedia } from '@/lib/public/types';
+import { IMAGE_SIZES } from '@/lib/public/image-sizes';
 import { HeroCarousel } from './hero-carousel';
 import { Picture } from './picture';
 import type { ContactCta } from '@/lib/public/cta';
@@ -33,7 +34,7 @@ export function Hero({ title, kicker, subtitle, rate, images, cta }: HeroProps) 
       key={media.id}
       media={media}
       priority={index === 0}
-      sizes="100vw"
+      sizes={IMAGE_SIZES.hero}
       className="block size-full"
       imgClassName="size-full object-cover"
       objectPosition="50% 45%"

@@ -27,7 +27,7 @@ function coordinates(hotel: Pick<PublicHotel, 'latitude' | 'longitude'>): string
 export interface MapLinks {
   /** Google Maps embed (loaded only on demand, requirement 17.5). */
   embedUrl: string;
-  /** "Cómo llegar" / "Abrir en Google Maps". */
+  /** "Cómo llegar" (Google Maps directions). */
   directionsUrl: string;
 }
 

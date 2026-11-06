@@ -40,7 +40,11 @@ export default async function PoliciesPage() {
 
   return (
     <>
-      <PageHeader path={routes.policies} title={ui.pages.policies} />
+      <PageHeader
+        path={routes.policies}
+        title={ui.pages.policies}
+        kicker={ui.home.policiesKicker}
+      />
       <div className={`${container} pt-12 pb-[110px]`}>
         <div className="grid max-w-4xl gap-7">
           {hasTimes ? (

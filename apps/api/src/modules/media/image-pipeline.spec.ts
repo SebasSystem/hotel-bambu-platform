@@ -18,14 +18,19 @@ async function jpegWithExif(width: number, height: number): Promise<Buffer> {
 
 describe('planVariantWidths', () => {
   it('uses the standard widths below the source and caps at the source width', () => {
-    expect(planVariantWidths(1280)).toEqual([640, 960, 1280]);
-    expect(planVariantWidths(960)).toEqual([640, 960]);
-    expect(planVariantWidths(1100)).toEqual([640, 960, 1100]);
+    expect(planVariantWidths(1280)).toEqual([480, 640, 750, 960, 1280]);
+    expect(planVariantWidths(960)).toEqual([480, 640, 750, 960]);
+    expect(planVariantWidths(1100)).toEqual([480, 640, 750, 960, 1100]);
+  });
+
+  it('adds the 480 px (thumbnails, small slots) and 750 px (375 CSS px at 2x) widths', () => {
+    expect(planVariantWidths(960).slice(0, 3)).toEqual([480, 640, 750]);
+    expect(planVariantWidths(600)).toEqual([480, 600]);
   });
 
   it('never upscales and never exceeds 1920', () => {
     expect(planVariantWidths(400)).toEqual([400]);
-    expect(planVariantWidths(4032)).toEqual([640, 960, 1280, 1920]);
+    expect(planVariantWidths(4032)).toEqual([480, 640, 750, 960, 1280, 1920]);
   });
 });
 
@@ -61,14 +66,10 @@ describe('processImage', () => {
     expect(result.checksum).toMatch(/^[0-9a-f]{64}$/);
 
     const widths = [...new Set(result.variants.map((v) => v.width))];
-    expect(widths).toEqual([640, 960, 1000]);
+    expect(widths).toEqual([480, 640, 750, 960, 1000]);
     expect(result.variants.map((v) => v.format).sort()).toEqual([
-      'avif',
-      'avif',
-      'avif',
-      'webp',
-      'webp',
-      'webp',
+      ...Array<string>(5).fill('avif'),
+      ...Array<string>(5).fill('webp'),
     ]);
 
     for (const variant of result.variants) {

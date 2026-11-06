@@ -25,23 +25,6 @@ export function TextBlock({ text, className = '' }: { text: string | null; class
   );
 }
 
-/** 52 px green-tint circle with a Lucide icon (mockup `.amenity-icon`). */
-export function IconBadge({
-  iconKey,
-  className = '',
-}: {
-  iconKey: string | null;
-  className?: string;
-}) {
-  return (
-    <span
-      className={`inline-grid size-[52px] shrink-0 place-items-center rounded-full bg-green-50 text-green ${className}`}
-    >
-      <SiteIcon iconKey={iconKey} className="size-5" />
-    </span>
-  );
-}
-
 /** FAQ rows styled as mockup `.detail-block`: top border, serif question, rotating chevron. */
 export function FaqList({ faqs }: { faqs: PublicFaq[] }) {
   return (
@@ -120,8 +103,17 @@ export function LocationBlock({
     children ||
     (showDetails && (hotel.directions || hotel.nearbyAttractions)),
   );
+  // Without nearby places or directions the card is short: keep its natural height next to the
+  // map instead of stretching it into an empty box (D7 empty-data review).
+  const light =
+    nearby.length === 0 && !(showDetails && (hotel.directions || hotel.nearbyAttractions));
   return (
-    <div className="grid gap-7 *:min-w-0 desk:grid-cols-[0.85fr_1.15fr]">
+    <div
+      className={[
+        'grid gap-7 *:min-w-0 desk:grid-cols-[0.85fr_1.15fr]',
+        light ? 'desk:items-start' : '',
+      ].join(' ')}
+    >
       {hasCard ? (
         <div className={`${cardClass('panel')} flex flex-col`}>
           {address ? (

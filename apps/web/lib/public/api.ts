@@ -10,6 +10,7 @@ import type {
   PublicNearbyPlace,
   PublicPolicy,
   PublicRoomTypeDetail,
+  PublicRoomTypeRedirect,
   PublicRoomTypeSummary,
   PublicSite,
 } from './types';
@@ -96,7 +97,7 @@ export type RoomResult =
  * migration) answers `{ redirectTo }`, which the page turns into a permanent redirect.
  */
 export const getRoomType = cache(async (slug: string): Promise<RoomResult> => {
-  const data = await publicGet<PublicRoomTypeDetail | { redirectTo: string }>(
+  const data = await publicGet<PublicRoomTypeDetail | PublicRoomTypeRedirect>(
     `/room-types/${encodeURIComponent(slug)}`,
     [CACHE_TAGS.rooms, roomCacheTag(slug), CACHE_TAGS.amenities],
   );

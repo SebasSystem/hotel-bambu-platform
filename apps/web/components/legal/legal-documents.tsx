@@ -362,7 +362,7 @@ function CookiePolicy({ hotel, effectiveDate }: LegalContext) {
         </ul>
         <p>
           Rechazar las cookies no esenciales no te impide usar el sitio ni contactar al Hotel. El
-          enlace «Abrir en Google Maps» siempre está disponible.
+          enlace «Cómo llegar» a Google Maps siempre está disponible.
         </p>
       </LegalSection>
 

@@ -471,6 +471,8 @@ Each defect is observed in the captures or the code.
 
 ## 7. Mapping mockup elements to platform data
 
+> **Status after D3/C2 (2026-11-05).** This mapping was written against the model of the time. Since then `Service`, `Promotion`, `WhatsAppTemplate`, `RoomImage` and `RoomAmenity` were removed: one `Amenity` catalog with HOTEL/ROOM scope, room types with their own photos, rate and amenities, code-default WhatsApp messages with an editable greeting, and `/contacto`, `/preguntas-frecuentes`, `/servicios` merged or redirected ([ADR 0015](../adr/0015-amenities-and-hero-slides.md), [ADR 0016](../adr/0016-room-types-and-single-sources.md)). The current page contents are in [public-site.md](../public-site.md).
+
 Sources: `apps/api/prisma/schema.prisma` (models HotelProfile, Room, RoomImage, Amenity, RoomAmenity, Service, GalleryItem,
 LandingSection, Faq, HotelPolicy, SocialLink, WhatsAppTemplate, Promotion; enums RoomType, GalleryCategory, LandingSectionKey)
 and `packages/shared/src/icons/icons.ts` (Lucide `ICON_KEYS`).

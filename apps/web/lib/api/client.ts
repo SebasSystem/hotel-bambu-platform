@@ -137,5 +137,3 @@ export function createApiClient(options: ApiClientOptions) {
       request<T>('DELETE', path, body, requestOptions),
   };
 }
-
-export type ApiClient = ReturnType<typeof createApiClient>;

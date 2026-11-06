@@ -10,7 +10,12 @@ import sharp, { type OutputInfo } from 'sharp';
 export const ALLOWED_IMAGE_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp'] as const;
 export type AllowedImageMimeType = (typeof ALLOWED_IMAGE_MIME_TYPES)[number];
 
-export const VARIANT_WIDTHS = [640, 960, 1280, 1920] as const;
+/**
+ * 480: thumbnails and small slots. 750: a full-width phone slot at 375 CSS px x 2 (also 360 x 2
+ * and Lighthouse's 412 x 1.75 device), so phones no longer download the 960 file. Existing media
+ * get new widths with `pnpm --filter @hotel-bambu/api media:variants` (README).
+ */
+export const VARIANT_WIDTHS = [480, 640, 750, 960, 1280, 1920] as const;
 export const VARIANT_FORMATS = ['avif', 'webp'] as const;
 export type VariantFormat = (typeof VARIANT_FORMATS)[number];
 
@@ -70,6 +75,36 @@ export function planVariantWidths(sourceWidth: number): number[] {
   return widths;
 }
 
+/**
+ * Encodes one variant (resize without enlargement + AVIF/WebP at the pipeline quality). The source
+ * must already be oriented and metadata-free: the upload intermediate, or a stored variant when
+ * regenerating (regenerate-variants.ts).
+ */
+export async function renderVariant(
+  source: Buffer,
+  width: number,
+  format: VariantFormat,
+  maxPixels: number = MAX_IMAGE_PIXELS,
+): Promise<ImageVariant> {
+  const pipeline = sharp(source, { limitInputPixels: maxPixels }).resize({
+    width,
+    withoutEnlargement: true,
+  });
+  const encoded =
+    format === 'avif'
+      ? pipeline.avif({ quality: QUALITY.avif, effort: 4 })
+      : pipeline.webp({ quality: QUALITY.webp, effort: 4 });
+  const { data, info } = await encoded.toBuffer({ resolveWithObject: true });
+  return {
+    width: info.width,
+    height: info.height,
+    format,
+    mimeType: `image/${format}`,
+    sizeBytes: data.length,
+    buffer: data,
+  };
+}
+
 function toHex(value: number): string {
   return Math.max(0, Math.min(255, Math.round(value)))
     .toString(16)
@@ -112,20 +147,7 @@ export async function processImage(
   const variants: ImageVariant[] = [];
   for (const targetWidth of planVariantWidths(width)) {
     for (const format of VARIANT_FORMATS) {
-      const pipeline = base().resize({ width: targetWidth, withoutEnlargement: true });
-      const encoded =
-        format === 'avif'
-          ? pipeline.avif({ quality: QUALITY.avif, effort: 4 })
-          : pipeline.webp({ quality: QUALITY.webp, effort: 4 });
-      const { data, info } = await encoded.toBuffer({ resolveWithObject: true });
-      variants.push({
-        width: info.width,
-        height: info.height,
-        format,
-        mimeType: `image/${format}`,
-        sizeBytes: data.length,
-        buffer: data,
-      });
+      variants.push(await renderVariant(oriented.data, targetWidth, format, maxPixels));
     }
   }
 

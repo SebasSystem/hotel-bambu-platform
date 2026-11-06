@@ -80,7 +80,7 @@ export default async function RoomPage({ params }: PageProps<'/habitaciones/[slu
   const beds = (room.beds ?? []).filter((bed) => bed.count > 0);
   const suggestions = otherRooms(rooms, room);
   const capacity: [string, string][] = [
-    [ui.rooms.capacityLabel, ui.rooms.capacity(room.capacity)],
+    [ui.rooms.guestsLabel, ui.rooms.capacity(room.capacity)],
     ...(beds.length > 0
       ? [
           [

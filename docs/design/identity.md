@@ -1,6 +1,6 @@
 # Visual identity — proposal v0.1
 
-Status: **proposal, pending hotel approval** (requirement 6.2, 28.2). Tokens live in [`tokens.json`](./tokens.json); every value can change without touching components.
+Status: **superseded.** The owner approved the mockup design instead (2026-11-05): the current palette, type and logo are in [`mockup-design-spec.md`](./mockup-design-spec.md) and `apps/web/styles/tokens.css`, and the v1 names in this file (`sand-*`, `ink-*`, `earth-600`…) no longer exist in the code. Kept as history. Original status: proposal, pending hotel approval (requirement 6.2, 28.2). Tokens live in [`tokens.json`](./tokens.json); every value can change without touching components.
 
 ## Concept
 

@@ -1,8 +1,8 @@
 # Motion specification (req. 8.5)
 
-> **v1 baseline.** This is the motion shipped with the v1 site. It is **superseded** by [`docs/research/motion-spec.md`](../research/motion-spec.md) (directions A and B) as soon as the owner chooses a redesign direction. Until then it describes current behaviour.
+> **Current behaviour** of the mockup-based site (updated in D7). The redesign directions A and B in [`docs/research/motion-spec.md`](../research/motion-spec.md) were not adopted: the owner chose the mockup on 2026-11-05.
 
-Baseline: **CSS first, GSAP + ScrollTrigger (+ SplitText) via `@gsap/react` `useGSAP`** for scroll-linked work. **No Lenis, no Motion, no Three.js/R3F by default** (ADR 0004). Admin panel: shadcn/ui + CSS transitions only.
+Baseline: **CSS only.** GSAP was planned for scroll-linked work (ADR 0004) but nothing uses it any more: the SplitText hero title became a CSS keyframe in D6 and the dependency was removed in D7. **No Lenis, no Motion, no Three.js/R3F.** Admin panel: CSS transitions only.
 
 Note: req. 8.5 names `docs/research/motion-spec.md`; this phase places it under `docs/design/` with the other design deliverables.
 
@@ -33,7 +33,7 @@ From [`tokens.json`](./tokens.json) → CSS variables:
 | Section fade-up | element enters viewport (15%) | slow 600ms, out-soft, `--reveal-y` | same | none, content visible | CSS (`animation-timeline: view()` where supported) with IO fallback |
 | Room cards staggered entrance | grid enters viewport | slow 600ms, stagger 0.08 | stagger 0.04 | none | CSS + IO |
 | Room card image hover (second photo / scale 1.03) | hover/focus-visible | base 320ms, standard | not applied (no hover) | no scale, instant swap | CSS |
-| Sticky "Sobre nosotros" (text advances, image swaps) | scroll through section | scrub, image cross-fade in-out-soft | **no pin**: stacked text + image | no pin, stacked static | GSAP ScrollTrigger |
+| Sticky "Sobre nosotros" (text advances, image swaps) | — | not shipped: the mockup port shows the text and one photo side by side | stacked text + image | static | — |
 | Bamboo line/leaf draws itself (section kicker) | enters viewport | slower 900ms, out-soft | same | drawn statically | CSS `stroke-dashoffset` |
 | Gallery | user swipe/scroll | native | `scroll-snap` carousel | native, no smooth | CSS scroll-snap (no pin) |
 | Lightbox open/close | click | base 320ms, out-soft | same | fade only (opacity, fast) | CSS / dialog element |
@@ -45,10 +45,9 @@ Not approved for v1: pinned horizontal gallery, parallax layers, cursor effects,
 ## Rules (from 8.3, enforced)
 
 1. Content is fully rendered in HTML; animation start states are applied only after JS hydrates (`.js-motion` class on `<html>`), so no-JS shows everything.
-2. Animate only `transform`, `opacity`, `clip-path` (SplitText masks) and `stroke-dashoffset`.
+2. Animate only `transform`, `opacity`, `clip-path` and `stroke-dashoffset`.
 3. The LCP element (hero image / H1) is never hidden waiting for animation; the hero image is not animated in.
-4. `gsap.matchMedia()` with `(prefers-reduced-motion: no-preference)` gates every GSAP timeline; CSS animations wrapped in `@media (prefers-reduced-motion: no-preference)`.
-5. `useGSAP` scope for cleanup; `ScrollTrigger.refresh()` after images that change layout load.
-6. Any auto-moving content > 5 s has a visible, labelled pause control.
-7. Reference device: mid-range Android, CPU 4× throttle, Fast 3G — target no long tasks > 50 ms from animation code.
-8. GSAP loaded only in client components that need it (code-split), not in the root layout.
+4. Every animation is wrapped in `@media (prefers-reduced-motion: no-preference)`.
+5. Any auto-moving content > 5 s has a visible, labelled pause control.
+6. Reference device: mid-range Android, CPU 4× throttle, Fast 3G — target no long tasks > 50 ms from animation code.
+7. A JavaScript animation library needs an ADR and a measured bundle budget first (JS ≤ 170 KB on public pages).

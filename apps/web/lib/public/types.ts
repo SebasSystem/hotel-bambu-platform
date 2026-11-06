@@ -2,12 +2,19 @@ import type {
   PublicMedia,
   PublicNearbyPlace,
   PublicRoomTypeDetail,
+  PublicRoomTypeRedirect,
   PublicRoomTypeSummary,
 } from '@hotel-bambu/shared';
 
 /** Public API response shapes (`docs/api.md`, "Public"). */
 
-export type { PublicMedia, PublicNearbyPlace, PublicRoomTypeDetail, PublicRoomTypeSummary };
+export type {
+  PublicMedia,
+  PublicNearbyPlace,
+  PublicRoomTypeDetail,
+  PublicRoomTypeRedirect,
+  PublicRoomTypeSummary,
+};
 
 export interface PublicHotel {
   name: string;

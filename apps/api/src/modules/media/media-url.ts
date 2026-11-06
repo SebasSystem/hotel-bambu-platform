@@ -1,5 +1,8 @@
-import type { PublicMedia, PublicMediaVariant } from '@hotel-bambu/shared';
+import { CACHE_TAGS, type PublicMedia, type PublicMediaVariant } from '@hotel-bambu/shared';
 import type { StoredVariant } from './media-storage.js';
+
+/** Tags of every public page that can show a media asset (uploads, deletes, media:variants). */
+export const MEDIA_CACHE_TAGS = [CACHE_TAGS.site, CACHE_TAGS.rooms, CACHE_TAGS.gallery] as const;
 
 /** Fields of MediaAsset needed to render it publicly. */
 export interface MediaRow {
