@@ -8,7 +8,7 @@ import {
 import { Pencil, Trash2, Upload } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { useForm, type FieldValues } from 'react-hook-form';
 import { useConfirm, useToast } from '@/components/admin/feedback';
 import {
@@ -83,34 +83,36 @@ function UploadForm() {
     setFile(selected);
   };
 
-  const onSubmit = handleSubmit(async (values) => {
-    setFormError(null);
-    if (!file) {
-      setFileError('Seleccione una imagen.');
-      fileRef.current?.focus();
-      return;
-    }
-    // Text fields must precede the file part (API contract, docs/api.md).
-    const body = new FormData();
-    body.append('altText', values.altText as string);
-    if (values.caption) body.append('caption', values.caption as string);
-    if (values.galleryCategory) body.append('galleryCategory', values.galleryCategory as string);
-    body.append('file', file);
-    try {
-      await browserApi.post('/admin/media', body);
-      toast.success('Imagen subida.');
-      reset();
-      setFile(null);
-      setPreview(null);
-      router.refresh();
-    } catch (error) {
-      const result = applyApiError(error, setError, ['altText', 'caption', 'galleryCategory']);
-      if (isApiError(error) && error.details.some((d) => d.path === 'file')) {
-        setFileError('El archivo no es una imagen válida.');
+  // handleSubmit runs inside the event handler, so reading fileRef is not a render-time access.
+  const onSubmit = (event: FormEvent<HTMLFormElement>) =>
+    handleSubmit(async (values) => {
+      setFormError(null);
+      if (!file) {
+        setFileError('Seleccione una imagen.');
+        fileRef.current?.focus();
+        return;
       }
-      setFormError(result.message);
-    }
-  });
+      // Text fields must precede the file part (API contract, docs/api.md).
+      const body = new FormData();
+      body.append('altText', values.altText as string);
+      if (values.caption) body.append('caption', values.caption as string);
+      if (values.galleryCategory) body.append('galleryCategory', values.galleryCategory as string);
+      body.append('file', file);
+      try {
+        await browserApi.post('/admin/media', body);
+        toast.success('Imagen subida.');
+        reset();
+        setFile(null);
+        setPreview(null);
+        router.refresh();
+      } catch (error) {
+        const result = applyApiError(error, setError, ['altText', 'caption', 'galleryCategory']);
+        if (isApiError(error) && error.details.some((d) => d.path === 'file')) {
+          setFileError('El archivo no es una imagen válida.');
+        }
+        setFormError(result.message);
+      }
+    })(event);
 
   return (
     <Card>
