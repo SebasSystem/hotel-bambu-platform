@@ -4,32 +4,35 @@ import { RoomCard } from '@/components/site/room-card';
 import { container } from '@/components/site/styles';
 import { ui } from '@/lib/i18n/es';
 import { pageMetadata } from '@/lib/seo/metadata';
-import { getRooms, getSite } from '@/lib/public/api';
+import { getRoomTypes, getSite } from '@/lib/public/api';
 import { routes } from '@/lib/public/navigation';
-import { filterRoomsByType, roomTypeFilters, roomTypeFromParam } from '@/lib/public/rooms';
-import { sectionOf } from '@/lib/public/site';
+import {
+  filterRoomsByType,
+  publishedRoomTotal,
+  roomTypeFilters,
+  roomTypeFromParam,
+} from '@/lib/public/rooms';
 import { whatsAppLink } from '@/lib/public/whatsapp';
 
 export async function generateMetadata(): Promise<Metadata> {
-  const [site, rooms] = await Promise.all([getSite(), getRooms()]);
-  const section = sectionOf(site, 'ROOMS');
+  const [site, rooms] = await Promise.all([getSite(), getRoomTypes()]);
+  const city = site.hotel.municipality ? ` en ${site.hotel.municipality}` : '';
   return pageMetadata({
     path: routes.rooms,
     siteName: site.hotel.name,
-    title: section?.title ?? ui.nav.rooms,
-    description:
-      section?.subtitle ??
-      `${ui.rooms.countLabel(rooms.length)} en ${site.hotel.name}: fotos, capacidad, servicios incluidos y tarifa informativa. Consulta disponibilidad por WhatsApp.`,
+    title: `${ui.nav.rooms}${city}`,
+    description: `${ui.rooms.typeCount(rooms.length)} en ${site.hotel.name}: fotos, capacidad, comodidades incluidas y tarifa informativa.`,
   });
 }
 
 /**
  * Rooms catalogue (mockup `#habitaciones`): sand page hero, toolbar with one chip per published
- * room type (`?tipo=`, shareable) and a live count, then a 3/2/1-column card grid.
+ * room kind (`?tipo=`, shareable) and a live count, then a 3/2/1-column grid of room type cards
+ * (ADR 0016: one card per type; the kicker counts the published rooms).
  */
 export default async function RoomsPage({ searchParams }: PageProps<'/habitaciones'>) {
-  const [site, rooms, query] = await Promise.all([getSite(), getRooms(), searchParams]);
-  const section = sectionOf(site, 'ROOMS');
+  const [site, rooms, query] = await Promise.all([getSite(), getRoomTypes(), searchParams]);
+  const roomCount = publishedRoomTotal(rooms);
   const filters = roomTypeFilters(rooms);
   const requested = roomTypeFromParam(query.tipo);
   const active = filters.some((filter) => filter.type === requested) ? requested : null;
@@ -39,11 +42,11 @@ export default async function RoomsPage({ searchParams }: PageProps<'/habitacion
     <>
       <PageHeader
         path={routes.rooms}
-        title={section?.title ?? ui.nav.rooms}
-        kicker={ui.rooms.countLabel(rooms.length)}
-        intro={section?.subtitle ?? section?.body}
+        title={ui.nav.rooms}
+        kicker={roomCount > 0 ? ui.rooms.countLabel(roomCount) : null}
+        intro={null}
       />
-      <Toolbar label={ui.rooms.filter} count={ui.rooms.countLabel(visible.length)}>
+      <Toolbar label={ui.rooms.filter} count={ui.rooms.typeCount(visible.length)}>
         {filters.length > 1 ? (
           <>
             <FilterLink href={routes.rooms} active={!active}>
@@ -71,7 +74,7 @@ export default async function RoomsPage({ searchParams }: PageProps<'/habitacion
                   room={room}
                   index={index}
                   headingLevel="h2"
-                  whatsappUrl={whatsAppLink(site, { kind: 'room', name: room.name })}
+                  whatsappUrl={whatsAppLink(site, { kind: 'roomType', name: room.name })}
                 />
               </li>
             ))}

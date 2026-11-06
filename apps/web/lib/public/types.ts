@@ -1,19 +1,36 @@
-import type { PublicMedia, PublicRoomSummary } from '@hotel-bambu/shared';
+import type {
+  PublicMedia,
+  PublicNearbyPlace,
+  PublicRoomTypeDetail,
+  PublicRoomTypeSummary,
+} from '@hotel-bambu/shared';
 
 /** Public API response shapes (`docs/api.md`, "Public"). */
 
-export type { PublicMedia, PublicRoomSummary };
+export type { PublicMedia, PublicNearbyPlace, PublicRoomTypeDetail, PublicRoomTypeSummary };
+
+/**
+ * Since ADR 0016 a public "room" card or page is a room type (`/habitaciones/<type slug>`); the
+ * physical rooms only add up to `publishedRoomCount`. The aliases keep the page code stable until
+ * the C3 restructure.
+ */
+export type PublicRoomSummary = PublicRoomTypeSummary;
+export type PublicRoomDetail = PublicRoomTypeDetail;
 
 export interface PublicHotel {
   name: string;
   legalName: string | null;
   rntNumber: string | null;
   escnnaNotice: string | null;
+  tagline: string | null;
+  /** Meta description of the hotel (home page). */
   shortDescription: string | null;
+  /** "Sobre nosotros": the single description source (paragraphs separated by a blank line). */
   description: string | null;
   address: string | null;
   municipality: string | null;
   department: string | null;
+  country: string | null;
   latitude: number | string | null;
   longitude: number | string | null;
   mapUrl: string | null;
@@ -21,25 +38,20 @@ export interface PublicHotel {
   nearbyAttractions: string | null;
   phone: string | null;
   whatsappNumber: string | null;
+  /** Optional opening of the WhatsApp messages (the messages are shared code defaults). */
+  whatsappGreeting: string | null;
   email: string | null;
   openingHours: { days: string; hours: string }[] | null;
   checkInTime: string | null;
   checkOutTime: string | null;
   updatedAt: string;
   logo: PublicMedia | null;
-  hero: PublicMedia | null;
 }
 
 export interface PublicSocialLink {
   id: string;
   platform: string;
   url: string;
-}
-
-export interface PublicWhatsAppTemplate {
-  key: 'GENERAL' | 'ROOM' | 'PROMOTION';
-  body: string;
-  allowedVariables: string[];
 }
 
 export interface PublicAmenity {
@@ -64,47 +76,21 @@ export interface PublicHeroSlide {
 export type SectionKey =
   'HERO' | 'ABOUT' | 'ROOMS' | 'SERVICES' | 'GALLERY' | 'LOCATION' | 'FAQ' | 'CONTACT';
 
+/** An enabled home section: headings live in the web code and copy in the hotel profile. */
 export interface PublicSection {
   key: SectionKey;
-  title: string | null;
-  subtitle: string | null;
-  body: string | null;
-  ctaLabel: string | null;
   sortOrder: number;
-  media: PublicMedia | null;
 }
 
 export interface PublicSite {
   hotel: PublicHotel;
   socialLinks: PublicSocialLink[];
-  whatsappTemplates: PublicWhatsAppTemplate[];
   heroSlides: PublicHeroSlide[];
   /** Every active hotel-wide amenity (home panel, room detail "En todo el hotel", JSON-LD). */
   hotelAmenities: PublicHotelAmenity[];
   /** Room equipment flagged for the home grid. */
   homeAmenities: PublicAmenity[];
   sections: PublicSection[];
-}
-
-export interface PublicPromotion {
-  id: string;
-  title: string;
-  description: string | null;
-  conditions: string | null;
-  startsAt: string;
-  endsAt: string;
-  room?: { slug: string; name: string } | null;
-}
-
-export interface PublicRoomDetail extends PublicRoomSummary {
-  description: string | null;
-  beds: { type: string; count: number }[] | null;
-  areaM2: number | null;
-  priceNotes: string | null;
-  seoTitle: string | null;
-  seoDescription: string | null;
-  images: PublicMedia[];
-  promotions: PublicPromotion[];
 }
 
 export interface PublicGalleryItem {

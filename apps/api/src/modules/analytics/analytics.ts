@@ -24,15 +24,15 @@ export function hotelDay(now: Date): Date {
 export class AnalyticsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  /** Only known entities are kept (published room slug or social platform key), so arbitrary ids cannot bloat the table. */
+  /** Only known entities are kept (published room type slug or social platform key), so arbitrary ids cannot bloat the table. */
   private async normalizeEntity(entityId: string | undefined): Promise<string> {
     if (!entityId) return '';
     if (SOCIAL_KEYS.has(entityId)) return entityId;
-    const room = await this.prisma.room.findFirst({
+    const roomType = await this.prisma.roomType.findFirst({
       where: { slug: entityId, status: 'PUBLISHED' },
       select: { id: true },
     });
-    return room ? entityId : '';
+    return roomType ? entityId : '';
   }
 
   async track(event: AnalyticsEventInput, now = new Date()): Promise<void> {

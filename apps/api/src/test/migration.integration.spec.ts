@@ -37,8 +37,9 @@ const databaseUrl = inject('testDatabaseUrl');
 describe.skipIf(!databaseUrl)(
   'migrations amenity_scope_hero_slides + clear_restated_amenity_descriptions',
   () => {
-    const adminUrl = new URL(databaseUrl);
-    const scratchUrl = new URL(databaseUrl);
+    // A placeholder keeps collection working when the suite is skipped (no database).
+    const adminUrl = new URL(databaseUrl || 'postgresql://localhost/skipped');
+    const scratchUrl = new URL(adminUrl);
     scratchUrl.pathname = `/${SCRATCH_DB}`;
     let db: SqlClient;
 

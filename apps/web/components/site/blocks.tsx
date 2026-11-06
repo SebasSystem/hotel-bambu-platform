@@ -133,7 +133,7 @@ export function LocationBlock({
     address || (showDetails && (hotel.directions || hotel.nearbyAttractions)),
   );
   return (
-    <div className="grid gap-7 desk:grid-cols-[0.85fr_1.15fr]">
+    <div className="grid gap-7 *:min-w-0 desk:grid-cols-[0.85fr_1.15fr]">
       {hasCard ? (
         <div className={cardClass('panel')}>
           {address ? (

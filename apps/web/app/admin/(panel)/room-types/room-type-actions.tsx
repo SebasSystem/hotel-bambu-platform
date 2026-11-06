@@ -7,35 +7,35 @@ import { useConfirm } from '@/components/admin/feedback';
 import { useAction } from '@/components/admin/hooks';
 import { Button, Card, StatusBadge } from '@/components/admin/ui';
 import { browserApi } from '@/lib/api/browser';
-import type { Room } from '@/lib/api/types';
+import type { RoomType } from '@/lib/api/types';
 import { translateMessage } from '@/lib/forms/messages';
-import { publicRoomPath } from './room-format';
+import { publicRoomTypePath } from './room-type-format';
 
 const ISSUE_LABELS: Record<string, string> = {
   name: 'Falta el nombre.',
   slug: 'Falta el identificador (slug).',
-  shortDescription: 'Falta la descripción corta.',
   capacity: 'La capacidad debe ser al menos 1.',
   coverImage: 'Falta una imagen principal procesada y con texto alternativo.',
 };
 
-/** Status (publish / unpublish / deactivate), "Ver en el sitio" and delete. */
-export function RoomActions({ room }: { room: Room }) {
+/** Room type status (publish / unpublish / deactivate), "Ver en el sitio" and delete. */
+export function RoomTypeActions({ room }: { room: RoomType }) {
+  const hasRooms = room.roomCount > 0;
   const router = useRouter();
   const confirm = useConfirm();
   const { run, busy } = useAction();
   const published = room.status === 'PUBLISHED';
 
-  const setStatus = (status: Room['status'], message: string) =>
+  const setStatus = (status: RoomType['status'], message: string) =>
     void run(
       `status:${status}`,
-      () => browserApi.patch(`/admin/rooms/${room.id}/status`, { status }),
+      () => browserApi.patch(`/admin/room-types/${room.id}/status`, { status }),
       message,
     );
 
   const remove = async () => {
     const ok = await confirm({
-      title: '¿Eliminar habitación?',
+      title: '¿Eliminar tipo de habitación?',
       description: `«${room.name}» se eliminará definitivamente. Las imágenes siguen en la biblioteca.`,
       confirmLabel: 'Eliminar',
       destructive: true,
@@ -44,12 +44,12 @@ export function RoomActions({ room }: { room: Room }) {
     const result = await run(
       'delete',
       async () => {
-        await browserApi.delete(`/admin/rooms/${room.id}`);
+        await browserApi.delete(`/admin/room-types/${room.id}`);
         return true;
       },
-      'Habitación eliminada.',
+      'Tipo de habitación eliminado.',
     );
-    if (result) router.push('/admin/rooms');
+    if (result) router.push('/admin/room-types');
   };
 
   return (
@@ -59,7 +59,7 @@ export function RoomActions({ room }: { room: Room }) {
         <StatusBadge status={room.status} />
         {published ? (
           <Link
-            href={publicRoomPath(room.slug)}
+            href={publicRoomTypePath(room.slug)}
             target="_blank"
             className="inline-flex items-center gap-1 text-sm text-primary underline underline-offset-4"
           >
@@ -83,14 +83,14 @@ export function RoomActions({ room }: { room: Room }) {
           <Button
             variant="secondary"
             loading={busy === 'status:DRAFT'}
-            onClick={() => setStatus('DRAFT', 'Habitación despublicada.')}
+            onClick={() => setStatus('DRAFT', 'Tipo de habitación despublicado.')}
           >
             Despublicar
           </Button>
         ) : (
           <Button
             loading={busy === 'status:PUBLISHED'}
-            onClick={() => setStatus('PUBLISHED', 'Habitación publicada.')}
+            onClick={() => setStatus('PUBLISHED', 'Tipo de habitación publicado.')}
           >
             Publicar
           </Button>
@@ -99,7 +99,9 @@ export function RoomActions({ room }: { room: Room }) {
           <Button
             variant="secondary"
             loading={busy === 'status:INACTIVE'}
-            onClick={() => setStatus('INACTIVE', 'Habitación desactivada (oculta del sitio).')}
+            onClick={() =>
+              setStatus('INACTIVE', 'Tipo de habitación desactivado (oculto del sitio).')
+            }
           >
             Desactivar
           </Button>
@@ -107,18 +109,25 @@ export function RoomActions({ room }: { room: Room }) {
         <Button
           variant="danger"
           loading={busy === 'delete'}
-          disabled={published}
-          title={published ? 'Despublique la habitación antes de eliminarla.' : undefined}
+          disabled={published || hasRooms}
+          title={
+            published
+              ? 'Despublique el tipo antes de eliminarlo.'
+              : hasRooms
+                ? 'Mueva o elimine primero sus habitaciones.'
+                : undefined
+          }
           onClick={() => void remove()}
         >
           Eliminar
         </Button>
       </div>
-      {published ? (
-        <p className="mt-2 text-xs text-muted-foreground">
-          Para eliminarla, primero despublíquela.
-        </p>
-      ) : null}
+      <p className="mt-2 text-xs text-muted-foreground">
+        {room.publishedRoomCount} de {room.roomCount}{' '}
+        {room.roomCount === 1 ? 'habitación publicada' : 'habitaciones publicadas'} de este tipo (se
+        gestionan en «Habitaciones»).
+        {published ? ' Para eliminar el tipo, primero despublíquelo.' : ''}
+      </p>
       {room.slugRedirects.length > 0 ? (
         <p className="mt-3 text-xs text-muted-foreground">
           Enlaces anteriores que redirigen aquí:{' '}

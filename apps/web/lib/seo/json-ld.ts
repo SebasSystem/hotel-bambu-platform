@@ -1,6 +1,7 @@
 import { BED_TYPE_LABELS } from '@/lib/labels';
 import { routes } from '@/lib/public/navigation';
 import { shareImage } from '@/lib/seo/metadata';
+import { publishedRoomTotal } from '@/lib/public/rooms';
 import { fullAddress } from '@/lib/public/site';
 import type {
   PublicFaq,
@@ -61,7 +62,9 @@ export function hotelJsonLd(site: PublicSite, rooms: PublicRoomSummary[]): Json 
   const { hotel } = site;
   const lat = num(hotel.latitude);
   const lng = num(hotel.longitude);
-  const images = [hotel.hero, ...rooms.map((room) => room.cover)]
+  const roomCount = publishedRoomTotal(rooms);
+  const images = rooms
+    .map((room) => room.cover)
     .map((media) => shareImage(media)?.url)
     .filter((url): url is string => Boolean(url))
     .slice(0, 6);
@@ -91,13 +94,13 @@ export function hotelJsonLd(site: PublicSite, rooms: PublicRoomSummary[]): Json 
       name: amenity.name,
       value: true,
     })),
-    numberOfRooms: rooms.length > 0 ? rooms.length : null,
+    numberOfRooms: roomCount > 0 ? roomCount : null,
     priceRange: priceRange(rooms),
     sameAs: site.socialLinks.map((social) => social.url),
   });
 }
 
-/** `HotelRoom`, wrapped in an `Offer` only when the room has a published rate. */
+/** `HotelRoom` for a room type page, wrapped in an `Offer` only when the type has a rate. */
 export function roomJsonLd(room: PublicRoomDetail, hotel: PublicHotel): Json {
   const url = absoluteUrl(routes.room(room.slug));
   const beds = (room.beds ?? []).filter((bed) => bed.count > 0);
@@ -105,7 +108,7 @@ export function roomJsonLd(room: PublicRoomDetail, hotel: PublicHotel): Json {
     '@context': 'https://schema.org',
     '@type': 'HotelRoom',
     name: room.name,
-    description: room.shortDescription ?? room.description,
+    description: room.description,
     url,
     image: [...room.images, room.cover]
       .map((media) => shareImage(media)?.url)

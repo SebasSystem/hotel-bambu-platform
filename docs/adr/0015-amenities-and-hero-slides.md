@@ -3,6 +3,7 @@
 - Status: Accepted
 - Date: 2026-11-05
 - Amends: [0006](0006-data-model.md) (the `Service` model is removed)
+- Amended by: [0016](0016-room-types-and-single-sources.md) (room amenities link to room types; `HotelProfile.heroMedia` and the hero fallback to it are gone)
 
 ## Context
 

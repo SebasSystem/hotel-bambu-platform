@@ -13,7 +13,7 @@ import { ui } from '@/lib/i18n/es';
 import { pageMetadata } from '@/lib/seo/metadata';
 import { routes } from '@/lib/public/navigation';
 import { getSite } from '@/lib/public/api';
-import { fullAddress, mapLinks, sectionOf, telHref } from '@/lib/public/site';
+import { fullAddress, mapLinks, telHref } from '@/lib/public/site';
 import { whatsAppLink } from '@/lib/public/whatsapp';
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -33,18 +33,12 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function ContactPage() {
   const site = await getSite();
   const { hotel } = site;
-  const section = sectionOf(site, 'CONTACT');
   const whatsappUrl = whatsAppLink(site, { kind: 'general' });
   const links = mapLinks(hotel);
 
   return (
     <>
-      <PageHeader
-        path={routes.contact}
-        title={section?.title ?? ui.nav.contact}
-        kicker={section?.subtitle}
-        intro={section?.body}
-      />
+      <PageHeader path={routes.contact} title={ui.nav.contact} kicker={null} intro={null} />
       <div className={`${container} grid gap-7 pt-12 pb-[110px] desk:grid-cols-[0.85fr_1.15fr]`}>
         <div className={cardClass('panel')}>
           <Eyebrow className="mb-4">{ui.contact.direct}</Eyebrow>

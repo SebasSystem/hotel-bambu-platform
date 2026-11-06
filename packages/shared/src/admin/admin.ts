@@ -67,11 +67,15 @@ export const hotelProfileUpdateSchema = z
     legalName: nullableText(200),
     rntNumber: nullableText(30),
     escnnaNotice: nullableText(2000),
+    tagline: nullableText(160),
+    /** Meta description of the hotel (home page). */
     shortDescription: nullableText(300),
+    /** "Sobre nosotros": the single description source (ADR 0016). */
     description: nullableText(5000),
     address: nullableText(200),
     municipality: nullableText(100),
     department: nullableText(100),
+    country: nullableText(100),
     latitude: z.number().min(-90).max(90).nullable(),
     longitude: z.number().min(-180).max(180).nullable(),
     mapUrl: nullableHttpsUrl,
@@ -83,6 +87,8 @@ export const hotelProfileUpdateSchema = z
       .nullable()
       .transform((value) => (value === '' ? null : value))
       .pipe(whatsAppPhoneSchema.nullable()),
+    /** Opening of every WhatsApp message (messages are code defaults, see whatsapp/messages). */
+    whatsappGreeting: nullableText(80),
     email: z
       .union([z.literal(''), z.email().max(254)])
       .nullable()
@@ -91,25 +97,9 @@ export const hotelProfileUpdateSchema = z
     checkInTime: timeOfDaySchema.nullable(),
     checkOutTime: timeOfDaySchema.nullable(),
     logoMediaId: nullableId,
-    heroMediaId: nullableId,
   })
   .partial();
 export type HotelProfileUpdateInput = z.infer<typeof hotelProfileUpdateSchema>;
-
-// ─── WhatsApp templates (5.2, 9.10) ─────────────────────────────────────────
-
-export const WHATSAPP_TEMPLATE_KEYS = ['GENERAL', 'ROOM', 'PROMOTION'] as const;
-export const whatsAppTemplateKeySchema = z.enum(WHATSAPP_TEMPLATE_KEYS);
-
-export const whatsAppTemplateUpdateSchema = z
-  .strictObject({ label: requiredText(80), body: requiredText(1000) })
-  .partial();
-export type WhatsAppTemplateUpdateInput = z.infer<typeof whatsAppTemplateUpdateSchema>;
-
-/** Variables used in a template body (`{{name}}`). */
-export function templateVariables(body: string): string[] {
-  return [...body.matchAll(/\{\{\s*([a-zA-Z_]+)\s*\}\}/g)].map((match) => match[1] ?? '');
-}
 
 // ─── Social links (9.10) ────────────────────────────────────────────────────
 
@@ -198,9 +188,10 @@ export const amenityUpdateSchema = z.strictObject(amenityFields).partial();
 export type AmenityCreateInput = z.infer<typeof amenityCreateSchema>;
 export type AmenityUpdateInput = z.infer<typeof amenityUpdateSchema>;
 
-// ─── Rooms (9.4) ────────────────────────────────────────────────────────────
+// ─── Room types and rooms (9.4, ADR 0016) ───────────────────────────────────
 
 export const ROOM_TYPES = ['INDIVIDUAL', 'COUPLE', 'TWIN', 'FAMILY'] as const;
+export type RoomKind = (typeof ROOM_TYPES)[number];
 export const PRICE_UNITS = ['PER_NIGHT', 'PER_PERSON_PER_NIGHT', 'OTHER'] as const;
 export const BED_TYPES = ['SINGLE', 'DOUBLE', 'QUEEN', 'KING', 'BUNK', 'SOFA_BED'] as const;
 
@@ -208,11 +199,11 @@ export const bedsSchema = z
   .array(z.strictObject({ type: z.enum(BED_TYPES), count: z.int().min(1).max(10) }))
   .max(10);
 
-const roomFields = {
+/** What the site shows: description, rate, beds, photos and ROOM amenities. */
+const roomTypeFields = {
   name: requiredText(120),
   slug: slugSchema,
   type: z.enum(ROOM_TYPES),
-  shortDescription: nullableText(300),
   description: nullableText(5000),
   capacity: z.int().min(1).max(50),
   beds: bedsSchema.nullable(),
@@ -222,33 +213,28 @@ const roomFields = {
   priceUnit: z.enum(PRICE_UNITS),
   taxesIncluded: z.boolean(),
   priceNotes: nullableText(500),
-  seoTitle: nullableText(70),
-  seoDescription: nullableText(170),
   amenityIds: z.array(idSchema).max(100),
 };
-export const roomCreateSchema = z.strictObject({
-  ...roomFields,
-  slug: roomFields.slug.optional(),
-  shortDescription: roomFields.shortDescription.optional(),
-  description: roomFields.description.optional(),
-  beds: roomFields.beds.optional(),
-  areaM2: roomFields.areaM2.optional(),
-  basePrice: roomFields.basePrice.optional(),
-  priceUnit: roomFields.priceUnit.default('PER_NIGHT'),
-  taxesIncluded: roomFields.taxesIncluded.default(true),
-  priceNotes: roomFields.priceNotes.optional(),
-  seoTitle: roomFields.seoTitle.optional(),
-  seoDescription: roomFields.seoDescription.optional(),
-  amenityIds: roomFields.amenityIds.default([]),
+export const roomTypeCreateSchema = z.strictObject({
+  ...roomTypeFields,
+  slug: roomTypeFields.slug.optional(),
+  description: roomTypeFields.description.optional(),
+  beds: roomTypeFields.beds.optional(),
+  areaM2: roomTypeFields.areaM2.optional(),
+  basePrice: roomTypeFields.basePrice.optional(),
+  priceUnit: roomTypeFields.priceUnit.default('PER_NIGHT'),
+  taxesIncluded: roomTypeFields.taxesIncluded.default(true),
+  priceNotes: roomTypeFields.priceNotes.optional(),
+  amenityIds: roomTypeFields.amenityIds.default([]),
 });
-export const roomUpdateSchema = z.strictObject(roomFields).partial();
-export type RoomCreateInput = z.infer<typeof roomCreateSchema>;
-export type RoomUpdateInput = z.infer<typeof roomUpdateSchema>;
+export const roomTypeUpdateSchema = z.strictObject(roomTypeFields).partial();
+export type RoomTypeCreateInput = z.infer<typeof roomTypeCreateSchema>;
+export type RoomTypeUpdateInput = z.infer<typeof roomTypeUpdateSchema>;
 
-export const roomStatusSchema = z.strictObject({ status: publicationStatusSchema });
+export const roomTypeStatusSchema = z.strictObject({ status: publicationStatusSchema });
 
-/** Full ordered image set of a room; replaces the previous one. At most one cover. */
-export const roomImagesSchema = z.strictObject({
+/** Full ordered image set of a room type; replaces the previous one. At most one cover. */
+export const roomTypeImagesSchema = z.strictObject({
   images: z
     .array(z.strictObject({ mediaAssetId: idSchema, isCover: z.boolean().default(false) }))
     .max(60)
@@ -258,36 +244,50 @@ export const roomImagesSchema = z.strictObject({
       'Images must be unique',
     ),
 });
-export type RoomImagesInput = z.infer<typeof roomImagesSchema>;
+export type RoomTypeImagesInput = z.infer<typeof roomTypeImagesSchema>;
 
-// ─── Promotions (9.5) ───────────────────────────────────────────────────────
-
-const promotionFields = {
-  title: requiredText(120),
-  description: nullableText(2000),
-  conditions: nullableText(2000),
-  startsAt: z.coerce.date(),
-  endsAt: z.coerce.date(),
-  roomId: nullableId,
+/**
+ * A physical room: number or name, its type and its status. PUBLISHED rooms of a PUBLISHED type
+ * are counted on the site; INACTIVE also covers "out of service".
+ */
+const roomFields = {
+  name: requiredText(60),
+  roomTypeId: idSchema,
   status: publicationStatusSchema,
   sortOrder: sortOrderSchema,
 };
-export const promotionCreateSchema = z
-  .strictObject({
-    ...promotionFields,
-    description: promotionFields.description.optional(),
-    conditions: promotionFields.conditions.optional(),
-    roomId: promotionFields.roomId.optional(),
-    status: promotionFields.status.default('DRAFT'),
-    sortOrder: promotionFields.sortOrder.optional(),
-  })
-  .refine((v) => v.endsAt > v.startsAt, {
-    message: 'endsAt must be after startsAt',
-    path: ['endsAt'],
-  });
-export const promotionUpdateSchema = z.strictObject(promotionFields).partial();
-export type PromotionCreateInput = z.infer<typeof promotionCreateSchema>;
-export type PromotionUpdateInput = z.infer<typeof promotionUpdateSchema>;
+export const roomCreateSchema = z.strictObject({
+  name: roomFields.name,
+  roomTypeId: roomFields.roomTypeId,
+  status: roomFields.status.default('DRAFT'),
+  sortOrder: roomFields.sortOrder.optional(),
+});
+export const roomUpdateSchema = z.strictObject(roomFields).partial();
+export type RoomCreateInput = z.infer<typeof roomCreateSchema>;
+export type RoomUpdateInput = z.infer<typeof roomUpdateSchema>;
+
+// ─── Nearby places (ADR 0016) ───────────────────────────────────────────────
+
+/** Distances and travel times are free texts the hotel measured ("1,2 km", "5 min en carro"). */
+const nearbyPlaceFields = {
+  name: requiredText(120),
+  category: nullableText(60),
+  distanceText: nullableText(80),
+  travelTimeText: nullableText(80),
+  active: z.boolean(),
+  sortOrder: sortOrderSchema,
+};
+export const nearbyPlaceCreateSchema = z.strictObject({
+  name: nearbyPlaceFields.name,
+  category: nearbyPlaceFields.category.optional(),
+  distanceText: nearbyPlaceFields.distanceText.optional(),
+  travelTimeText: nearbyPlaceFields.travelTimeText.optional(),
+  active: nearbyPlaceFields.active.default(true),
+  sortOrder: nearbyPlaceFields.sortOrder.optional(),
+});
+export const nearbyPlaceUpdateSchema = z.strictObject(nearbyPlaceFields).partial();
+export type NearbyPlaceCreateInput = z.infer<typeof nearbyPlaceCreateSchema>;
+export type NearbyPlaceUpdateInput = z.infer<typeof nearbyPlaceUpdateSchema>;
 
 // ─── Media & gallery (9.7) ──────────────────────────────────────────────────
 
@@ -376,17 +376,12 @@ export const LANDING_SECTION_KEYS = [
 ] as const;
 export const landingSectionKeySchema = z.enum(LANDING_SECTION_KEYS);
 
-/** Plain text only (no HTML); the web renders it as text. */
+/**
+ * A section is a switch and a position (ADR 0016): copy lives in the hotel profile and headings in
+ * the web code.
+ */
 export const landingSectionUpdateSchema = z
-  .strictObject({
-    title: nullableText(160),
-    subtitle: nullableText(300),
-    body: nullableText(4000),
-    ctaLabel: nullableText(60),
-    mediaAssetId: nullableId,
-    enabled: z.boolean(),
-    sortOrder: sortOrderSchema,
-  })
+  .strictObject({ enabled: z.boolean(), sortOrder: sortOrderSchema })
   .partial();
 export type LandingSectionUpdateInput = z.infer<typeof landingSectionUpdateSchema>;
 

@@ -1,4 +1,4 @@
-import type { PublicMedia, PublicRoomSummary } from './types';
+import type { PublicRoomSummary } from './types';
 
 /** Public room-type vocabulary and URL filter values (`/habitaciones?tipo=pareja`). */
 export const ROOM_TYPES_PUBLIC = {
@@ -21,50 +21,24 @@ export function roomTypeFromParam(param: string | string[] | undefined): RoomTyp
   return ORDER.find((key) => ROOM_TYPES_PUBLIC[key].param === value) ?? null;
 }
 
-export interface RoomTypeSummary {
-  type: RoomTypeKey;
-  count: number;
-  maxCapacity: number;
-  cover: PublicMedia | null;
-  /** Cheapest published rate of the type (keeps its unit and taxes flag), or null. */
-  cheapest: Pick<PublicRoomSummary, 'basePrice' | 'priceUnit' | 'taxesIncluded'> | null;
-  /** Amenities every room of the type has. */
-  sharedAmenities: { name: string; iconKey: string }[];
+/** Published rooms of every listed type (home fact stack, Hotel `numberOfRooms`). */
+export function publishedRoomTotal(types: Pick<PublicRoomSummary, 'publishedRoomCount'>[]): number {
+  return types.reduce((total, type) => total + type.publishedRoomCount, 0);
 }
 
-/** Home teaser: one card per room type actually published, in a stable order. */
-export function summarizeRoomTypes(rooms: PublicRoomSummary[]): RoomTypeSummary[] {
-  return ORDER.flatMap((type) => {
-    const ofType = rooms.filter((room) => room.type === type);
-    if (ofType.length === 0) return [];
-    const priced = ofType
-      .filter((room) => room.basePrice !== null)
-      .sort((a, b) => (a.basePrice ?? 0) - (b.basePrice ?? 0));
-    const first = ofType[0]!;
-    const sharedAmenities = first.amenities.filter((amenity) =>
-      ofType.every((room) => room.amenities.some((other) => other.name === amenity.name)),
-    );
-    const cheapest = priced[0];
-    return [
-      {
-        type,
-        count: ofType.length,
-        maxCapacity: Math.max(...ofType.map((room) => room.capacity)),
-        cover: ofType.find((room) => room.cover)?.cover ?? null,
-        cheapest: cheapest
-          ? {
-              basePrice: cheapest.basePrice,
-              priceUnit: cheapest.priceUnit,
-              taxesIncluded: cheapest.taxesIncluded,
-            }
-          : null,
-        sharedAmenities,
-      },
-    ];
-  });
+/** Card text: the first paragraph of the type description, cut at a word boundary. */
+export function roomExcerpt(description: string | null, max = 180): string | null {
+  const first = description
+    ?.split(/\n\s*\n/)
+    .map((chunk) => chunk.trim())
+    .find(Boolean);
+  if (!first) return null;
+  if (first.length <= max) return first;
+  const cut = first.slice(0, max);
+  return `${cut.slice(0, cut.lastIndexOf(' ') > 0 ? cut.lastIndexOf(' ') : max).trimEnd()}…`;
 }
 
-/** Other rooms for the detail page: same type first, then the rest. */
+/** Other room types for the detail page: same kind first, then the rest. */
 export function otherRooms(rooms: PublicRoomSummary[], current: PublicRoomSummary, limit = 3) {
   const others = rooms.filter((room) => room.slug !== current.slug);
   return [
@@ -81,7 +55,7 @@ export interface RoomTypeFilter {
   count: number;
 }
 
-/** Catalogue chips: one per type that has published rooms, in the stable type order. */
+/** Catalogue chips: one per kind that has published room types, in the stable kind order. */
 export function roomTypeFilters(rooms: Pick<PublicRoomSummary, 'type'>[]): RoomTypeFilter[] {
   return ORDER.flatMap((type) => {
     const count = rooms.filter((room) => room.type === type).length;

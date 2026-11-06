@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import type { GalleryCategory, RoomType } from '../../generated/prisma/enums.js';
+import type { GalleryCategory, RoomKind } from '../../generated/prisma/enums.js';
 
 /** One entry of docs/assets/assets-manifest.json (metadata only; originals are not versioned). */
 export const manifestEntrySchema = z.object({
@@ -26,7 +26,7 @@ const CATEGORY_MAP: Record<ManifestEntry['category'], GalleryCategory> = {
   surroundings: 'SURROUNDINGS',
 };
 
-const ROOM_TYPE_MAP: Record<string, RoomType> = {
+const ROOM_TYPE_MAP: Record<string, RoomKind> = {
   individual: 'INDIVIDUAL',
   single: 'INDIVIDUAL',
   couple: 'COUPLE',
@@ -39,7 +39,7 @@ export interface ImportCandidate {
   altText: string;
   galleryCategory: GalleryCategory;
   isRoomPhoto: boolean;
-  roomType: RoomType | null;
+  roomType: RoomKind | null;
   /**
    * Publishable without further review: quality "ok" and no identifiable people (people need
    * written authorization, requirement 15.1).
@@ -67,8 +67,8 @@ export function planImport(entries: readonly ManifestEntry[]): ImportCandidate[]
  * rooms of that type when any exist; typed photos are placed first. Deterministic.
  */
 export function assignRoomPhotos<
-  P extends { roomType: RoomType | null },
-  R extends { type: RoomType },
+  P extends { roomType: RoomKind | null },
+  R extends { type: RoomKind },
 >(photos: readonly P[], rooms: readonly R[]): Array<{ photo: P; room: R }> {
   if (rooms.length === 0) return [];
   const load = new Map<R, number>(rooms.map((room) => [room, 0]));

@@ -18,9 +18,9 @@ import { createScriptPrisma, loadLocalEnv, log, runScript } from './lib/script-r
  * auto-orient, metadata stripped, AVIF/WebP variants, placeholder), uploads to S3 under random
  * keys and creates READY MediaAsset rows with the manifest alt text.
  *
- * Linking: room photos are spread over the [DEMO] rooms (least-loaded first) and demo rooms that
- * receive a cover are published; when no demo rooms exist (e.g. an approved one-time production
- * import) room photos go to the gallery instead. Every other photo becomes a GalleryItem,
+ * Linking: room photos are spread over the room types that have [DEMO] rooms (least-loaded first,
+ * same kind first) and draft types that receive a cover are published; when no demo rooms exist
+ * (e.g. an approved one-time production import) room photos go to the gallery instead. Every other photo becomes a GalleryItem,
  * published only when the manifest marks it "ok" without identifiable people.
  *
  * Re-runnable: photos whose checksum already exists are skipped.
@@ -110,27 +110,30 @@ await runScript('media:import', async () => {
       );
     }
 
-    const demoRooms = await prisma.room.findMany({
-      where: { name: { startsWith: DEMO_MARKER } },
+    const demoTypes = await prisma.roomType.findMany({
+      where: { rooms: { some: { name: { startsWith: DEMO_MARKER } } } },
       orderBy: { sortOrder: 'asc' },
       select: { id: true, type: true },
     });
-    const roomPhotos = demoRooms.length > 0 ? imported.filter((p) => p.candidate.isRoomPhoto) : [];
+    const roomPhotos = demoTypes.length > 0 ? imported.filter((p) => p.candidate.isRoomPhoto) : [];
     const galleryPhotos = imported.filter((p) => !roomPhotos.includes(p));
 
     await prisma.$transaction(async (tx) => {
       const nextOrder = new Map<string, number>();
-      for (const { photo, room } of assignRoomPhotos(
+      for (const { photo, room: type } of assignRoomPhotos(
         roomPhotos.map((p) => ({ ...p, roomType: p.candidate.roomType })),
-        demoRooms,
+        demoTypes,
       )) {
         const order =
-          nextOrder.get(room.id) ?? (await tx.roomImage.count({ where: { roomId: room.id } }));
-        nextOrder.set(room.id, order + 1);
-        const hasCover = await tx.roomImage.count({ where: { roomId: room.id, isCover: true } });
-        await tx.roomImage.create({
+          nextOrder.get(type.id) ??
+          (await tx.roomTypeImage.count({ where: { roomTypeId: type.id } }));
+        nextOrder.set(type.id, order + 1);
+        const hasCover = await tx.roomTypeImage.count({
+          where: { roomTypeId: type.id, isCover: true },
+        });
+        await tx.roomTypeImage.create({
           data: {
-            roomId: room.id,
+            roomTypeId: type.id,
             mediaAssetId: photo.mediaAssetId,
             sortOrder: order,
             isCover: hasCover === 0,
@@ -148,13 +151,23 @@ await runScript('media:import', async () => {
         })),
       });
 
-      // Demo rooms meet the publication rule once they have a cover with alt text.
-      await tx.room.updateMany({
+      // Demo room types meet the publication rule once they have a cover with alt text; their
+      // demo rooms are published with them.
+      const ready = await tx.roomType.findMany({
         where: {
-          name: { startsWith: DEMO_MARKER },
+          id: { in: demoTypes.map((t) => t.id) },
           status: 'DRAFT',
           images: { some: { isCover: true, mediaAsset: { altText: { not: null } } } },
         },
+        select: { id: true },
+      });
+      const readyIds = ready.map((t) => t.id);
+      await tx.roomType.updateMany({
+        where: { id: { in: readyIds } },
+        data: { status: 'PUBLISHED' },
+      });
+      await tx.room.updateMany({
+        where: { roomTypeId: { in: readyIds }, name: { startsWith: DEMO_MARKER }, status: 'DRAFT' },
         data: { status: 'PUBLISHED' },
       });
     });

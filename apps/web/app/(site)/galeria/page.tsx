@@ -7,16 +7,14 @@ import { pageMetadata } from '@/lib/seo/metadata';
 import { getGallery, getSite } from '@/lib/public/api';
 import { galleryCategoryFromParam, galleryFilters } from '@/lib/public/gallery';
 import { routes } from '@/lib/public/navigation';
-import { sectionOf } from '@/lib/public/site';
 
 export async function generateMetadata(): Promise<Metadata> {
   const site = await getSite();
-  const section = sectionOf(site, 'GALLERY');
   return pageMetadata({
     path: routes.gallery,
     siteName: site.hotel.name,
-    title: section?.title ?? ui.nav.gallery,
-    description: section?.subtitle ?? `Fotografías reales de ${site.hotel.name}.`,
+    title: ui.nav.gallery,
+    description: `Fotografías reales de ${site.hotel.name}.`,
   });
 }
 
@@ -25,8 +23,7 @@ export async function generateMetadata(): Promise<Metadata> {
  * `?categoria=`), a 3/2/1-column masonry whose tiles always fill (defect 3) and the lightbox.
  */
 export default async function GalleryPage({ searchParams }: PageProps<'/galeria'>) {
-  const [site, items, query] = await Promise.all([getSite(), getGallery(), searchParams]);
-  const section = sectionOf(site, 'GALLERY');
+  const [items, query] = await Promise.all([getGallery(), searchParams]);
   const filters = galleryFilters(items);
   const requested = galleryCategoryFromParam(query.categoria);
   const active = filters.some((filter) => filter.category === requested) ? requested : null;
@@ -36,9 +33,9 @@ export default async function GalleryPage({ searchParams }: PageProps<'/galeria'
     <>
       <PageHeader
         path={routes.gallery}
-        title={section?.title ?? ui.nav.gallery}
-        kicker={section?.subtitle ?? ui.home.galleryKicker}
-        intro={section?.body}
+        title={ui.nav.gallery}
+        kicker={ui.home.galleryKicker}
+        intro={null}
       />
       <Toolbar label={ui.gallery.filter} count={ui.gallery.count(visible.length)}>
         {filters.length > 1 ? (

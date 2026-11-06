@@ -9,7 +9,7 @@ import type { HomeFact } from '@/lib/public/facts';
 import { formatRoomPrice } from '@/lib/public/format';
 import { galleryLabel } from '@/lib/public/gallery';
 import { routes } from '@/lib/public/navigation';
-import { roomTypeLabel } from '@/lib/public/rooms';
+import { roomExcerpt, roomTypeLabel } from '@/lib/public/rooms';
 import type {
   PublicAmenity,
   PublicGalleryItem,
@@ -88,22 +88,22 @@ export function HomeIntro({
   );
 }
 
+/** Deep-green band with the first published room type; the eyebrow counts the published rooms. */
 export function RoomsShowcase({
   title,
-  intro,
   rooms,
-  ctaLabel,
+  roomCount,
   whatsappUrl,
 }: {
   title: string;
-  intro: string | null;
   rooms: PublicRoomSummary[];
-  ctaLabel: string | null;
+  roomCount: number;
   whatsappUrl: string | null;
 }) {
   const room = rooms[0];
   if (!room) return null;
   const price = formatRoomPrice(room);
+  const excerpt = roomExcerpt(room.description);
   return (
     <section
       aria-labelledby="habitaciones-title"
@@ -115,15 +115,14 @@ export function RoomsShowcase({
           <SectionHeading
             id="habitaciones-title"
             surface="dark"
-            eyebrow={ui.rooms.countLabel(rooms.length)}
+            eyebrow={roomCount > 0 ? ui.rooms.countLabel(roomCount) : null}
             title={title}
-            intro={intro}
           />
           <Link
             href={routes.rooms}
             className={`${buttonClass('light')} shrink-0 self-start tab:self-auto`}
           >
-            {ctaLabel ?? ui.home.roomsAll(rooms.length)}
+            {ui.rooms.seeAll}
           </Link>
         </div>
 
@@ -147,9 +146,7 @@ export function RoomsShowcase({
               {ui.rooms.featured} · {roomTypeLabel(room.type)}
             </p>
             <h3 className="text-feature text-balance text-charcoal">{room.name}</h3>
-            {room.shortDescription ? (
-              <p className="mt-4 text-muted-foreground">{room.shortDescription}</p>
-            ) : null}
+            {excerpt ? <p className="mt-4 text-muted-foreground">{excerpt}</p> : null}
             <ul className="mt-6 flex flex-wrap gap-2">
               <li>
                 <Chip>{ui.rooms.upTo(room.capacity)}</Chip>

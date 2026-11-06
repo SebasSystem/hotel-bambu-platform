@@ -10,8 +10,8 @@ import { ui } from '@/lib/i18n/es';
 import { pageMetadata } from '@/lib/seo/metadata';
 import { hotelJsonLd } from '@/lib/seo/json-ld';
 import { routes } from '@/lib/public/navigation';
-import { getRooms, getSite } from '@/lib/public/api';
-import { fullAddress, sectionOf } from '@/lib/public/site';
+import { getRoomTypes, getSite } from '@/lib/public/api';
+import { fullAddress } from '@/lib/public/site';
 import { whatsAppLink } from '@/lib/public/whatsapp';
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -29,8 +29,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
 /** Location (requirements 4.1, 19.3): address and directions card plus the on-demand map card. */
 export default async function LocationPage() {
-  const [site, rooms] = await Promise.all([getSite(), getRooms()]);
-  const section = sectionOf(site, 'LOCATION');
+  const [site, rooms] = await Promise.all([getSite(), getRoomTypes()]);
   const whatsappUrl = whatsAppLink(site, { kind: 'general' });
   const region = [site.hotel.municipality, site.hotel.department].filter(Boolean).join(' · ');
 
@@ -39,9 +38,9 @@ export default async function LocationPage() {
       <JsonLd data={hotelJsonLd(site, rooms)} />
       <PageHeader
         path={routes.location}
-        title={section?.title ?? ui.nav.location}
-        kicker={section?.subtitle ?? (region || null)}
-        intro={section?.body}
+        title={ui.nav.location}
+        kicker={region || null}
+        intro={null}
       />
       <div className={`${container} pt-12 pb-[110px]`}>
         {hasLocation(site.hotel) ? (

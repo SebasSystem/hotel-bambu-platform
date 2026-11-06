@@ -1,58 +1,74 @@
 import type { AmenityScope, IconKey } from '@hotel-bambu/shared';
-import type { LandingSectionKey, WhatsAppTemplateKey } from '../generated/prisma/enums.js';
+import type { LandingSectionKey } from '../generated/prisma/enums.js';
 
 /**
  * Base seed content (requirement 15.5): structure and facts confirmed by the owner only.
- * Unknown hotel data stays null and is listed in docs/pendientes-hotel.md — never invented, and
- * never seeded from what photos happen to show (address, phone, RNT) until the hotel confirms.
+ * Unknown hotel data stays null and is listed in docs/pendientes-hotel.md, never invented.
  */
 
 export const HOTEL_NAME = 'Hotel Bambú Plaza';
 
-// TODO(hotel): legalName, rntNumber, escnnaNotice, descriptions, address, municipality,
-// department, coordinates, mapUrl, directions, phone, whatsappNumber, email, openingHours,
-// checkInTime, checkOutTime. Left null so the site hides them until set in /admin.
+export const HOTEL_COORDINATES = { latitude: 1.146883, longitude: -76.64794 } as const;
 
-export const LANDING_SECTIONS: ReadonlyArray<{
-  key: LandingSectionKey;
-  title: string;
-  ctaLabel?: string;
-}> = [
-  { key: 'HERO', title: HOTEL_NAME, ctaLabel: 'Escríbenos por WhatsApp' },
-  { key: 'ABOUT', title: 'Sobre nosotros' },
-  { key: 'ROOMS', title: 'Habitaciones', ctaLabel: 'Ver habitaciones' },
-  { key: 'SERVICES', title: 'Comodidades del hotel' },
-  { key: 'GALLERY', title: 'Galería', ctaLabel: 'Ver galería completa' },
-  { key: 'LOCATION', title: 'Ubicación', ctaLabel: 'Cómo llegar' },
-  { key: 'FAQ', title: 'Preguntas frecuentes' },
-  { key: 'CONTACT', title: 'Contacto' },
-];
+/** Google Maps link built from the coordinates (owner link: maps.app.goo.gl/MYQBgcYNJzk3A6zL7). */
+export function mapUrlFor(latitude: number, longitude: number): string {
+  return `https://www.google.com/maps/search/?api=1&query=${latitude.toFixed(6)},${longitude.toFixed(6)}`;
+}
 
-/** Default messages from requirement 5.2 (editable in /admin). */
-export const WHATSAPP_TEMPLATES: ReadonlyArray<{
-  key: WhatsAppTemplateKey;
-  label: string;
-  body: string;
-  allowedVariables: string[];
-}> = [
-  {
-    key: 'GENERAL',
-    label: 'Consulta general',
-    body: 'Hola, vi su hotel en su página web y quisiera obtener más información.',
-    allowedVariables: [],
-  },
-  {
-    key: 'ROOM',
-    label: 'Consulta por habitación',
-    body: 'Hola, estoy interesado en la habitación {{habitacion}}. ¿Podrían brindarme información sobre disponibilidad y tarifa?',
-    allowedVariables: ['habitacion'],
-  },
-  {
-    key: 'PROMOTION',
-    label: 'Consulta por promoción',
-    body: 'Hola, vi la promoción {{promocion}} en su página web y quisiera más información.',
-    allowedVariables: ['promocion'],
-  },
+/**
+ * Hotel facts approved for publication by the owner on 2026-11-05 (address, coordinates, phone,
+ * RNT and tagline from the framed prints, docs/assets/photo-inventory.md). The about text and the
+ * meta description are written from the framed mission only. The phone is not confirmed as
+ * WhatsApp, so `whatsappNumber` stays empty.
+ *
+ * TODO(hotel): legalName, escnnaNotice, email, openingHours, checkInTime, checkOutTime,
+ * whatsappNumber, directions.
+ */
+export const HOTEL_FACTS = {
+  tagline: 'Hotel Bambú Plaza: descanso, comodidad y confianza en el corazón de Mocoa',
+  shortDescription:
+    'Hotel Bambú Plaza, en el corazón de Mocoa (Putumayo): alojamiento confortable, seguro y familiar para familias y viajeros de negocios.',
+  description: [
+    'En Hotel Bambú Plaza queremos brindarte una experiencia de alojamiento confortable, segura y familiar, en una ubicación privilegiada en el corazón de Mocoa. Te recibimos con atención cálida e instalaciones adecuadas para tu estadía.',
+    'Si viajas en familia, encontrarás un ambiente ideal para el descanso. Si vienes a Mocoa por actividades comerciales o administrativas, tendrás un lugar cómodo desde el cual atender tus compromisos y descansar al final del día.',
+  ].join('\n\n'),
+  address: 'Calle 8 # 7-10',
+  municipality: 'Mocoa',
+  department: 'Putumayo',
+  country: 'Colombia',
+  latitude: HOTEL_COORDINATES.latitude,
+  longitude: HOTEL_COORDINATES.longitude,
+  mapUrl: mapUrlFor(HOTEL_COORDINATES.latitude, HOTEL_COORDINATES.longitude),
+  phone: '+57 310 679 8260',
+  rntNumber: '232175',
+} as const;
+
+export type HotelFactField = keyof typeof HOTEL_FACTS;
+
+/**
+ * Facts to write on an existing profile: only the fields that are still empty, so a re-run never
+ * overwrites what the hotel edited in /admin.
+ */
+export function missingHotelFacts(
+  current: Readonly<Partial<Record<HotelFactField, unknown>>>,
+): Partial<typeof HOTEL_FACTS> {
+  const isEmpty = (value: unknown) =>
+    value === null || value === undefined || (typeof value === 'string' && value.trim() === '');
+  return Object.fromEntries(
+    Object.entries(HOTEL_FACTS).filter(([field]) => isEmpty(current[field as HotelFactField])),
+  ) as Partial<typeof HOTEL_FACTS>;
+}
+
+/** Home sections in their default order; headings live in the web code (ADR 0016). */
+export const LANDING_SECTIONS: readonly LandingSectionKey[] = [
+  'HERO',
+  'ABOUT',
+  'ROOMS',
+  'SERVICES',
+  'GALLERY',
+  'LOCATION',
+  'FAQ',
+  'CONTACT',
 ];
 
 /**

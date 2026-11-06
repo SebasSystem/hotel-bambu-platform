@@ -51,7 +51,7 @@ export function AmenitiesManager({ items }: { items: Amenity[] }) {
         createSchema={amenityCreateSchema}
         updateSchema={amenityUpdateSchema}
         reorderable
-        deleteDescription="Solo se puede eliminar si ninguna habitación la usa."
+        deleteDescription="Solo se puede eliminar si ningún tipo de habitación la usa."
         fields={[
           { name: 'name', label: 'Nombre', kind: 'text', required: true },
           {
@@ -60,7 +60,7 @@ export function AmenitiesManager({ items }: { items: Amenity[] }) {
             kind: 'select',
             required: true,
             options: toOptions(AMENITY_SCOPE_LABELS),
-            hint: '«Todo el hotel»: aplica a todo el hotel. «Habitaciones»: se asigna en cada habitación.',
+            hint: '«Todo el hotel»: aplica a todo el hotel. «Habitaciones»: se asigna en cada tipo de habitación.',
           },
           {
             name: 'iconKey',
@@ -102,7 +102,7 @@ export function AmenitiesManager({ items }: { items: Amenity[] }) {
             <p className="text-sm text-muted-foreground">
               Icono: {labelOf(ICON_LABELS, item.iconKey)}
               {item.scope === 'ROOM' && item._count
-                ? ` · En ${item._count.rooms} ${item._count.rooms === 1 ? 'habitación' : 'habitaciones'}`
+                ? ` · En ${item._count.roomTypes} ${item._count.roomTypes === 1 ? 'tipo de habitación' : 'tipos de habitación'}`
                 : null}
             </p>
             <div className="mt-2 flex flex-wrap gap-2">

@@ -7,7 +7,6 @@ import {
   NotFoundException,
   Param,
   Put,
-  UnprocessableEntityException,
 } from '@nestjs/common';
 import {
   CACHE_TAGS,
@@ -21,11 +20,13 @@ import { zod } from '../../common/zod-validation.pipe.js';
 import { PrismaService } from '../../prisma/prisma.service.js';
 import { AdminChangesService } from '../audit/admin-changes.service.js';
 import { changedFields } from '../audit/audit.service.js';
-import { PUBLIC_MEDIA_SELECT, isPublishableMedia } from '../media/media-url.js';
 
 type SectionKey = z.output<typeof landingSectionKeySchema>;
 
-/** Fixed landing sections (requirement 9.8): the code owns the layout, admins edit fields only. */
+/**
+ * Fixed landing sections (requirement 9.8): the code owns the layout and the headings, admins only
+ * switch sections on or off and order them (ADR 0016).
+ */
 @Injectable()
 export class ContentService {
   constructor(
@@ -34,17 +35,11 @@ export class ContentService {
   ) {}
 
   list() {
-    return this.prisma.landingSection.findMany({
-      orderBy: { sortOrder: 'asc' },
-      include: { mediaAsset: { select: PUBLIC_MEDIA_SELECT } },
-    });
+    return this.prisma.landingSection.findMany({ orderBy: { sortOrder: 'asc' } });
   }
 
   async get(key: SectionKey) {
-    const section = await this.prisma.landingSection.findUnique({
-      where: { key },
-      include: { mediaAsset: { select: PUBLIC_MEDIA_SELECT } },
-    });
+    const section = await this.prisma.landingSection.findUnique({ where: { key } });
     if (!section) throw new NotFoundException('Section not found (run db:seed:base).');
     return section;
   }
@@ -53,34 +48,12 @@ export class ContentService {
     return this.prisma.landingSection.findMany({
       where: { enabled: true },
       orderBy: { sortOrder: 'asc' },
-      select: {
-        key: true,
-        title: true,
-        subtitle: true,
-        body: true,
-        ctaLabel: true,
-        sortOrder: true,
-        mediaAsset: { select: PUBLIC_MEDIA_SELECT },
-      },
+      select: { key: true, sortOrder: true },
     });
   }
 
   async update(actorId: string, key: SectionKey, input: LandingSectionUpdateInput) {
     await this.get(key);
-    if (input.mediaAssetId) {
-      const media = await this.prisma.mediaAsset.findUnique({
-        where: { id: input.mediaAssetId },
-        select: { status: true, altText: true },
-      });
-      if (!isPublishableMedia(media)) {
-        throw new UnprocessableEntityException({
-          message: 'Section images must be processed and have alternative text.',
-          details: [
-            { path: 'mediaAssetId', message: 'Media is not publishable.', code: 'publication' },
-          ],
-        });
-      }
-    }
     await this.prisma.landingSection.update({ where: { key }, data: input });
     await this.changes.record(
       actorId,

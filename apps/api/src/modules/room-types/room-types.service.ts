@@ -10,9 +10,9 @@ import {
   roomCacheTag,
   uniqueSlug,
   type PublicationStatus,
-  type RoomCreateInput,
-  type RoomImagesInput,
-  type RoomUpdateInput,
+  type RoomTypeCreateInput,
+  type RoomTypeImagesInput,
+  type RoomTypeUpdateInput,
 } from '@hotel-bambu/shared';
 import type { Env } from '../../config/env.js';
 import type { Prisma } from '../../generated/prisma/client.js';
@@ -21,23 +21,31 @@ import { AdminChangesService } from '../audit/admin-changes.service.js';
 import { changedFields } from '../audit/audit.service.js';
 import { PUBLIC_MEDIA_SELECT, isPublishableMedia, toPublicMedia } from '../media/media-url.js';
 import {
-  ROOM_PUBLICATION_MESSAGES,
+  ROOM_TYPE_PUBLICATION_MESSAGES,
   planSlugChange,
-  roomPublicationIssues,
-  type RoomForPublication,
-} from './room-rules.js';
+  roomTypePublicationIssues,
+  type RoomTypeForPublication,
+} from './room-type-rules.js';
 
-const ADMIN_ROOM_INCLUDE = {
+const ADMIN_INCLUDE = {
   images: {
     orderBy: { sortOrder: 'asc' },
     include: { mediaAsset: { select: PUBLIC_MEDIA_SELECT } },
   },
   amenities: { select: { amenityId: true } },
-  slugRedirects: { select: { oldSlug: true, createdAt: true } },
-} satisfies Prisma.RoomInclude;
+  slugRedirects: { select: { oldSlug: true, createdAt: true }, orderBy: { createdAt: 'asc' } },
+  _count: { select: { rooms: true } },
+} satisfies Prisma.RoomTypeInclude;
 
+/** Rooms that make a published type "available" on the site. */
+const PUBLISHED_ROOMS = { where: { status: 'PUBLISHED' } } as const;
+
+/**
+ * Room types (ADR 0016): what the site sells and shows. Rooms only reference a type, so every
+ * public room page is a type page; old room URLs and renamed type slugs answer `{ redirectTo }`.
+ */
 @Injectable()
-export class RoomsService {
+export class RoomTypesService {
   private readonly publicBaseUrl: string;
 
   constructor(
@@ -51,25 +59,46 @@ export class RoomsService {
   // ─── Admin ──────────────────────────────────────────────────────────────────
 
   async list() {
-    const rooms = await this.prisma.room.findMany({
-      orderBy: [{ sortOrder: 'asc' }, { name: 'asc' }],
-      include: ADMIN_ROOM_INCLUDE,
-    });
-    return rooms.map((room) => this.presentAdmin(room));
+    const [types, published] = await Promise.all([
+      this.prisma.roomType.findMany({
+        orderBy: [{ sortOrder: 'asc' }, { name: 'asc' }],
+        include: ADMIN_INCLUDE,
+      }),
+      this.publishedRoomCounts(),
+    ]);
+    return types.map((type) => this.presentAdmin(type, published.get(type.id) ?? 0));
   }
 
   async get(id: string) {
-    const room = await this.prisma.room.findUnique({ where: { id }, include: ADMIN_ROOM_INCLUDE });
-    if (!room) throw new NotFoundException('Room not found.');
-    return this.presentAdmin(room);
+    const type = await this.prisma.roomType.findUnique({ where: { id }, include: ADMIN_INCLUDE });
+    if (!type) throw new NotFoundException('Room type not found.');
+    const published = await this.prisma.room.count({
+      where: { roomTypeId: id, status: 'PUBLISHED' },
+    });
+    return this.presentAdmin(type, published);
   }
 
-  private presentAdmin(room: Prisma.RoomGetPayload<{ include: typeof ADMIN_ROOM_INCLUDE }>) {
-    const { amenities, images, ...rest } = room;
+  private async publishedRoomCounts(): Promise<Map<string, number>> {
+    const rows = await this.prisma.room.groupBy({
+      by: ['roomTypeId'],
+      where: { status: 'PUBLISHED' },
+      _count: { _all: true },
+      orderBy: { roomTypeId: 'asc' },
+    });
+    return new Map(rows.map((row) => [row.roomTypeId, row._count._all]));
+  }
+
+  private presentAdmin(
+    type: Prisma.RoomTypeGetPayload<{ include: typeof ADMIN_INCLUDE }>,
+    publishedRoomCount: number,
+  ) {
+    const { amenities, images, _count, ...rest } = type;
     return {
       ...rest,
       areaM2: rest.areaM2 === null ? null : Number(rest.areaM2),
       amenityIds: amenities.map((a) => a.amenityId),
+      roomCount: _count.rooms,
+      publishedRoomCount,
       images: images.map((image) => ({
         mediaAssetId: image.mediaAssetId,
         isCover: image.isCover,
@@ -79,41 +108,44 @@ export class RoomsService {
           preview: toPublicMedia(image.mediaAsset, this.publicBaseUrl),
         },
       })),
-      publicationIssues: roomPublicationIssues(room),
+      publicationIssues: roomTypePublicationIssues(type),
     };
   }
 
   private async slugIsFree(slug: string): Promise<boolean> {
-    const [room, redirect] = await Promise.all([
-      this.prisma.room.findUnique({ where: { slug }, select: { id: true } }),
-      this.prisma.roomSlugRedirect.findUnique({ where: { oldSlug: slug }, select: { id: true } }),
+    const [type, redirect] = await Promise.all([
+      this.prisma.roomType.findUnique({ where: { slug }, select: { id: true } }),
+      this.prisma.roomTypeSlugRedirect.findUnique({
+        where: { oldSlug: slug },
+        select: { id: true },
+      }),
     ]);
-    return !room && !redirect;
+    return !type && !redirect;
   }
 
   private async generateSlug(name: string): Promise<string> {
-    const [rooms, redirects] = await Promise.all([
-      this.prisma.room.findMany({ select: { slug: true } }),
-      this.prisma.roomSlugRedirect.findMany({ select: { oldSlug: true } }),
+    const [types, redirects] = await Promise.all([
+      this.prisma.roomType.findMany({ select: { slug: true } }),
+      this.prisma.roomTypeSlugRedirect.findMany({ select: { oldSlug: true } }),
     ]);
-    const taken = new Set([...rooms.map((r) => r.slug), ...redirects.map((r) => r.oldSlug)]);
+    const taken = new Set([...types.map((t) => t.slug), ...redirects.map((r) => r.oldSlug)]);
     return uniqueSlug(name, taken, 'habitacion');
   }
 
-  /** Only ROOM amenities are assigned per room; HOTEL ones apply to the whole hotel (ADR 0015). */
+  /** Only ROOM amenities are assigned to a type; HOTEL ones apply to the whole hotel (ADR 0015). */
   private async assertRoomAmenities(ids: readonly string[]): Promise<void> {
     const unique = [...new Set(ids)];
     if (unique.length === 0) return;
     const found = await this.prisma.amenity.count({ where: { id: { in: unique }, scope: 'ROOM' } });
     if (found !== unique.length) {
       throw new UnprocessableEntityException({
-        message: 'Only room amenities can be assigned to a room.',
+        message: 'Only room amenities can be assigned to a room type.',
         details: [{ path: 'amenityIds', message: 'Unknown or hotel-wide amenity.', code: 'scope' }],
       });
     }
   }
 
-  async create(actorId: string, input: RoomCreateInput) {
+  async create(actorId: string, input: RoomTypeCreateInput) {
     const { amenityIds, slug: requestedSlug, beds, ...fields } = input;
     await this.assertRoomAmenities(amenityIds);
     let slug = requestedSlug;
@@ -122,8 +154,8 @@ export class RoomsService {
     } else {
       slug = await this.generateSlug(input.name);
     }
-    const max = await this.prisma.room.aggregate({ _max: { sortOrder: true } });
-    const room = await this.prisma.room.create({
+    const max = await this.prisma.roomType.aggregate({ _max: { sortOrder: true } });
+    const type = await this.prisma.roomType.create({
       data: {
         ...fields,
         beds: beds ?? undefined,
@@ -135,20 +167,20 @@ export class RoomsService {
       select: { id: true },
     });
     await this.changes.record(actorId, {
-      action: 'room.create',
-      entity: 'Room',
-      entityId: room.id,
+      action: 'roomType.create',
+      entity: 'RoomType',
+      entityId: type.id,
       summary: { fields: changedFields(input) },
     });
-    return this.get(room.id);
+    return this.get(type.id);
   }
 
-  async update(actorId: string, id: string, input: RoomUpdateInput) {
-    const current = await this.prisma.room.findUnique({
+  async update(actorId: string, id: string, input: RoomTypeUpdateInput) {
+    const current = await this.prisma.roomType.findUnique({
       where: { id },
-      include: ADMIN_ROOM_INCLUDE,
+      include: ADMIN_INCLUDE,
     });
-    if (!current) throw new NotFoundException('Room not found.');
+    if (!current) throw new NotFoundException('Room type not found.');
     const isPublished = current.status === 'PUBLISHED';
     const { amenityIds, beds, ...fields } = input;
     if (amenityIds) await this.assertRoomAmenities(amenityIds);
@@ -156,30 +188,34 @@ export class RoomsService {
     let redirectOps: Prisma.PrismaPromise<unknown>[] = [];
     if (input.slug !== undefined) {
       const [other, redirect] = await Promise.all([
-        this.prisma.room.findUnique({ where: { slug: input.slug }, select: { id: true } }),
-        this.prisma.roomSlugRedirect.findUnique({
+        this.prisma.roomType.findUnique({ where: { slug: input.slug }, select: { id: true } }),
+        this.prisma.roomTypeSlugRedirect.findUnique({
           where: { oldSlug: input.slug },
-          select: { roomId: true },
+          select: { roomTypeId: true },
         }),
       ]);
       const plan = planSlugChange({
-        roomId: id,
+        ownerId: id,
         currentSlug: current.slug,
         newSlug: input.slug,
         isPublished,
-        takenByOtherRoom: !!other && other.id !== id,
-        redirectOwnerRoomId: redirect?.roomId ?? null,
+        takenByOther: !!other && other.id !== id,
+        redirectOwnerId: redirect?.roomTypeId ?? null,
       });
       if (plan.kind === 'conflict') throw new ConflictException('Slug is already in use.');
       if (plan.kind === 'change') {
         redirectOps = [
           ...(plan.deleteRedirectFrom
-            ? [this.prisma.roomSlugRedirect.delete({ where: { oldSlug: plan.deleteRedirectFrom } })]
+            ? [
+                this.prisma.roomTypeSlugRedirect.delete({
+                  where: { oldSlug: plan.deleteRedirectFrom },
+                }),
+              ]
             : []),
           ...(plan.createRedirectFrom
             ? [
-                this.prisma.roomSlugRedirect.create({
-                  data: { oldSlug: plan.createRedirectFrom, roomId: id },
+                this.prisma.roomTypeSlugRedirect.create({
+                  data: { oldSlug: plan.createRedirectFrom, roomTypeId: id },
                 }),
               ]
             : []),
@@ -191,8 +227,6 @@ export class RoomsService {
       this.assertPublishable({
         name: input.name ?? current.name,
         slug: input.slug ?? current.slug,
-        shortDescription:
-          input.shortDescription !== undefined ? input.shortDescription : current.shortDescription,
         capacity: input.capacity ?? current.capacity,
         images: current.images,
       });
@@ -200,7 +234,7 @@ export class RoomsService {
 
     await this.prisma.$transaction([
       ...redirectOps,
-      this.prisma.room.update({
+      this.prisma.roomType.update({
         where: { id },
         data: {
           ...fields,
@@ -218,18 +252,13 @@ export class RoomsService {
     ]);
 
     const tags = isPublished
-      ? [
-          CACHE_TAGS.rooms,
-          CACHE_TAGS.promotions,
-          roomCacheTag(current.slug),
-          roomCacheTag(input.slug ?? current.slug),
-        ]
+      ? [CACHE_TAGS.rooms, roomCacheTag(current.slug), roomCacheTag(input.slug ?? current.slug)]
       : [];
     await this.changes.record(
       actorId,
       {
-        action: 'room.update',
-        entity: 'Room',
+        action: 'roomType.update',
+        entity: 'RoomType',
         entityId: id,
         summary: { fields: changedFields(input) },
       },
@@ -238,14 +267,14 @@ export class RoomsService {
     return this.get(id);
   }
 
-  private assertPublishable(room: RoomForPublication): void {
-    const issues = roomPublicationIssues(room);
+  private assertPublishable(type: RoomTypeForPublication): void {
+    const issues = roomTypePublicationIssues(type);
     if (issues.length > 0) {
       throw new UnprocessableEntityException({
-        message: 'The room does not meet the publication requirements.',
+        message: 'The room type does not meet the publication requirements.',
         details: issues.map((issue) => ({
           path: issue,
-          message: ROOM_PUBLICATION_MESSAGES[issue],
+          message: ROOM_TYPE_PUBLICATION_MESSAGES[issue],
           code: 'publication',
         })),
       });
@@ -253,53 +282,46 @@ export class RoomsService {
   }
 
   async setStatus(actorId: string, id: string, status: PublicationStatus) {
-    const room = await this.prisma.room.findUnique({ where: { id }, include: ADMIN_ROOM_INCLUDE });
-    if (!room) throw new NotFoundException('Room not found.');
-    if (status === 'PUBLISHED') this.assertPublishable(room);
-    await this.prisma.room.update({ where: { id }, data: { status } });
+    const type = await this.prisma.roomType.findUnique({ where: { id }, include: ADMIN_INCLUDE });
+    if (!type) throw new NotFoundException('Room type not found.');
+    if (status === 'PUBLISHED') this.assertPublishable(type);
+    await this.prisma.roomType.update({ where: { id }, data: { status } });
     await this.changes.record(
       actorId,
       {
-        action: 'room.status',
-        entity: 'Room',
+        action: 'roomType.status',
+        entity: 'RoomType',
         entityId: id,
-        summary: { from: room.status, to: status },
+        summary: { from: type.status, to: status },
       },
-      [CACHE_TAGS.rooms, CACHE_TAGS.promotions, roomCacheTag(room.slug)],
+      [CACHE_TAGS.rooms, roomCacheTag(type.slug)],
     );
     return this.get(id);
   }
 
   async reorder(actorId: string, ids: string[]) {
-    const count = await this.prisma.room.count({ where: { id: { in: ids } } });
-    if (count !== ids.length) throw new UnprocessableEntityException('Unknown room id in order.');
+    const count = await this.prisma.roomType.count({ where: { id: { in: ids } } });
+    if (count !== ids.length) throw new UnprocessableEntityException('Unknown id in order.');
     await this.prisma.$transaction(
       ids.map((id, index) =>
-        this.prisma.room.update({ where: { id }, data: { sortOrder: index } }),
+        this.prisma.roomType.update({ where: { id }, data: { sortOrder: index } }),
       ),
     );
     await this.changes.record(
       actorId,
-      { action: 'room.reorder', entity: 'Room', summary: { count: ids.length } },
+      { action: 'roomType.reorder', entity: 'RoomType', summary: { count: ids.length } },
       [CACHE_TAGS.rooms],
     );
     return this.list();
   }
 
-  /** Replaces the ordered image set and cover (requirement 9.4, 12.10 PUT /rooms/:id/images). */
-  async setImages(actorId: string, id: string, input: RoomImagesInput) {
-    const room = await this.prisma.room.findUnique({
+  /** Replaces the ordered image set and cover (PUT /admin/room-types/:id/images). */
+  async setImages(actorId: string, id: string, input: RoomTypeImagesInput) {
+    const type = await this.prisma.roomType.findUnique({
       where: { id },
-      select: {
-        id: true,
-        slug: true,
-        status: true,
-        name: true,
-        shortDescription: true,
-        capacity: true,
-      },
+      select: { id: true, slug: true, status: true, name: true, capacity: true },
     });
-    if (!room) throw new NotFoundException('Room not found.');
+    if (!type) throw new NotFoundException('Room type not found.');
     const mediaIds = input.images.map((image) => image.mediaAssetId);
     const media = await this.prisma.mediaAsset.findMany({
       where: { id: { in: mediaIds } },
@@ -309,11 +331,11 @@ export class RoomsService {
       throw new UnprocessableEntityException('Unknown media id.');
     const byId = new Map(media.map((m) => [m.id, m]));
 
-    if (room.status === 'PUBLISHED') {
+    if (type.status === 'PUBLISHED') {
       const notReady = media.filter((m) => !isPublishableMedia(m));
       if (notReady.length > 0) {
         throw new UnprocessableEntityException({
-          message: 'Published rooms only accept processed images with alternative text.',
+          message: 'Published room types only accept processed images with alternative text.',
           details: notReady.map((m) => ({
             path: 'images',
             message: `Media ${m.id} is not publishable.`,
@@ -322,7 +344,7 @@ export class RoomsService {
         });
       }
       this.assertPublishable({
-        ...room,
+        ...type,
         images: input.images.map((image) => ({
           isCover: image.isCover,
           mediaAsset: byId.get(image.mediaAssetId)!,
@@ -331,10 +353,10 @@ export class RoomsService {
     }
 
     await this.prisma.$transaction([
-      this.prisma.roomImage.deleteMany({ where: { roomId: id } }),
-      this.prisma.roomImage.createMany({
+      this.prisma.roomTypeImage.deleteMany({ where: { roomTypeId: id } }),
+      this.prisma.roomTypeImage.createMany({
         data: input.images.map((image, index) => ({
-          roomId: id,
+          roomTypeId: id,
           mediaAssetId: image.mediaAssetId,
           isCover: image.isCover,
           sortOrder: index,
@@ -344,37 +366,41 @@ export class RoomsService {
     await this.changes.record(
       actorId,
       {
-        action: 'room.images',
-        entity: 'Room',
+        action: 'roomType.images',
+        entity: 'RoomType',
         entityId: id,
         summary: { count: input.images.length },
       },
-      room.status === 'PUBLISHED' ? [CACHE_TAGS.rooms, roomCacheTag(room.slug)] : [],
+      type.status === 'PUBLISHED' ? [CACHE_TAGS.rooms, roomCacheTag(type.slug)] : [],
     );
     return this.get(id);
   }
 
-  /** Published rooms must be unpublished first (dependency on the live site). */
+  /** Published types must be unpublished first; types with rooms are protected (409). */
   async remove(actorId: string, id: string): Promise<void> {
-    const room = await this.prisma.room.findUnique({
+    const type = await this.prisma.roomType.findUnique({
       where: { id },
-      select: { status: true, slug: true },
+      select: { status: true, slug: true, _count: { select: { rooms: true } } },
     });
-    if (!room) throw new NotFoundException('Room not found.');
-    if (room.status === 'PUBLISHED') {
-      throw new ConflictException('Unpublish the room before deleting it.');
+    if (!type) throw new NotFoundException('Room type not found.');
+    if (type.status === 'PUBLISHED') {
+      throw new ConflictException('Unpublish the room type before deleting it.');
     }
-    await this.prisma.room.delete({ where: { id } });
-    await this.changes.record(
-      actorId,
-      { action: 'room.delete', entity: 'Room', entityId: id, summary: { slug: room.slug } },
-      [CACHE_TAGS.promotions],
-    );
+    if (type._count.rooms > 0) {
+      throw new ConflictException('Move or delete the rooms of this type first.');
+    }
+    await this.prisma.roomType.delete({ where: { id } });
+    await this.changes.record(actorId, {
+      action: 'roomType.delete',
+      entity: 'RoomType',
+      entityId: id,
+      summary: { slug: type.slug },
+    });
   }
 
   // ─── Public ─────────────────────────────────────────────────────────────────
 
-  private publicRoomInclude() {
+  private publicInclude() {
     return {
       images: {
         orderBy: { sortOrder: 'asc' },
@@ -384,27 +410,29 @@ export class RoomsService {
         where: { amenity: { active: true, scope: 'ROOM' } },
         include: { amenity: { select: { name: true, iconKey: true, sortOrder: true } } },
       },
-    } satisfies Prisma.RoomInclude;
+      _count: { select: { rooms: PUBLISHED_ROOMS } },
+    } satisfies Prisma.RoomTypeInclude;
   }
 
   private presentPublicSummary(
-    room: Prisma.RoomGetPayload<{ include: ReturnType<RoomsService['publicRoomInclude']> }>,
+    type: Prisma.RoomTypeGetPayload<{ include: ReturnType<RoomTypesService['publicInclude']> }>,
   ) {
-    const cover = room.images.find((image) => image.isCover);
+    const cover = type.images.find((image) => image.isCover);
     return {
-      slug: room.slug,
-      name: room.name,
-      type: room.type,
-      shortDescription: room.shortDescription,
-      capacity: room.capacity,
-      basePrice: room.basePrice,
-      currency: room.currency,
-      priceUnit: room.priceUnit,
-      taxesIncluded: room.taxesIncluded,
+      slug: type.slug,
+      name: type.name,
+      type: type.type,
+      description: type.description,
+      capacity: type.capacity,
+      basePrice: type.basePrice,
+      currency: type.currency,
+      priceUnit: type.priceUnit,
+      taxesIncluded: type.taxesIncluded,
       cover: toPublicMedia(cover?.mediaAsset, this.publicBaseUrl),
+      publishedRoomCount: type._count.rooms,
       /** Sitemap `lastModified` (requirement 19.1). */
-      updatedAt: room.updatedAt,
-      amenities: room.amenities
+      updatedAt: type.updatedAt,
+      amenities: type.amenities
         .map((a) => a.amenity)
         .sort((a, b) => a.sortOrder - b.sortOrder)
         .map(({ name, iconKey }) => ({ name, iconKey })),
@@ -412,55 +440,37 @@ export class RoomsService {
   }
 
   async listPublished() {
-    const rooms = await this.prisma.room.findMany({
+    const types = await this.prisma.roomType.findMany({
       where: { status: 'PUBLISHED' },
       orderBy: [{ sortOrder: 'asc' }, { name: 'asc' }],
-      include: this.publicRoomInclude(),
+      include: this.publicInclude(),
     });
-    return rooms.map((room) => this.presentPublicSummary(room));
+    return types.map((type) => this.presentPublicSummary(type));
   }
 
-  /** Published room by slug; an old slug answers `{ redirectTo }` (301 handled by the web). */
-  async getPublishedBySlug(slug: string, now = new Date()) {
-    const room = await this.prisma.room.findFirst({
+  /** Published type by slug; an old slug answers `{ redirectTo }` (301 handled by the web). */
+  async getPublishedBySlug(slug: string) {
+    const type = await this.prisma.roomType.findFirst({
       where: { slug, status: 'PUBLISHED' },
-      include: {
-        ...this.publicRoomInclude(),
-        promotions: {
-          where: { status: 'PUBLISHED', startsAt: { lte: now }, endsAt: { gt: now } },
-          orderBy: { sortOrder: 'asc' },
-          select: {
-            id: true,
-            title: true,
-            description: true,
-            conditions: true,
-            startsAt: true,
-            endsAt: true,
-          },
-        },
-      },
+      include: this.publicInclude(),
     });
-    if (room) {
+    if (type) {
       return {
-        ...this.presentPublicSummary(room),
-        description: room.description,
-        beds: room.beds,
-        areaM2: room.areaM2 === null ? null : Number(room.areaM2),
-        priceNotes: room.priceNotes,
-        seoTitle: room.seoTitle,
-        seoDescription: room.seoDescription,
-        images: room.images
+        ...this.presentPublicSummary(type),
+        beds: type.beds,
+        areaM2: type.areaM2 === null ? null : Number(type.areaM2),
+        priceNotes: type.priceNotes,
+        images: type.images
           .map((image) => toPublicMedia(image.mediaAsset, this.publicBaseUrl))
           .filter((media) => media !== null),
-        promotions: room.promotions,
       };
     }
 
-    const redirect = await this.prisma.roomSlugRedirect.findUnique({
+    const redirect = await this.prisma.roomTypeSlugRedirect.findUnique({
       where: { oldSlug: slug },
-      select: { room: { select: { slug: true, status: true } } },
+      select: { roomType: { select: { slug: true, status: true } } },
     });
-    if (redirect?.room.status === 'PUBLISHED') return { redirectTo: redirect.room.slug };
-    throw new NotFoundException('Room not found.');
+    if (redirect?.roomType.status === 'PUBLISHED') return { redirectTo: redirect.roomType.slug };
+    throw new NotFoundException('Room type not found.');
   }
 }

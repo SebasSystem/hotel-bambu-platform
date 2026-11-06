@@ -4,8 +4,9 @@ import {
   otherRooms,
   roomTypeFilters,
   roomTypeFromParam,
+  publishedRoomTotal,
+  roomExcerpt,
   roomTypeLabel,
-  summarizeRoomTypes,
 } from './rooms';
 import type { PublicRoomSummary } from './types';
 
@@ -19,13 +20,14 @@ function room(
     slug,
     name: slug,
     type,
-    shortDescription: null,
+    description: null,
     capacity,
     basePrice,
     currency: 'COP',
     priceUnit: 'PER_NIGHT',
     taxesIncluded: true,
     cover: null,
+    publishedRoomCount: 1,
     updatedAt: '2026-11-01T00:00:00.000Z',
     amenities: [
       { name: 'Wi-Fi', iconKey: 'wifi' },
@@ -34,20 +36,31 @@ function room(
   };
 }
 
-describe('summarizeRoomTypes', () => {
-  it('groups published rooms by type with count, capacity, cheapest rate and shared amenities', () => {
-    const summary = summarizeRoomTypes([
-      room('p1-tv', 'COUPLE', 150000, 2),
-      room('i1', 'INDIVIDUAL', null),
-      room('p2', 'COUPLE', 120000, 2),
-    ]);
-    expect(summary.map((s) => s.type)).toEqual(['INDIVIDUAL', 'COUPLE']);
-    const couple = summary[1]!;
-    expect(couple.count).toBe(2);
-    expect(couple.maxCapacity).toBe(2);
-    expect(couple.cheapest?.basePrice).toBe(120000);
-    expect(couple.sharedAmenities.map((a) => a.name)).toEqual(['Wi-Fi']);
-    expect(summary[0]!.cheapest).toBeNull();
+describe('publishedRoomTotal', () => {
+  it('adds up the published rooms of every type (home fact stack)', () => {
+    expect(
+      publishedRoomTotal([
+        { ...room('a', 'COUPLE', null), publishedRoomCount: 8 },
+        { ...room('b', 'INDIVIDUAL', null), publishedRoomCount: 7 },
+      ]),
+    ).toBe(15);
+    expect(publishedRoomTotal([])).toBe(0);
+  });
+});
+
+describe('roomExcerpt', () => {
+  it('is the first paragraph of the type description, or null', () => {
+    expect(roomExcerpt('Cama doble y luz natural.\n\nSegundo párrafo.')).toBe(
+      'Cama doble y luz natural.',
+    );
+    expect(roomExcerpt(null)).toBeNull();
+    expect(roomExcerpt('  ')).toBeNull();
+  });
+
+  it('cuts a long paragraph at a word boundary with an ellipsis', () => {
+    const excerpt = roomExcerpt('palabra '.repeat(40), 60)!;
+    expect(excerpt.length).toBeLessThanOrEqual(61);
+    expect(excerpt.endsWith('palabra…')).toBe(true);
   });
 });
 
@@ -59,7 +72,7 @@ describe('roomTypeFromParam / otherRooms', () => {
     expect(roomTypeFromParam(undefined)).toBeNull();
   });
 
-  it('suggests rooms of the same type first, excluding the current one', () => {
+  it('suggests room types of the same kind first, excluding the current one', () => {
     const rooms = [
       room('a', 'COUPLE', null),
       room('b', 'INDIVIDUAL', null),

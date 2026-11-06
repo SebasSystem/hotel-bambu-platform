@@ -14,7 +14,7 @@ export interface Timestamps {
   updatedAt: string;
 }
 
-/** `PUBLIC_MEDIA_SELECT` + status (embedded media in rooms, gallery, sections, hotel). */
+/** `PUBLIC_MEDIA_SELECT` + status (embedded media in room types, gallery, hero slides, hotel). */
 export interface EmbeddedMedia {
   id: string;
   altText: string | null;
@@ -51,7 +51,7 @@ export interface MediaAsset extends Timestamps {
   caption: string | null;
   status: MediaStatus;
   galleryItems?: { id: string; category: string; published: boolean }[];
-  _count?: { roomImages: number; heroSlides: number; sections: number };
+  _count?: { roomTypeImages: number; heroSlides: number; hotelLogos: number };
 }
 
 export interface Paginated<T> {
@@ -63,14 +63,15 @@ export interface Paginated<T> {
 
 export interface DashboardSummary {
   rooms: Partial<Record<PublicationStatus, number>>;
+  roomTypes: Partial<Record<PublicationStatus, number>>;
   /** Active hotel-wide amenities (scope HOTEL). */
   activeHotelAmenities: number;
-  activePromotions: number;
+  activeNearbyPlaces: number;
   lastChange: { createdAt: string; action: string; entity: string } | null;
   incomplete: {
     mediaMissingAlt: number;
-    publishedRoomsWithoutPrice: number;
-    roomsWithoutCover: number;
+    publishedRoomTypesWithoutPrice: number;
+    roomTypesWithoutCover: number;
   };
   analytics: {
     since: string;
@@ -94,11 +95,13 @@ export interface HotelProfile extends Timestamps {
   legalName: string | null;
   rntNumber: string | null;
   escnnaNotice: string | null;
+  tagline: string | null;
   shortDescription: string | null;
   description: string | null;
   address: string | null;
   municipality: string | null;
   department: string | null;
+  country: string | null;
   latitude: number | null;
   longitude: number | null;
   mapUrl: string | null;
@@ -106,38 +109,31 @@ export interface HotelProfile extends Timestamps {
   nearbyAttractions: string | null;
   phone: string | null;
   whatsappNumber: string | null;
+  whatsappGreeting: string | null;
   email: string | null;
   openingHours: { days: string; hours: string }[] | null;
   checkInTime: string | null;
   checkOutTime: string | null;
   logoMediaId: string | null;
-  heroMediaId: string | null;
   logoMedia: EmbeddedMedia | null;
-  heroMedia: EmbeddedMedia | null;
 }
 
-export interface WhatsAppTemplate extends Timestamps {
-  id: string;
-  key: 'GENERAL' | 'ROOM' | 'PROMOTION';
-  label: string;
-  body: string;
-  allowedVariables: string[];
-}
+export type RoomKind = 'INDIVIDUAL' | 'COUPLE' | 'TWIN' | 'FAMILY';
 
-export interface RoomImage {
+export interface RoomTypeImage {
   mediaAssetId: string;
   isCover: boolean;
   sortOrder: number;
   media: EmbeddedMedia & { preview: PublicMedia | null };
 }
 
-export interface Room extends Timestamps {
+/** What the site shows (ADR 0016); physical rooms reference it. */
+export interface RoomType extends Timestamps {
   id: string;
   slug: string;
   name: string;
-  type: 'INDIVIDUAL' | 'COUPLE' | 'TWIN' | 'FAMILY';
+  type: RoomKind;
   status: PublicationStatus;
-  shortDescription: string | null;
   description: string | null;
   capacity: number;
   beds: { type: string; count: number }[] | null;
@@ -148,12 +144,32 @@ export interface Room extends Timestamps {
   taxesIncluded: boolean;
   priceNotes: string | null;
   sortOrder: number;
-  seoTitle: string | null;
-  seoDescription: string | null;
   amenityIds: string[];
-  images: RoomImage[];
+  images: RoomTypeImage[];
   slugRedirects: { oldSlug: string; createdAt: string }[];
   publicationIssues: string[];
+  roomCount: number;
+  publishedRoomCount: number;
+}
+
+/** A physical room: number or name, type and status only. */
+export interface Room extends Timestamps {
+  id: string;
+  name: string;
+  status: PublicationStatus;
+  sortOrder: number;
+  roomTypeId: string;
+  roomType: { id: string; name: string; type: RoomKind; status: PublicationStatus };
+}
+
+export interface NearbyPlace extends Timestamps {
+  id: string;
+  name: string;
+  category: string | null;
+  distanceText: string | null;
+  travelTimeText: string | null;
+  sortOrder: number;
+  active: boolean;
 }
 
 export interface Amenity extends Timestamps {
@@ -165,8 +181,8 @@ export interface Amenity extends Timestamps {
   active: boolean;
   showOnHome: boolean;
   sortOrder: number;
-  /** Rooms using it (admin list only). */
-  _count?: { rooms: number };
+  /** Room types using it (admin list only). */
+  _count?: { roomTypes: number };
 }
 
 export interface HeroSlide extends Timestamps {
@@ -179,19 +195,6 @@ export interface HeroSlide extends Timestamps {
   mediaAsset: EmbeddedMedia;
 }
 
-export interface Promotion extends Timestamps {
-  id: string;
-  title: string;
-  description: string | null;
-  conditions: string | null;
-  startsAt: string;
-  endsAt: string;
-  roomId: string | null;
-  room: { id: string; name: string; slug: string; status: PublicationStatus } | null;
-  status: PublicationStatus;
-  sortOrder: number;
-}
-
 export interface GalleryItem extends Timestamps {
   id: string;
   mediaAssetId: string;
@@ -202,17 +205,12 @@ export interface GalleryItem extends Timestamps {
   mediaAsset: EmbeddedMedia;
 }
 
+/** A home section switch and position (ADR 0016). */
 export interface LandingSection extends Timestamps {
   id: string;
   key: string;
-  title: string | null;
-  subtitle: string | null;
-  body: string | null;
-  ctaLabel: string | null;
-  mediaAssetId: string | null;
   enabled: boolean;
   sortOrder: number;
-  mediaAsset: EmbeddedMedia | null;
 }
 
 export interface Faq extends Timestamps {

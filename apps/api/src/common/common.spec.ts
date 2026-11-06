@@ -1,9 +1,7 @@
 import { BadRequestException, ConflictException } from '@nestjs/common';
 import { describe, expect, it } from 'vitest';
 import { Prisma } from '../generated/prisma/client.js';
-import { isPromotionActive } from '../modules/promotions/promotions.js';
 import { hotelDay } from '../modules/analytics/analytics.js';
-import { disallowedVariables } from '../modules/hotel/hotel.js';
 import { toPublicMedia } from '../modules/media/media-url.js';
 import { changedFields } from '../modules/audit/audit.service.js';
 import { toErrorResponse } from './http-exception.filter.js';
@@ -77,26 +75,6 @@ describe('publication helpers', () => {
   it('never exposes unprocessed or undescribed media', () => {
     expect(toPublicMedia({ ...media, status: 'PROCESSING' }, 'https://cdn.example')).toBeNull();
     expect(toPublicMedia({ ...media, altText: ' ' }, 'https://cdn.example')).toBeNull();
-  });
-
-  it('shows promotions only while published and in date', () => {
-    const promo = {
-      status: 'PUBLISHED',
-      startsAt: new Date('2026-11-01T00:00:00Z'),
-      endsAt: new Date('2026-11-10T00:00:00Z'),
-    };
-    expect(isPromotionActive(promo, new Date('2026-11-05T00:00:00Z'))).toBe(true);
-    expect(isPromotionActive(promo, new Date('2026-11-10T00:00:00Z'))).toBe(false);
-    expect(isPromotionActive({ ...promo, status: 'DRAFT' }, new Date('2026-11-05T00:00:00Z'))).toBe(
-      false,
-    );
-  });
-
-  it('only allows declared WhatsApp template variables', () => {
-    expect(disallowedVariables('Hola {{habitacion}} {{ precio }}', ['habitacion'])).toEqual([
-      'precio',
-    ]);
-    expect(disallowedVariables('Hola', [])).toEqual([]);
   });
 
   it('counts analytics per hotel-local day (America/Bogota, UTC-5)', () => {

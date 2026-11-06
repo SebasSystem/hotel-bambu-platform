@@ -30,7 +30,7 @@ export function MapEmbed({ hotelName, embedUrl, directionsUrl, address }: MapEmb
 
   return (
     <div className="overflow-hidden rounded-lg border border-line bg-paper">
-      <div className="relative min-h-[330px] w-full aspect-[4/3] tab:aspect-[16/10]">
+      <div className="relative min-h-[330px] w-full min-w-0 aspect-[4/3] tab:aspect-[16/10]">
         {loaded ? (
           <iframe
             src={embedUrl}

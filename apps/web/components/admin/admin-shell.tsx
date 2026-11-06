@@ -2,6 +2,7 @@
 
 import {
   BedDouble,
+  BedSingle,
   CircleHelp,
   FileText,
   Hotel,
@@ -9,10 +10,9 @@ import {
   LayoutDashboard,
   LayoutTemplate,
   LogOut,
+  MapPin,
   Menu,
-  MessageCircle,
   Share2,
-  Tag,
   UserRound,
   Wifi,
   X,
@@ -30,16 +30,16 @@ import { Button, cx } from './ui';
 export const ADMIN_NAV = [
   { href: '/admin', label: 'Resumen', icon: LayoutDashboard },
   { href: '/admin/hotel', label: 'Información del hotel', icon: Hotel },
-  { href: '/admin/rooms', label: 'Habitaciones', icon: BedDouble },
+  { href: '/admin/room-types', label: 'Tipos de habitación', icon: BedDouble },
+  { href: '/admin/rooms', label: 'Habitaciones', icon: BedSingle },
   { href: '/admin/amenities', label: 'Comodidades', icon: Wifi },
-  { href: '/admin/promotions', label: 'Promociones', icon: Tag },
+  { href: '/admin/nearby-places', label: 'Lugares cercanos', icon: MapPin },
   { href: '/admin/media', label: 'Medios', icon: Images },
   { href: '/admin/gallery', label: 'Galería', icon: Images },
   { href: '/admin/content', label: 'Contenido de la landing', icon: LayoutTemplate },
   { href: '/admin/faq', label: 'Preguntas frecuentes', icon: CircleHelp },
   { href: '/admin/policies', label: 'Políticas del hotel', icon: FileText },
   { href: '/admin/social', label: 'Redes sociales', icon: Share2 },
-  { href: '/admin/whatsapp', label: 'WhatsApp', icon: MessageCircle },
   { href: '/admin/account', label: 'Mi cuenta', icon: UserRound },
 ] as const;
 

@@ -29,7 +29,7 @@ export const changePasswordSchema = z.strictObject({
 export type ChangePasswordInput = z.infer<typeof changePasswordSchema>;
 
 export interface AuthSessionResponse {
-  user: { id: string; email: string; name: string | null; role: 'ADMIN' | 'EDITOR' };
+  user: { id: string; email: string; name: string | null; role: 'ADMIN' };
   csrfToken: string;
   expiresAt: string;
 }

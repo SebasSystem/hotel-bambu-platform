@@ -1,5 +1,5 @@
 import type { MetadataRoute } from 'next';
-import { getRooms } from '@/lib/public/api';
+import { getRoomTypes } from '@/lib/public/api';
 import { routes } from '@/lib/public/navigation';
 import { absoluteUrl, isLegalApproved } from '@/lib/seo/config';
 
@@ -10,7 +10,7 @@ export const dynamic = 'force-dynamic';
  * Legal pages are listed only once the hotel approved them (`LEGAL_APPROVED=true`).
  */
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const rooms = await getRooms();
+  const rooms = await getRoomTypes();
   const pages = [
     { path: routes.home, priority: 1 },
     { path: routes.rooms, priority: 0.9 },

@@ -54,7 +54,7 @@ export interface ResourceManagerProps<T extends { id: string }> {
 
 /**
  * Generic list + inline form for simple admin resources (FAQ, policies, social links, amenities,
- * services, promotions). Validation reuses the shared Zod schemas; the API stays the authority.
+ * rooms, nearby places). Validation reuses the shared Zod schemas; the API stays the authority.
  */
 export function ResourceManager<T extends { id: string }>(props: ResourceManagerProps<T>) {
   const { items, noun, endpoint, reorderable, toggles = [] } = props;

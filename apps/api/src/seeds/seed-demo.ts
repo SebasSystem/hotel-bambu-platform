@@ -1,22 +1,33 @@
 import type { PrismaClient } from '../generated/prisma/client.js';
 import { AMENITIES } from './base-data.js';
-
-/** Room equipment only: HOTEL amenities are never assigned per room (ADR 0015). */
-const ROOM_AMENITIES = AMENITIES.filter((amenity) => amenity.scope === 'ROOM');
-import { DEMO_FAQS, DEMO_MARKER, DEMO_POLICIES, buildDemoRooms } from './demo-data.js';
+import {
+  DEMO_FAQS,
+  DEMO_MARKER,
+  DEMO_POLICIES,
+  DEMO_ROOM_TYPES,
+  buildDemoRooms,
+} from './demo-data.js';
 import { assertDemoSeedAllowed } from './seed-guards.js';
 
+/** Room equipment only: HOTEL amenities are never assigned per room type (ADR 0015). */
+const ROOM_AMENITIES = AMENITIES.filter((amenity) => amenity.scope === 'ROOM');
+
+/** Bed setups the pre-ADR 0016 demo seed invented for its rooms. */
+const LEGACY_DEMO_BEDS = [[{ type: 'SINGLE', count: 1 }], [{ type: 'DOUBLE', count: 1 }]];
+
 export interface SeedDemoResult {
+  roomTypes: number;
   rooms: number;
   faqs: number;
   policies: number;
 }
 
 /**
- * Demo seed (local/staging only). Re-runnable: rooms are upserted by slug (demo text refreshed,
- * images and status kept); [DEMO] FAQ and policy rows are replaced. Requires db:seed:base first
- * (amenity catalog). Rooms start as DRAFT; media:import adds photos and publishes rooms that get
- * a cover, honouring the publication rule (cover image with alt text).
+ * Demo seed (local/staging only). Re-runnable: the confirmed room types are created when missing
+ * (an existing type keeps its data, except that a [DEMO] description is cleared), each gets the
+ * confirmed room equipment, and a type without rooms gets one [DEMO] example room. Existing rooms
+ * are never touched. [DEMO] FAQ and policy rows are replaced. Requires db:seed:base first
+ * (amenity catalog). New types start as DRAFT; media:import adds photos and publishes them.
  */
 export async function seedDemo(
   prisma: PrismaClient,
@@ -33,31 +44,69 @@ export async function seedDemo(
       throw new Error('Amenity catalog missing: run db:seed:base before db:seed:demo.');
     }
 
-    for (const room of buildDemoRooms()) {
-      const data = {
-        name: room.name,
-        type: room.type,
-        capacity: room.capacity,
-        beds: room.beds,
-        shortDescription: room.shortDescription,
-        description: room.description,
-        sortOrder: room.sortOrder,
-        // TODO(hotel): real informative rates (COP, taxes included). Null hides the price.
-        basePrice: null,
-        currency: 'COP',
-        priceUnit: 'PER_NIGHT' as const,
-        taxesIncluded: true,
-      };
-      const saved = await tx.room.upsert({
-        where: { slug: room.slug },
-        create: { slug: room.slug, status: 'DRAFT', ...data },
-        update: data,
-        select: { id: true },
+    // Descriptions invented by earlier demo seeds are removed (owner decision 2026-11-05).
+    await tx.roomType.updateMany({
+      where: { description: { startsWith: DEMO_MARKER } },
+      data: { description: null },
+    });
+    // So are the bed setups they assumed (one single / one double bed), on types that only have
+    // demo rooms: the real beds are unknown.
+    for (const beds of LEGACY_DEMO_BEDS) {
+      await tx.roomType.updateMany({
+        where: {
+          beds: { equals: beds },
+          rooms: { every: { name: { startsWith: DEMO_MARKER } } },
+        },
+        data: { beds: [] },
       });
-      await tx.roomAmenity.createMany({
-        data: amenities.map((a) => ({ roomId: saved.id, amenityId: a.id })),
+    }
+
+    const typeIds = new Map<string, string>();
+    for (const type of DEMO_ROOM_TYPES) {
+      // An existing type of the same kind (e.g. created by the room-type migration) is reused.
+      const existing =
+        (await tx.roomType.findUnique({ where: { slug: type.slug }, select: { id: true } })) ??
+        (await tx.roomType.findFirst({
+          where: { type: type.type },
+          orderBy: { sortOrder: 'asc' },
+          select: { id: true },
+        }));
+      const saved =
+        existing ??
+        (await tx.roomType.create({
+          data: {
+            slug: type.slug,
+            name: type.name,
+            type: type.type,
+            capacity: type.capacity,
+            sortOrder: type.sortOrder,
+            status: 'DRAFT',
+            // TODO(hotel): description, beds, area and informative rates (COP, taxes included).
+          },
+          select: { id: true },
+        }));
+      typeIds.set(type.slug, saved.id);
+      await tx.roomTypeAmenity.createMany({
+        data: amenities.map((a) => ({ roomTypeId: saved.id, amenityId: a.id })),
         skipDuplicates: true,
       });
+    }
+
+    for (const [index, room] of buildDemoRooms().entries()) {
+      const roomTypeId = typeIds.get(room.typeSlug)!;
+      // Only for a type without rooms: existing rooms (demo or real) are never multiplied.
+      const hasRooms = await tx.room.count({ where: { roomTypeId } });
+      if (!hasRooms) {
+        const max = await tx.room.aggregate({ _max: { sortOrder: true } });
+        await tx.room.create({
+          data: {
+            name: room.name,
+            roomTypeId,
+            status: 'DRAFT',
+            sortOrder: (max._max.sortOrder ?? -1) + 1 + index,
+          },
+        });
+      }
     }
 
     await tx.faq.deleteMany({ where: { question: { startsWith: DEMO_MARKER } } });
@@ -75,6 +124,7 @@ export async function seedDemo(
     });
 
     return {
+      roomTypes: await tx.roomType.count(),
       rooms: await tx.room.count({ where: { name: { startsWith: DEMO_MARKER } } }),
       faqs: await tx.faq.count({ where: { question: { startsWith: DEMO_MARKER } } }),
       policies: await tx.hotelPolicy.count({ where: { title: { startsWith: DEMO_MARKER } } }),

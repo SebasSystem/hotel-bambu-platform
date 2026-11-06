@@ -4,7 +4,7 @@ import { buttonClass } from '@/components/ui/button';
 import { Eyebrow } from '@/components/ui/eyebrow';
 import { WhatsAppLink } from '@/components/site/whatsapp-link';
 import { ui } from '@/lib/i18n/es';
-import { getRooms, getSite } from '@/lib/public/api';
+import { getRoomTypes, getSite } from '@/lib/public/api';
 import { routes } from '@/lib/public/navigation';
 import { whatsAppLink } from '@/lib/public/whatsapp';
 
@@ -12,7 +12,7 @@ export const metadata = { title: 'Página no encontrada', robots: { index: false
 
 /** Useful 404 (requirement 19.1): links to the rooms and WhatsApp, inside the site shell. */
 export default async function NotFound() {
-  const [site, rooms] = await Promise.all([getSite(), getRooms()]);
+  const [site, rooms] = await Promise.all([getSite(), getRoomTypes()]);
   const whatsappUrl = whatsAppLink(site, { kind: 'general' });
   const suggestions = rooms.slice(0, 4);
 

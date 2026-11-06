@@ -117,12 +117,47 @@ describe.skipIf(!databaseUrl)('API integration (hotel_test database)', () => {
 
   it('serves health and public content without a session', async () => {
     expect((await call('GET', '/health')).statusCode).toBe(200);
-    const rooms = await call('GET', '/public/rooms');
-    expect(rooms.statusCode).toBe(200);
-    expect(rooms.json()).toEqual([]);
-    expect(rooms.headers['cache-control']).toContain('public');
+    const types = await call('GET', '/public/room-types');
+    expect(types.statusCode).toBe(200);
+    expect(types.json()).toEqual([]);
+    expect(types.headers['cache-control']).toContain('public');
     const site = await call('GET', '/public/site');
     expect(site.json().hotel.name).toBe('Hotel Bambú Plaza');
+  });
+
+  it('serves the approved hotel facts from the base seed, without a WhatsApp number', async () => {
+    const site = (await call('GET', '/public/site')).json();
+    expect(site.hotel).toMatchObject({
+      tagline: 'Hotel Bambú Plaza: descanso, comodidad y confianza en el corazón de Mocoa',
+      address: 'Calle 8 # 7-10',
+      municipality: 'Mocoa',
+      department: 'Putumayo',
+      country: 'Colombia',
+      latitude: 1.146883,
+      longitude: -76.64794,
+      mapUrl: 'https://www.google.com/maps/search/?api=1&query=1.146883,-76.647940',
+      phone: '+57 310 679 8260',
+      rntNumber: '232175',
+      whatsappNumber: null,
+      whatsappGreeting: null,
+    });
+    expect(site.hotel.description.split('\n\n')).toHaveLength(2);
+    // Single hero and description sources (ADR 0016).
+    expect(site.hotel.hero).toBeUndefined();
+    expect(site.whatsappTemplates).toBeUndefined();
+    expect(site.sections[0]).toEqual({ key: 'HERO', sortOrder: 0 });
+  });
+
+  it('answers 404 for the removed promotion, template and per-room endpoints', async () => {
+    for (const url of [
+      '/public/promotions',
+      '/public/rooms',
+      '/public/rooms/habitacion-101',
+      '/admin/promotions',
+      '/admin/whatsapp-templates',
+    ]) {
+      expect((await call('GET', url, { auth: false })).statusCode, url).toBe(404);
+    }
   });
 
   it('sends locked-down security headers on JSON responses', async () => {
@@ -188,14 +223,18 @@ describe.skipIf(!databaseUrl)('API integration (hotel_test database)', () => {
 
   it('requires the CSRF token on authenticated writes (403)', async () => {
     const body = { name: 'Habitación Prueba', type: 'COUPLE', capacity: 2 };
-    expect((await call('POST', '/admin/rooms', { body, csrf: false })).statusCode).toBe(403);
+    expect((await call('POST', '/admin/room-types', { body, csrf: false })).statusCode).toBe(403);
     expect(
-      (await call('POST', '/admin/rooms', { body, headers: { 'x-csrf-token': 'forged' } }))
+      (await call('POST', '/admin/room-types', { body, headers: { 'x-csrf-token': 'forged' } }))
         .statusCode,
     ).toBe(403);
     expect(
-      (await call('POST', '/admin/rooms', { body, headers: { origin: 'https://evil.example' } }))
-        .statusCode,
+      (
+        await call('POST', '/admin/room-types', {
+          body,
+          headers: { origin: 'https://evil.example' },
+        })
+      ).statusCode,
     ).toBe(403);
   });
 
@@ -207,31 +246,32 @@ describe.skipIf(!databaseUrl)('API integration (hotel_test database)', () => {
     expect(res.json().details[0].code).toBe('unrecognized_keys');
   });
 
-  let roomId = '';
+  let typeId = '';
   let mediaId = '';
 
-  it('creates a draft room that stays hidden from the public site', async () => {
-    const res = await call('POST', '/admin/rooms', {
-      body: {
-        name: 'Habitación Prueba',
-        type: 'COUPLE',
-        capacity: 2,
-        shortDescription: 'Para dos.',
-      },
+  it('creates a draft room type that stays hidden from the public site', async () => {
+    const res = await call('POST', '/admin/room-types', {
+      body: { name: 'Habitación Prueba', type: 'COUPLE', capacity: 2 },
     });
     expect(res.statusCode).toBe(201);
-    expect(res.json()).toMatchObject({ slug: 'habitacion-prueba', status: 'DRAFT' });
-    roomId = res.json().id;
-    expect((await call('GET', '/public/rooms')).json()).toEqual([]);
-    expect((await call('GET', '/public/rooms/habitacion-prueba')).statusCode).toBe(404);
+    expect(res.json()).toMatchObject({
+      slug: 'habitacion-prueba',
+      status: 'DRAFT',
+      description: null,
+      roomCount: 0,
+      publishedRoomCount: 0,
+    });
+    typeId = res.json().id;
+    expect((await call('GET', '/public/room-types')).json()).toEqual([]);
+    expect((await call('GET', '/public/room-types/habitacion-prueba')).statusCode).toBe(404);
   });
 
-  it('refuses to publish a room without a cover image (422)', async () => {
-    const res = await call('PATCH', `/admin/rooms/${roomId}/status`, {
+  it('refuses to publish a room type without a cover image (422)', async () => {
+    const res = await call('PATCH', `/admin/room-types/${typeId}/status`, {
       body: { status: 'PUBLISHED' },
     });
     expect(res.statusCode).toBe(422);
-    expect(res.json().details.map((d: { path: string }) => d.path)).toContain('coverImage');
+    expect(res.json().details.map((d: { path: string }) => d.path)).toEqual(['coverImage']);
   });
 
   it('uploads an image through the pipeline (multipart, alt text required)', async () => {
@@ -272,13 +312,13 @@ describe.skipIf(!databaseUrl)('API integration (hotel_test database)', () => {
     expect(storage.objects.size).toBeGreaterThan(0);
   });
 
-  it('publishes the room once it has a cover and shows it publicly with variant URLs', async () => {
+  it('publishes the type once it has a cover and shows it publicly with variant URLs', async () => {
     revalidate.mockClear();
-    const images = await call('PUT', `/admin/rooms/${roomId}/images`, {
+    const images = await call('PUT', `/admin/room-types/${typeId}/images`, {
       body: { images: [{ mediaAssetId: mediaId, isCover: true }] },
     });
     expect(images.statusCode).toBe(200);
-    const publish = await call('PATCH', `/admin/rooms/${roomId}/status`, {
+    const publish = await call('PATCH', `/admin/room-types/${typeId}/status`, {
       body: { status: 'PUBLISHED' },
     });
     expect(publish.statusCode).toBe(200);
@@ -286,26 +326,140 @@ describe.skipIf(!databaseUrl)('API integration (hotel_test database)', () => {
       expect.arrayContaining(['rooms', 'room:habitacion-prueba']),
     );
 
-    const list = (await call('GET', '/public/rooms')).json();
+    const list = (await call('GET', '/public/room-types')).json();
     expect(list).toHaveLength(1);
+    expect(list[0]).toMatchObject({ slug: 'habitacion-prueba', publishedRoomCount: 0 });
     expect(list[0].cover.altText).toBe('Cama doble con lencería blanca');
     expect(list[0].cover.variants[0].url).toMatch(/^http:\/\/localhost:9000\/hotel-media\/media\//);
+    const detail = (await call('GET', '/public/room-types/habitacion-prueba')).json();
+    expect(detail.seoTitle).toBeUndefined();
+    expect(detail.promotions).toBeUndefined();
   });
 
-  it('keeps the old URL alive with a redirect after renaming a published room', async () => {
-    const res = await call('PATCH', `/admin/rooms/${roomId}`, { body: { slug: 'suite-prueba' } });
+  it('keeps the old URL alive with a redirect after renaming a published type', async () => {
+    const res = await call('PATCH', `/admin/room-types/${typeId}`, {
+      body: { slug: 'suite-prueba' },
+    });
     expect(res.statusCode).toBe(200);
-    expect((await call('GET', '/public/rooms/habitacion-prueba')).json()).toEqual({
+    expect((await call('GET', '/public/room-types/habitacion-prueba')).json()).toEqual({
       redirectTo: 'suite-prueba',
     });
-    expect((await call('GET', '/public/rooms/suite-prueba')).json()).toMatchObject({
+    expect((await call('GET', '/public/room-types/suite-prueba')).json()).toMatchObject({
       name: 'Habitación Prueba',
     });
   });
 
-  it('protects in-use media and published rooms from deletion (409)', async () => {
+  it('maps a former per-room URL to its type page (migrated redirect)', async () => {
+    await prisma.roomTypeSlugRedirect.create({
+      data: { oldSlug: 'habitacion-101', roomTypeId: typeId },
+    });
+    expect((await call('GET', '/public/room-types/habitacion-101')).json()).toEqual({
+      redirectTo: 'suite-prueba',
+    });
+    // The slug stays reserved for that type.
+    const taken = await call('POST', '/admin/room-types', {
+      body: { name: 'Otra', slug: 'habitacion-101', type: 'TWIN', capacity: 2 },
+    });
+    expect(taken.statusCode).toBe(409);
+  });
+
+  let roomIds: string[] = [];
+
+  it('manages lightweight rooms and counts only the published ones on the type', async () => {
+    revalidate.mockClear();
+    const first = await call('POST', '/admin/rooms', {
+      body: { name: '101', roomTypeId: typeId, status: 'PUBLISHED' },
+    });
+    expect(first.statusCode).toBe(201);
+    expect(first.json()).toMatchObject({
+      name: '101',
+      status: 'PUBLISHED',
+      roomType: { id: typeId, name: 'Habitación Prueba' },
+    });
+    expect(revalidate).toHaveBeenCalledWith(expect.arrayContaining(['rooms']));
+    const second = await call('POST', '/admin/rooms', {
+      body: { name: '102', roomTypeId: typeId },
+    });
+    expect(second.statusCode).toBe(201);
+    expect(second.json().status).toBe('DRAFT');
+    expect(second.json().sortOrder).toBeGreaterThan(first.json().sortOrder);
+    roomIds = [first.json().id, second.json().id];
+
+    const unknownType = await call('POST', '/admin/rooms', {
+      body: { name: '103', roomTypeId: '00000000-0000-7000-8000-000000000000' },
+    });
+    expect(unknownType.statusCode).toBe(422);
+    expect(unknownType.json().details[0].path).toBe('roomTypeId');
+
+    const count = async () =>
+      (await call('GET', '/public/room-types')).json()[0].publishedRoomCount as number;
+    expect(await count()).toBe(1);
+    expect(
+      (await call('PATCH', `/admin/rooms/${roomIds[1]}`, { body: { status: 'PUBLISHED' } }))
+        .statusCode,
+    ).toBe(200);
+    expect(await count()).toBe(2);
+    expect(
+      (await call('PATCH', `/admin/rooms/${roomIds[0]}`, { body: { status: 'INACTIVE' } }))
+        .statusCode,
+    ).toBe(200);
+    expect(await count()).toBe(1);
+
+    const admin = (await call('GET', `/admin/room-types/${typeId}`)).json();
+    expect(admin).toMatchObject({ roomCount: 2, publishedRoomCount: 1 });
+    const order = await call('PUT', '/admin/rooms/order', {
+      body: { ids: [...roomIds].reverse() },
+    });
+    expect(order.json().map((r: { name: string }) => r.name)).toEqual(['102', '101']);
+  });
+
+  it('protects in-use media, published types and types with rooms from deletion (409)', async () => {
     expect((await call('DELETE', `/admin/media/${mediaId}`)).statusCode).toBe(409);
-    expect((await call('DELETE', `/admin/rooms/${roomId}`)).statusCode).toBe(409);
+    expect((await call('DELETE', `/admin/room-types/${typeId}`)).statusCode).toBe(409);
+    await call('PATCH', `/admin/room-types/${typeId}/status`, { body: { status: 'DRAFT' } });
+    expect((await call('DELETE', `/admin/room-types/${typeId}`)).statusCode).toBe(409);
+    expect((await call('GET', '/public/room-types')).json()).toEqual([]);
+    await call('PATCH', `/admin/room-types/${typeId}/status`, { body: { status: 'PUBLISHED' } });
+    expect((await call('DELETE', `/admin/rooms/${roomIds[0]}`)).statusCode).toBe(204);
+    expect((await call('GET', '/admin/rooms')).json()).toHaveLength(1);
+  });
+
+  it('manages nearby places and lists only the active ones publicly', async () => {
+    revalidate.mockClear();
+    const park = await call('POST', '/admin/nearby-places', {
+      body: { name: 'Parque principal', distanceText: '300 m', travelTimeText: '4 min a pie' },
+    });
+    expect(park.statusCode).toBe(201);
+    expect(revalidate).toHaveBeenCalledWith(['nearby']);
+    const terminal = await call('POST', '/admin/nearby-places', {
+      body: { name: 'Terminal de transporte', category: 'Transporte', distanceText: '' },
+    });
+    expect(terminal.statusCode).toBe(201);
+    expect(terminal.json()).toMatchObject({ distanceText: null, active: true });
+    expect(
+      (await call('POST', '/admin/nearby-places', { body: { distanceText: '1 km' } })).statusCode,
+    ).toBe(400);
+
+    const order = await call('PUT', '/admin/nearby-places/order', {
+      body: { ids: [terminal.json().id, park.json().id] },
+    });
+    expect(order.statusCode).toBe(200);
+    await call('PATCH', `/admin/nearby-places/${park.json().id}`, { body: { active: false } });
+    const list = await call('GET', '/public/nearby-places', { auth: false });
+    expect(list.headers['cache-control']).toContain('public');
+    expect(list.json()).toEqual([
+      {
+        id: terminal.json().id,
+        name: 'Terminal de transporte',
+        category: 'Transporte',
+        distanceText: null,
+        travelTimeText: null,
+      },
+    ]);
+    expect((await call('DELETE', `/admin/nearby-places/${terminal.json().id}`)).statusCode).toBe(
+      204,
+    );
+    expect((await call('GET', '/admin/nearby-places')).json()).toHaveLength(1);
   });
 
   it('has no hotel services module any more (ADR 0015)', async () => {
@@ -331,7 +485,7 @@ describe.skipIf(!databaseUrl)('API integration (hotel_test database)', () => {
     expect(all.find((a: { name: string }) => a.name === 'Paneles solares').scope).toBe('HOTEL');
   });
 
-  it('assigns only ROOM amenities to rooms (422 for a HOTEL amenity)', async () => {
+  it('assigns only ROOM amenities to room types (422 for a HOTEL amenity)', async () => {
     const amenities = (await call('GET', '/admin/amenities')).json() as {
       id: string;
       name: string;
@@ -339,14 +493,18 @@ describe.skipIf(!databaseUrl)('API integration (hotel_test database)', () => {
     }[];
     const wifi = amenities.find((a) => a.scope === 'HOTEL')!;
     const tv = amenities.find((a) => a.name === 'Televisor')!;
-    const bad = await call('PATCH', `/admin/rooms/${roomId}`, { body: { amenityIds: [wifi.id] } });
+    const bad = await call('PATCH', `/admin/room-types/${typeId}`, {
+      body: { amenityIds: [wifi.id] },
+    });
     expect(bad.statusCode).toBe(422);
     expect(bad.json().details[0].path).toBe('amenityIds');
-    const ok = await call('PATCH', `/admin/rooms/${roomId}`, { body: { amenityIds: [tv.id] } });
+    const ok = await call('PATCH', `/admin/room-types/${typeId}`, {
+      body: { amenityIds: [tv.id] },
+    });
     expect(ok.statusCode).toBe(200);
-    const room = (await call('GET', '/public/rooms/suite-prueba')).json();
-    expect(room.amenities).toEqual([{ name: 'Televisor', iconKey: 'tv' }]);
-    // An amenity still assigned to rooms cannot move to the HOTEL scope.
+    const type = (await call('GET', '/public/room-types/suite-prueba')).json();
+    expect(type.amenities).toEqual([{ name: 'Televisor', iconKey: 'tv' }]);
+    // An amenity still assigned to room types cannot move to the HOTEL scope.
     const scope = await call('PATCH', `/admin/amenities/${tv.id}`, { body: { scope: 'HOTEL' } });
     expect(scope.statusCode).toBe(409);
   });
@@ -423,9 +581,16 @@ describe.skipIf(!databaseUrl)('API integration (hotel_test database)', () => {
   });
 
   it('records an audit trail without secrets', async () => {
-    const logs = await prisma.auditLog.findMany({ where: { entity: 'Room', entityId: roomId } });
+    const logs = await prisma.auditLog.findMany({
+      where: { entity: 'RoomType', entityId: typeId },
+    });
     expect(logs.map((l) => l.action)).toEqual(
-      expect.arrayContaining(['room.create', 'room.images', 'room.status', 'room.update']),
+      expect.arrayContaining([
+        'roomType.create',
+        'roomType.images',
+        'roomType.status',
+        'roomType.update',
+      ]),
     );
     expect(JSON.stringify(logs)).not.toMatch(/password|csrf/i);
   });
@@ -463,7 +628,7 @@ describe.skipIf(!databaseUrl)('API integration (hotel_test database)', () => {
 
   it('logs out and invalidates the session server-side', async () => {
     expect((await call('POST', '/auth/logout')).statusCode).toBe(204);
-    expect((await call('GET', '/admin/rooms')).statusCode).toBe(401);
+    expect((await call('GET', '/admin/room-types')).statusCode).toBe(401);
     expect(await prisma.session.count({ where: { adminUser: { email: ADMIN.email } } })).toBe(0);
   });
 

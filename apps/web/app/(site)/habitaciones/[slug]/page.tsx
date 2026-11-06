@@ -17,34 +17,31 @@ import { BED_TYPE_LABELS } from '@/lib/labels';
 import { ui } from '@/lib/i18n/es';
 import { breadcrumbJsonLd, roomJsonLd } from '@/lib/seo/json-ld';
 import { pageMetadata } from '@/lib/seo/metadata';
-import { getRoom, getRooms, getSite } from '@/lib/public/api';
+import { roomTypeSeo } from '@/lib/seo/room-type-seo';
+import { getRoomType, getRoomTypes, getSite } from '@/lib/public/api';
 import { routes } from '@/lib/public/navigation';
 import { otherRooms, roomTypeLabel } from '@/lib/public/rooms';
 import { whatsAppLink } from '@/lib/public/whatsapp';
-
-const dateFormat = new Intl.DateTimeFormat('es-CO', {
-  dateStyle: 'long',
-  timeZone: 'America/Bogota',
-});
 
 export async function generateMetadata({
   params,
 }: PageProps<'/habitaciones/[slug]'>): Promise<Metadata> {
   const { slug } = await params;
-  const result = await getRoom(slug);
+  const result = await getRoomType(slug);
   if (result.kind !== 'room') return {};
   const { room } = result;
   const { hotel } = await getSite();
-  return pageMetadata({
+  // Generated from the type and the city (ADR 0016: no per-room SEO fields).
+  const seo = roomTypeSeo(room, hotel);
+  const meta = pageMetadata({
     path: routes.room(room.slug),
     siteName: hotel.name,
-    title: room.seoTitle ?? room.name,
-    description:
-      room.seoDescription ??
-      room.shortDescription ??
-      `${room.name}: ${ui.rooms.capacity(room.capacity)}. ${ui.rooms.confirm}`,
+    title: seo.title,
+    description: seo.description,
     image: room.cover ?? room.images[0] ?? null,
   });
+  // The generated title already ends with the hotel name: skip the layout template.
+  return { ...meta, title: { absolute: seo.title } };
 }
 
 function Block({ label, children }: { label: string; children: ReactNode }) {
@@ -57,21 +54,22 @@ function Block({ label, children }: { label: string; children: ReactNode }) {
 }
 
 /**
- * Room detail (mockup `#habitacion`, requirement 4.3): sticky photo column with thumbnails and the
- * lightbox, content column with a breadcrumb on its own line (defect 2), kicker, title, lead and
- * detail blocks (description, capacity, equipment, rate, schedule). No availability block (owner
- * decision); the CTA opens WhatsApp with the ROOM template. An old slug answers a 308 redirect.
+ * Room type page (mockup `#habitacion`, requirement 4.3, ADR 0016): sticky photo column with
+ * thumbnails and the lightbox, content column with a breadcrumb on its own line (defect 2), kicker,
+ * title and detail blocks (description, capacity, equipment, rate, schedule). No availability
+ * block (owner decision); the CTA opens WhatsApp with the room-type message. An old slug (renamed
+ * type, or a former per-room URL mapped by the migration) answers a 308 permanent redirect.
  */
 export default async function RoomPage({ params }: PageProps<'/habitaciones/[slug]'>) {
   const { slug } = await params;
-  const result = await getRoom(slug);
+  const result = await getRoomType(slug);
   if (result.kind === 'redirect') permanentRedirect(routes.room(result.slug));
   if (result.kind === 'not-found') notFound();
   const { room } = result;
 
-  const [site, rooms] = await Promise.all([getSite(), getRooms()]);
+  const [site, rooms] = await Promise.all([getSite(), getRoomTypes()]);
   const { hotel } = site;
-  const whatsappUrl = whatsAppLink(site, { kind: 'room', name: room.name });
+  const whatsappUrl = whatsAppLink(site, { kind: 'roomType', name: room.name });
   const images = room.images.length > 0 ? room.images : room.cover ? [room.cover] : [];
   const beds = (room.beds ?? []).filter((bed) => bed.count > 0);
   const suggestions = otherRooms(rooms, room);
@@ -143,9 +141,6 @@ export default async function RoomPage({ params }: PageProps<'/habitaciones/[slu
           <h1 className="text-[clamp(2.6rem,6vw,5.6rem)] text-balance text-charcoal">
             {room.name}
           </h1>
-          {room.shortDescription ? (
-            <p className="mt-5 text-[1.05rem] text-muted-foreground">{room.shortDescription}</p>
-          ) : null}
 
           <div className="mt-9">
             {room.description ? (
@@ -234,38 +229,6 @@ export default async function RoomPage({ params }: PageProps<'/habitaciones/[slu
               </Block>
             ) : null}
 
-            {room.promotions.map((promotion) => {
-              const promoUrl = whatsAppLink(site, { kind: 'promotion', name: promotion.title });
-              return (
-                <Block key={promotion.id} label={ui.rooms.promotion}>
-                  <h3 className="text-h3 text-charcoal">{promotion.title}</h3>
-                  <TextBlock
-                    text={promotion.description}
-                    className="mt-2 text-sm text-charcoal/90"
-                  />
-                  {promotion.conditions ? (
-                    <p className="mt-3 text-sm text-muted-foreground">
-                      <strong className="font-bold">{ui.rooms.conditions}:</strong>{' '}
-                      {promotion.conditions}
-                    </p>
-                  ) : null}
-                  <p className="mt-2 text-sm text-muted-foreground">
-                    {ui.rooms.validUntil} {dateFormat.format(new Date(promotion.endsAt))}
-                  </p>
-                  {promoUrl ? (
-                    <WhatsAppLink
-                      href={promoUrl}
-                      source="promotion"
-                      entityId={room.slug}
-                      className={`${buttonClass('ghost')} mt-4`}
-                    >
-                      {ui.whatsapp.cta}
-                    </WhatsAppLink>
-                  ) : null}
-                </Block>
-              );
-            })}
-
             {whatsappUrl ? (
               <div className="border-t border-line pt-7">
                 <WhatsAppLink
@@ -300,7 +263,7 @@ export default async function RoomPage({ params }: PageProps<'/habitaciones/[slu
                   <RoomCard
                     room={other}
                     index={index}
-                    whatsappUrl={whatsAppLink(site, { kind: 'room', name: other.name })}
+                    whatsappUrl={whatsAppLink(site, { kind: 'roomType', name: other.name })}
                   />
                 </li>
               ))}

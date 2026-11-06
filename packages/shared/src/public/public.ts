@@ -6,8 +6,9 @@ import { z } from 'zod';
  * Next.js cache tags. The API sends them to `POST /api/revalidate` after admin mutations;
  * the web tags its `fetch` calls with the same values.
  *
- * - `site`: GET /public/site (hotel profile, social links, WhatsApp templates, home amenities,
- *   hero slides, landing sections).
+ * - `site`: GET /public/site (hotel profile, social links, amenities, hero slides, sections).
+ * - `rooms`: the room types and their published room counts (GET /public/room-types).
+ * - `nearby`: GET /public/nearby-places.
  */
 export const CACHE_TAGS = {
   site: 'site',
@@ -16,12 +17,12 @@ export const CACHE_TAGS = {
   gallery: 'gallery',
   faq: 'faq',
   policies: 'policies',
-  promotions: 'promotions',
+  nearby: 'nearby',
 } as const;
 
 export type StaticCacheTag = (typeof CACHE_TAGS)[keyof typeof CACHE_TAGS];
 
-/** Tag for a single room detail page. */
+/** Tag for a single room type page (`/habitaciones/<slug>`). */
 export function roomCacheTag(slug: string): `room:${string}` {
   return `room:${slug}`;
 }
@@ -70,6 +71,7 @@ export const ANALYTICS_SOURCES = [
   'room_card',
   'floating',
   'footer',
+  /** Kept so stored aggregates still validate; promotions were removed (ADR 0016). */
   'promotion',
   'other',
 ] as const;
@@ -133,23 +135,47 @@ export interface PublicMedia {
   variants: PublicMediaVariant[];
 }
 
-export interface PublicRoomSummary {
+/** `GET /public/room-types` item: a published room type (ADR 0016). */
+export interface PublicRoomTypeSummary {
   slug: string;
   name: string;
+  /** RoomKind: INDIVIDUAL | COUPLE | TWIN | FAMILY. */
   type: string;
-  shortDescription: string | null;
+  description: string | null;
   capacity: number;
   basePrice: number | null;
   currency: string;
   priceUnit: string;
   taxesIncluded: boolean;
   cover: PublicMedia | null;
-  /** ISO 8601; last edit of the room (sitemap `lastModified`). */
+  /** Published rooms of this type (0 when the hotel has not listed them yet). */
+  publishedRoomCount: number;
+  /** ISO 8601; last edit of the type (sitemap `lastModified`). */
   updatedAt: string;
   amenities: { name: string; iconKey: string }[];
 }
 
-/** `GET /public/rooms/:slug` for an old slug answers 200 with `{ redirectTo }` only. */
-export interface PublicRoomRedirect {
+/** `GET /public/room-types/:slug` detail. */
+export interface PublicRoomTypeDetail extends PublicRoomTypeSummary {
+  beds: { type: string; count: number }[] | null;
+  areaM2: number | null;
+  priceNotes: string | null;
+  images: PublicMedia[];
+}
+
+/**
+ * `GET /public/room-types/:slug` for an old slug (a renamed type or a former per-room URL) answers
+ * 200 with `{ redirectTo }` only; the web turns it into a 301.
+ */
+export interface PublicRoomTypeRedirect {
   redirectTo: string;
+}
+
+/** `GET /public/nearby-places` item. */
+export interface PublicNearbyPlace {
+  id: string;
+  name: string;
+  category: string | null;
+  distanceText: string | null;
+  travelTimeText: string | null;
 }

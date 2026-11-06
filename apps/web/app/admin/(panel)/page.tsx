@@ -49,14 +49,14 @@ export default async function DashboardPage() {
       href: '/admin/media?missingAlt=true',
     },
     {
-      count: summary.incomplete.publishedRoomsWithoutPrice,
-      label: 'habitaciones publicadas sin tarifa',
-      href: '/admin/rooms',
+      count: summary.incomplete.publishedRoomTypesWithoutPrice,
+      label: 'tipos de habitación publicados sin tarifa',
+      href: '/admin/room-types',
     },
     {
-      count: summary.incomplete.roomsWithoutCover,
-      label: 'habitaciones sin imagen principal',
-      href: '/admin/rooms',
+      count: summary.incomplete.roomTypesWithoutCover,
+      label: 'tipos de habitación sin imagen principal',
+      href: '/admin/room-types',
     },
   ].filter((item) => item.count > 0);
 
@@ -74,9 +74,9 @@ export default async function DashboardPage() {
             href="/admin/rooms"
           />
           <Stat
-            label="Habitaciones en borrador"
-            value={summary.rooms.DRAFT ?? 0}
-            href="/admin/rooms"
+            label="Tipos de habitación publicados"
+            value={summary.roomTypes.PUBLISHED ?? 0}
+            href="/admin/room-types"
           />
           <Stat
             label="Comodidades del hotel"
@@ -84,9 +84,9 @@ export default async function DashboardPage() {
             href="/admin/amenities"
           />
           <Stat
-            label="Promociones vigentes"
-            value={summary.activePromotions}
-            href="/admin/promotions"
+            label="Lugares cercanos activos"
+            value={summary.activeNearbyPlaces}
+            href="/admin/nearby-places"
           />
         </div>
       </section>

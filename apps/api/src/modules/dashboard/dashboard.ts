@@ -16,11 +16,12 @@ export class DashboardService {
   async summary(now = new Date()) {
     const [
       roomsByStatus,
+      roomTypesByStatus,
       activeHotelAmenities,
-      activePromotions,
+      activeNearbyPlaces,
       mediaMissingAlt,
-      publishedRoomsWithoutPrice,
-      roomsWithoutCover,
+      publishedRoomTypesWithoutPrice,
+      roomTypesWithoutCover,
       lastChange,
       analytics,
     ] = await Promise.all([
@@ -29,13 +30,16 @@ export class DashboardService {
         _count: { _all: true },
         orderBy: { status: 'asc' },
       }),
-      this.prisma.amenity.count({ where: { active: true, scope: 'HOTEL' } }),
-      this.prisma.promotion.count({
-        where: { status: 'PUBLISHED', startsAt: { lte: now }, endsAt: { gt: now } },
+      this.prisma.roomType.groupBy({
+        by: ['status'],
+        _count: { _all: true },
+        orderBy: { status: 'asc' },
       }),
+      this.prisma.amenity.count({ where: { active: true, scope: 'HOTEL' } }),
+      this.prisma.nearbyPlace.count({ where: { active: true } }),
       this.prisma.mediaAsset.count({ where: { OR: [{ altText: null }, { altText: '' }] } }),
-      this.prisma.room.count({ where: { status: 'PUBLISHED', basePrice: null } }),
-      this.prisma.room.count({ where: { images: { none: { isCover: true } } } }),
+      this.prisma.roomType.count({ where: { status: 'PUBLISHED', basePrice: null } }),
+      this.prisma.roomType.count({ where: { images: { none: { isCover: true } } } }),
       this.prisma.auditLog.findFirst({
         where: { adminUserId: { not: null }, action: { notIn: ['auth.login', 'auth.logout'] } },
         orderBy: { createdAt: 'desc' },
@@ -45,10 +49,11 @@ export class DashboardService {
     ]);
     return {
       rooms: Object.fromEntries(roomsByStatus.map((row) => [row.status, row._count._all])),
+      roomTypes: Object.fromEntries(roomTypesByStatus.map((row) => [row.status, row._count._all])),
       activeHotelAmenities,
-      activePromotions,
+      activeNearbyPlaces,
       lastChange,
-      incomplete: { mediaMissingAlt, publishedRoomsWithoutPrice, roomsWithoutCover },
+      incomplete: { mediaMissingAlt, publishedRoomTypesWithoutPrice, roomTypesWithoutCover },
       analytics,
     };
   }

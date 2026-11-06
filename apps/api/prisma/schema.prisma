@@ -17,13 +17,14 @@ datasource db {
 
 // ─── Enums ──────────────────────────────────────────────────────────────────
 
+/// Single role for now (owner decision 2026-11-05, ADR 0016); EDITOR was removed.
 enum AdminRole {
   ADMIN
-  EDITOR
 }
 
-/// Extensible: add values with a migration when the hotel confirms new room types.
-enum RoomType {
+/// Kind of a room type (public label and `?tipo=` filter). Extensible with a migration.
+/// Was the enum "RoomType" until the RoomType model took that name (ADR 0016).
+enum RoomKind {
   INDIVIDUAL
   COUPLE
   TWIN
@@ -93,12 +94,6 @@ enum AmenityScope {
   ROOM
 }
 
-enum WhatsAppTemplateKey {
-  GENERAL
-  ROOM
-  PROMOTION
-}
-
 // ─── Administration ─────────────────────────────────────────────────────────
 
 model AdminUser {
@@ -165,11 +160,16 @@ model HotelProfile {
   rntNumber         String?
   /// ESCNNA prevention notice text approved by the hotel (req. 17.6). Optional.
   escnnaNotice      String?
+  /// Short brand line, e.g. "Hotel Bambú Plaza: descanso, comodidad y confianza en el corazón de Mocoa".
+  tagline           String?
+  /// Meta description of the hotel (home page). Single description source (ADR 0016).
   shortDescription  String?
+  /// "Sobre nosotros" text (paragraphs separated by a blank line).
   description       String?
   address           String?
   municipality      String?
   department        String?
+  country           String?
   latitude          Decimal?    @db.Decimal(9, 6)
   longitude         Decimal?    @db.Decimal(9, 6)
   mapUrl            String?
@@ -178,6 +178,9 @@ model HotelProfile {
   phone             String?
   /// E.164 digits without "+", validated by @hotel-bambu/shared whatsAppPhoneSchema.
   whatsappNumber    String?
+  /// Optional opening of every WhatsApp message; the messages are code defaults in
+  /// @hotel-bambu/shared (ADR 0016).
+  whatsappGreeting  String?
   email             String?
   /// Attention hours, e.g. [{ "days": "Lunes a domingo", "hours": "24 horas" }].
   openingHours      Json?
@@ -186,23 +189,8 @@ model HotelProfile {
   checkOutTime      String?
   logoMediaId       String?     @db.Uuid
   logoMedia         MediaAsset? @relation("HotelLogo", fields: [logoMediaId], references: [id], onDelete: SetNull)
-  heroMediaId       String?     @db.Uuid
-  heroMedia         MediaAsset? @relation("HotelHero", fields: [heroMediaId], references: [id], onDelete: SetNull)
-  heroVideoMediaId  String?     @db.Uuid
-  heroVideoMedia    MediaAsset? @relation("HotelHeroVideo", fields: [heroVideoMediaId], references: [id], onDelete: SetNull)
   createdAt         DateTime    @default(now()) @db.Timestamptz(3)
   updatedAt         DateTime    @updatedAt @db.Timestamptz(3)
-}
-
-model WhatsAppTemplate {
-  id               String              @id @default(uuid(7)) @db.Uuid
-  key              WhatsAppTemplateKey @unique
-  label            String
-  /// Message text with `{{variable}}` placeholders limited to `allowedVariables` (req. 5.2).
-  body             String
-  allowedVariables String[]
-  createdAt        DateTime            @default(now()) @db.Timestamptz(3)
-  updatedAt        DateTime            @updatedAt @db.Timestamptz(3)
 }
 
 model SocialLink {
@@ -220,53 +208,68 @@ model SocialLink {
 
 // ─── Rooms ──────────────────────────────────────────────────────────────────
 
-model Room {
-  id               String             @id @default(uuid(7)) @db.Uuid
-  slug             String             @unique
-  name             String
-  type             RoomType
-  status           PublicationStatus  @default(DRAFT)
-  shortDescription String?
-  description      String?
-  capacity         Int
+/// What the site sells and shows (ADR 0016): description, rate, beds, photos and room amenities.
+/// Public page: /habitaciones/<slug>. Physical rooms reference it.
+model RoomType {
+  id            String                 @id @default(uuid(7)) @db.Uuid
+  slug          String                 @unique
+  name          String
+  type          RoomKind
+  status        PublicationStatus      @default(DRAFT)
+  description   String?
+  capacity      Int
   /// Bed configuration, e.g. [{ "type": "DOUBLE", "count": 1 }].
-  beds             Json?
-  areaM2           Decimal?           @db.Decimal(6, 2)
+  beds          Json?
+  areaM2        Decimal?               @db.Decimal(6, 2)
   /// Informative "from" rate in whole Colombian pesos, taxes per `taxesIncluded`. Null = not published.
-  basePrice        Int?
-  currency         String             @default("COP") @db.Char(3)
-  priceUnit        PriceUnit          @default(PER_NIGHT)
-  taxesIncluded    Boolean            @default(true)
-  priceNotes       String?
-  sortOrder        Int                @default(0)
-  seoTitle         String?
-  seoDescription   String?
-  createdAt        DateTime           @default(now()) @db.Timestamptz(3)
-  updatedAt        DateTime           @updatedAt @db.Timestamptz(3)
-  images           RoomImage[]
-  amenities        RoomAmenity[]
-  slugRedirects    RoomSlugRedirect[]
-  promotions       Promotion[]
+  basePrice     Int?
+  currency      String                 @default("COP") @db.Char(3)
+  priceUnit     PriceUnit              @default(PER_NIGHT)
+  taxesIncluded Boolean                @default(true)
+  priceNotes    String?
+  sortOrder     Int                    @default(0)
+  createdAt     DateTime               @default(now()) @db.Timestamptz(3)
+  updatedAt     DateTime               @updatedAt @db.Timestamptz(3)
+  rooms         Room[]
+  images        RoomTypeImage[]
+  amenities     RoomTypeAmenity[]
+  slugRedirects RoomTypeSlugRedirect[]
 
   @@index([status, sortOrder])
 }
 
-/// Old slug → room, for 301 redirects after a published room is renamed.
-model RoomSlugRedirect {
-  id        String   @id @default(uuid(7)) @db.Uuid
-  oldSlug   String   @unique
-  roomId    String   @db.Uuid
-  room      Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
-  createdAt DateTime @default(now()) @db.Timestamptz(3)
+/// A physical room: number/name and status. A PUBLISHED room counts on the site when its type is
+/// PUBLISHED; DRAFT and INACTIVE rooms do not count (INACTIVE also covers "out of service").
+model Room {
+  id         String            @id @default(uuid(7)) @db.Uuid
+  name       String
+  roomTypeId String            @db.Uuid
+  roomType   RoomType          @relation(fields: [roomTypeId], references: [id], onDelete: Restrict)
+  status     PublicationStatus @default(DRAFT)
+  sortOrder  Int               @default(0)
+  createdAt  DateTime          @default(now()) @db.Timestamptz(3)
+  updatedAt  DateTime          @updatedAt @db.Timestamptz(3)
 
-  @@index([roomId])
+  @@index([roomTypeId, status])
+  @@index([sortOrder])
 }
 
-/// At most one cover per room (partial unique index in SQL).
-model RoomImage {
+/// Old slug → room type, for 301 redirects: renamed types and the former per-room URLs.
+model RoomTypeSlugRedirect {
+  id         String   @id @default(uuid(7)) @db.Uuid
+  oldSlug    String   @unique
+  roomTypeId String   @db.Uuid
+  roomType   RoomType @relation(fields: [roomTypeId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now()) @db.Timestamptz(3)
+
+  @@index([roomTypeId])
+}
+
+/// At most one cover per room type (partial unique index in SQL).
+model RoomTypeImage {
   id           String     @id @default(uuid(7)) @db.Uuid
-  roomId       String     @db.Uuid
-  room         Room       @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  roomTypeId   String     @db.Uuid
+  roomType     RoomType   @relation(fields: [roomTypeId], references: [id], onDelete: Cascade)
   mediaAssetId String     @db.Uuid
   mediaAsset   MediaAsset @relation(fields: [mediaAssetId], references: [id], onDelete: Restrict)
   sortOrder    Int        @default(0)
@@ -274,94 +277,91 @@ model RoomImage {
   createdAt    DateTime   @default(now()) @db.Timestamptz(3)
   updatedAt    DateTime   @updatedAt @db.Timestamptz(3)
 
-  @@unique([roomId, mediaAssetId])
-  @@index([roomId, sortOrder])
+  @@unique([roomTypeId, mediaAssetId])
+  @@index([roomTypeId, sortOrder])
   @@index([mediaAssetId])
 }
 
-/// Room-level comfort catalog (private bathroom, TV, fan, Wi-Fi...).
 /// "Comodidades": one catalog for hotel-wide features (scope HOTEL: Wi-Fi, solar panels...) and
-/// per-room equipment (scope ROOM: private bathroom, TV, fan...). Only ROOM amenities are linked
-/// to rooms through RoomAmenity (enforced by the API).
+/// room equipment (scope ROOM: private bathroom, TV, fan...). Only ROOM amenities are linked to
+/// room types through RoomTypeAmenity (enforced by the API).
 model Amenity {
-  id          String        @id @default(uuid(7)) @db.Uuid
-  name        String        @unique
+  id          String            @id @default(uuid(7)) @db.Uuid
+  name        String            @unique
   description String?
   /// Key from the controlled icon catalog (@hotel-bambu/shared ICON_KEYS).
   iconKey     String
-  scope       AmenityScope  @default(ROOM)
-  active      Boolean       @default(true)
+  scope       AmenityScope      @default(ROOM)
+  active      Boolean           @default(true)
   /// HOTEL: shown in the home hotel panel. ROOM: shown in the home "all rooms" grid.
-  showOnHome  Boolean       @default(false)
-  sortOrder   Int           @default(0)
-  createdAt   DateTime      @default(now()) @db.Timestamptz(3)
-  updatedAt   DateTime      @updatedAt @db.Timestamptz(3)
-  rooms       RoomAmenity[]
+  showOnHome  Boolean           @default(false)
+  sortOrder   Int               @default(0)
+  createdAt   DateTime          @default(now()) @db.Timestamptz(3)
+  updatedAt   DateTime          @updatedAt @db.Timestamptz(3)
+  roomTypes   RoomTypeAmenity[]
 
   @@index([active, sortOrder])
   @@index([scope, active, sortOrder])
 }
 
-model RoomAmenity {
-  roomId    String   @db.Uuid
-  room      Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
-  amenityId String   @db.Uuid
-  amenity   Amenity  @relation(fields: [amenityId], references: [id], onDelete: Restrict)
-  createdAt DateTime @default(now()) @db.Timestamptz(3)
+model RoomTypeAmenity {
+  roomTypeId String   @db.Uuid
+  roomType   RoomType @relation(fields: [roomTypeId], references: [id], onDelete: Cascade)
+  amenityId  String   @db.Uuid
+  amenity    Amenity  @relation(fields: [amenityId], references: [id], onDelete: Restrict)
+  createdAt  DateTime @default(now()) @db.Timestamptz(3)
 
-  @@id([roomId, amenityId])
+  @@id([roomTypeId, amenityId])
   @@index([amenityId])
 }
 
-model Promotion {
-  id          String            @id @default(uuid(7)) @db.Uuid
-  title       String
-  description String?
-  conditions  String?
-  startsAt    DateTime          @db.Timestamptz(3)
-  endsAt      DateTime          @db.Timestamptz(3)
-  roomId      String?           @db.Uuid
-  room        Room?             @relation(fields: [roomId], references: [id], onDelete: SetNull)
-  status      PublicationStatus @default(DRAFT)
-  sortOrder   Int               @default(0)
-  createdAt   DateTime          @default(now()) @db.Timestamptz(3)
-  updatedAt   DateTime          @updatedAt @db.Timestamptz(3)
+/// Nearby place with a measured distance and/or travel time (ADR 0016). Nothing is seeded: only
+/// the hotel can provide real measurements.
+model NearbyPlace {
+  id             String   @id @default(uuid(7)) @db.Uuid
+  name           String
+  /// Free label such as "Naturaleza" or "Transporte".
+  category       String?
+  /// e.g. "1,2 km".
+  distanceText   String?
+  /// e.g. "5 min en carro".
+  travelTimeText String?
+  sortOrder      Int      @default(0)
+  active         Boolean  @default(true)
+  createdAt      DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt      DateTime @updatedAt @db.Timestamptz(3)
 
-  @@index([status, startsAt, endsAt])
-  @@index([roomId])
+  @@index([active, sortOrder])
 }
 
 // ─── Media ──────────────────────────────────────────────────────────────────
 
 model MediaAsset {
-  id            String           @id @default(uuid(7)) @db.Uuid
+  id             String          @id @default(uuid(7)) @db.Uuid
   /// Random storage prefix; variants live under `<storageKey>/<width>.<format>`.
-  storageKey    String           @unique
-  kind          MediaKind        @default(IMAGE)
+  storageKey     String          @unique
+  kind           MediaKind       @default(IMAGE)
   /// Validated from magic bytes, not from the extension.
-  mimeType      String
+  mimeType       String
   /// SHA-256 of the original bytes: deduplication and idempotent imports.
-  checksum      String           @unique
-  sizeBytes     Int
-  width         Int?
-  height        Int?
+  checksum       String          @unique
+  sizeBytes      Int
+  width          Int?
+  height         Int?
   /// [{ "width": 640, "height": 853, "format": "webp", "key": "...", "sizeBytes": 1234 }, ...]
-  variants      Json             @default("[]")
-  blurDataUrl   String?
-  dominantColor String?          @db.VarChar(7)
+  variants       Json            @default("[]")
+  blurDataUrl    String?
+  dominantColor  String?         @db.VarChar(7)
   /// Required before the asset can be published.
-  altText       String?
-  caption       String?
-  status        MediaStatus      @default(UPLOADING)
-  createdAt     DateTime         @default(now()) @db.Timestamptz(3)
-  updatedAt     DateTime         @updatedAt @db.Timestamptz(3)
-  roomImages    RoomImage[]
-  galleryItems  GalleryItem[]
-  heroSlides    HeroSlide[]
-  sections      LandingSection[]
-  hotelLogos    HotelProfile[]   @relation("HotelLogo")
-  hotelHeroes   HotelProfile[]   @relation("HotelHero")
-  hotelVideos   HotelProfile[]   @relation("HotelHeroVideo")
+  altText        String?
+  caption        String?
+  status         MediaStatus     @default(UPLOADING)
+  createdAt      DateTime        @default(now()) @db.Timestamptz(3)
+  updatedAt      DateTime        @updatedAt @db.Timestamptz(3)
+  roomTypeImages RoomTypeImage[]
+  galleryItems   GalleryItem[]
+  heroSlides     HeroSlide[]
+  hotelLogos     HotelProfile[]  @relation("HotelLogo")
 
   @@index([status])
   @@index([createdAt])
@@ -396,20 +396,15 @@ model PendingStorageDeletion {
 
 // ─── Content ────────────────────────────────────────────────────────────────
 
+/// Home section switches and order (requirement 9.8, ADR 0016). Copy lives in HotelProfile and
+/// section headings in the web code, so a section has no text or media of its own.
 model LandingSection {
-  id           String            @id @default(uuid(7)) @db.Uuid
-  key          LandingSectionKey @unique
-  title        String?
-  subtitle     String?
-  /// Plain text or the controlled, sanitized subset (bold, links, lists). Never raw HTML.
-  body         String?
-  ctaLabel     String?
-  mediaAssetId String?           @db.Uuid
-  mediaAsset   MediaAsset?       @relation(fields: [mediaAssetId], references: [id], onDelete: SetNull)
-  enabled      Boolean           @default(false)
-  sortOrder    Int               @default(0)
-  createdAt    DateTime          @default(now()) @db.Timestamptz(3)
-  updatedAt    DateTime          @updatedAt @db.Timestamptz(3)
+  id        String            @id @default(uuid(7)) @db.Uuid
+  key       LandingSectionKey @unique
+  enabled   Boolean           @default(false)
+  sortOrder Int               @default(0)
+  createdAt DateTime          @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime          @updatedAt @db.Timestamptz(3)
 }
 
 /// Ordered home hero carousel. A slide is public when active and its media is READY with alt text

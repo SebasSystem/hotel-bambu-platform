@@ -30,10 +30,10 @@ import { GalleryModule, GalleryService } from '../gallery/gallery.js';
 import { HeroSlidesModule, HeroSlidesService } from '../hero-slides/hero-slides.js';
 import { HotelModule, HotelService } from '../hotel/hotel.js';
 import { toPublicMedia, type MediaRow } from '../media/media-url.js';
+import { NearbyPlacesModule, NearbyPlacesService } from '../nearby-places/nearby-places.js';
 import { PoliciesModule, PoliciesService } from '../policies/policies.js';
-import { PromotionsModule, PromotionsService } from '../promotions/promotions.js';
-import { RoomsModule } from '../rooms/rooms.module.js';
-import { RoomsService } from '../rooms/rooms.service.js';
+import { RoomTypesModule } from '../room-types/room-types.module.js';
+import { RoomTypesService } from '../room-types/room-types.service.js';
 import { SocialLinksModule, SocialLinksService } from '../social-links/social-links.js';
 
 /**
@@ -52,7 +52,7 @@ export class PublicController {
 
   constructor(
     private readonly hotel: HotelService,
-    private readonly rooms: RoomsService,
+    private readonly roomTypes: RoomTypesService,
     private readonly amenities: AmenitiesService,
     private readonly heroSlides: HeroSlidesService,
     private readonly gallery: GalleryService,
@@ -60,7 +60,7 @@ export class PublicController {
     private readonly faqs: FaqsService,
     private readonly policies: PoliciesService,
     private readonly socialLinks: SocialLinksService,
-    private readonly promotions: PromotionsService,
+    private readonly nearbyPlaces: NearbyPlacesService,
     private readonly analytics: AnalyticsService,
     config: ConfigService<Env, true>,
   ) {
@@ -74,32 +74,17 @@ export class PublicController {
   @Get('site')
   @Header('Cache-Control', PUBLIC_CACHE)
   async site() {
-    const [profile, templates, socialLinks, slides, amenities, sections] = await Promise.all([
+    const [profile, socialLinks, slides, amenities, sections] = await Promise.all([
       this.hotel.getProfile(),
-      this.hotel.listTemplates(),
       this.socialLinks.listPublic(),
       this.heroSlides.listPublic(),
       this.amenities.listPublic(),
       this.content.listEnabled(),
     ]);
-    const {
-      logoMedia,
-      heroMedia,
-      logoMediaId: _l,
-      heroMediaId: _h,
-      heroVideoMediaId: _v,
-      id: _id,
-      createdAt: _c,
-      ...hotel
-    } = profile;
+    const { logoMedia, logoMediaId: _l, id: _id, createdAt: _c, ...hotel } = profile;
     return {
-      hotel: { ...hotel, logo: this.media(logoMedia), hero: this.media(heroMedia) },
+      hotel: { ...hotel, logo: this.media(logoMedia) },
       socialLinks,
-      whatsappTemplates: templates.map(({ key, body, allowedVariables }) => ({
-        key,
-        body,
-        allowedVariables,
-      })),
       heroSlides: slides.flatMap(({ media, ...slide }) => {
         const publicMedia = this.media(media);
         return publicMedia ? [{ ...slide, media: publicMedia }] : [];
@@ -112,23 +97,29 @@ export class PublicController {
       homeAmenities: amenities
         .filter((amenity) => amenity.scope === 'ROOM' && amenity.showOnHome)
         .map(({ showOnHome: _s, scope: _sc, ...amenity }) => amenity),
-      sections: sections.map(({ mediaAsset, ...section }) => ({
-        ...section,
-        media: this.media(mediaAsset),
-      })),
+      /** Enabled home sections in order; headings and copy live in the web and the hotel profile. */
+      sections,
     };
   }
 
-  @Get('rooms')
+  /** Published room types with their count of published rooms (ADR 0016). */
+  @Get('room-types')
   @Header('Cache-Control', PUBLIC_CACHE)
-  listRooms() {
-    return this.rooms.listPublished();
+  listRoomTypes() {
+    return this.roomTypes.listPublished();
   }
 
-  @Get('rooms/:slug')
+  /** Type detail; an old slug (renamed type or former room URL) answers { redirectTo }. */
+  @Get('room-types/:slug')
   @Header('Cache-Control', PUBLIC_CACHE)
-  getRoom(@Param('slug', zod(slugSchema)) slug: string) {
-    return this.rooms.getPublishedBySlug(slug);
+  getRoomType(@Param('slug', zod(slugSchema)) slug: string) {
+    return this.roomTypes.getPublishedBySlug(slug);
+  }
+
+  @Get('nearby-places')
+  @Header('Cache-Control', PUBLIC_CACHE)
+  listNearbyPlaces() {
+    return this.nearbyPlaces.listPublic();
   }
 
   @Get('amenities')
@@ -164,13 +155,6 @@ export class PublicController {
     return this.policies.listPublic();
   }
 
-  /** Active by date; the web should use a short revalidate window so expired ones disappear (21). */
-  @Get('promotions')
-  @Header('Cache-Control', 'public, max-age=60')
-  listPromotions() {
-    return this.promotions.listActive();
-  }
-
   @Post('events')
   @HttpCode(204)
   @RateLimit('public-write')
@@ -189,7 +173,7 @@ export class PublicController {
 @Module({
   imports: [
     HotelModule,
-    RoomsModule,
+    RoomTypesModule,
     AmenitiesModule,
     HeroSlidesModule,
     GalleryModule,
@@ -197,7 +181,7 @@ export class PublicController {
     FaqsModule,
     PoliciesModule,
     SocialLinksModule,
-    PromotionsModule,
+    NearbyPlacesModule,
     AnalyticsModule,
   ],
   controllers: [PublicController],

@@ -6,6 +6,7 @@ import {
   heroImages,
   homeHotelAmenities,
   introText,
+  isSectionEnabled,
   mapLinks,
 } from './site';
 
@@ -71,13 +72,12 @@ const photo = (id: string, altText = id): PublicMedia => ({
 
 const siteWith = (overrides: Partial<PublicSite>): PublicSite =>
   ({
-    hotel: { hero: null },
+    hotel: {},
     sections: [],
     heroSlides: [],
     hotelAmenities: [],
     homeAmenities: [],
     socialLinks: [],
-    whatsappTemplates: [],
     ...overrides,
   }) as unknown as PublicSite;
 
@@ -103,9 +103,17 @@ describe('heroImages', () => {
     expect(heroImages(site, [], [])[0]?.caption).toBe('Llegada');
   });
 
-  it('falls back to the hero, then featured gallery photos and room covers, without slides', () => {
-    const site = siteWith({ hotel: { hero: photo('h1') } as PublicSite['hotel'] });
-    expect(heroImages(site, gallery, rooms).map((media) => media.id)).toEqual(['h1', 'g1', 'r1']);
+  it('falls back to featured gallery photos, then room type covers, without slides', () => {
+    const more = [
+      ...gallery,
+      { id: 'g2', category: 'ROOMS', featured: false, media: photo('g2') },
+    ] as PublicGalleryItem[];
+    expect(heroImages(siteWith({}), more, rooms).map((media) => media.id)).toEqual([
+      'g1',
+      'g2',
+      'r1',
+    ]);
+    expect(heroImages(siteWith({}), [], [])).toEqual([]);
   });
 });
 
@@ -126,13 +134,20 @@ describe('homeHotelAmenities', () => {
 });
 
 describe('introText (home "Sobre nosotros")', () => {
-  it('prefers the ABOUT body, then the hotel description', () => {
-    expect(introText('Hospitalidad serena.', 'Otra')).toBe('Hospitalidad serena.');
-    expect(introText(null, 'Hotel en Mocoa.')).toBe('Hotel en Mocoa.');
+  it('uses the hotel description, the single description source', () => {
+    expect(introText('Hotel en Mocoa.')).toBe('Hotel en Mocoa.');
   });
 
   it('is null when there is no real about text, so the intro is hidden', () => {
-    expect(introText(null, null)).toBeNull();
-    expect(introText('   ', ' \n ')).toBeNull();
+    expect(introText(null)).toBeNull();
+    expect(introText(' \n ')).toBeNull();
+  });
+});
+
+describe('isSectionEnabled', () => {
+  it('follows the enabled sections the API returns', () => {
+    const site = siteWith({ sections: [{ key: 'ABOUT', sortOrder: 0 }] });
+    expect(isSectionEnabled(site, 'ABOUT')).toBe(true);
+    expect(isSectionEnabled(site, 'FAQ')).toBe(false);
   });
 });

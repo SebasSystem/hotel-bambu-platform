@@ -12,78 +12,78 @@ import {
 } from '@nestjs/common';
 import {
   reorderSchema,
-  roomCreateSchema,
-  roomImagesSchema,
-  roomStatusSchema,
-  roomUpdateSchema,
+  roomTypeCreateSchema,
+  roomTypeImagesSchema,
+  roomTypeStatusSchema,
+  roomTypeUpdateSchema,
   type ReorderInput,
-  type RoomCreateInput,
-  type RoomImagesInput,
-  type RoomUpdateInput,
+  type RoomTypeCreateInput,
+  type RoomTypeImagesInput,
+  type RoomTypeUpdateInput,
 } from '@hotel-bambu/shared';
 import type { z } from 'zod';
 import { type AuthenticatedAdmin, CurrentAdmin } from '../../common/request-context.js';
 import { zod } from '../../common/zod-validation.pipe.js';
-import { RoomsService } from './rooms.service.js';
+import { RoomTypesService } from './room-types.service.js';
 
-@Controller('admin/rooms')
-export class RoomsController {
-  constructor(private readonly rooms: RoomsService) {}
+@Controller('admin/room-types')
+export class RoomTypesController {
+  constructor(private readonly roomTypes: RoomTypesService) {}
 
   @Get()
   list() {
-    return this.rooms.list();
+    return this.roomTypes.list();
   }
 
   @Post()
   create(
     @CurrentAdmin() admin: AuthenticatedAdmin,
-    @Body(zod(roomCreateSchema)) body: RoomCreateInput,
+    @Body(zod(roomTypeCreateSchema)) body: RoomTypeCreateInput,
   ) {
-    return this.rooms.create(admin.id, body);
+    return this.roomTypes.create(admin.id, body);
   }
 
   /** Declared before `:id` routes so "order" is never parsed as an id. */
   @Put('order')
   reorder(@CurrentAdmin() admin: AuthenticatedAdmin, @Body(zod(reorderSchema)) body: ReorderInput) {
-    return this.rooms.reorder(admin.id, body.ids);
+    return this.roomTypes.reorder(admin.id, body.ids);
   }
 
   @Get(':id')
   get(@Param('id', ParseUUIDPipe) id: string) {
-    return this.rooms.get(id);
+    return this.roomTypes.get(id);
   }
 
   @Patch(':id')
   update(
     @CurrentAdmin() admin: AuthenticatedAdmin,
     @Param('id', ParseUUIDPipe) id: string,
-    @Body(zod(roomUpdateSchema)) body: RoomUpdateInput,
+    @Body(zod(roomTypeUpdateSchema)) body: RoomTypeUpdateInput,
   ) {
-    return this.rooms.update(admin.id, id, body);
+    return this.roomTypes.update(admin.id, id, body);
   }
 
   @Patch(':id/status')
   setStatus(
     @CurrentAdmin() admin: AuthenticatedAdmin,
     @Param('id', ParseUUIDPipe) id: string,
-    @Body(zod(roomStatusSchema)) body: z.output<typeof roomStatusSchema>,
+    @Body(zod(roomTypeStatusSchema)) body: z.output<typeof roomTypeStatusSchema>,
   ) {
-    return this.rooms.setStatus(admin.id, id, body.status);
+    return this.roomTypes.setStatus(admin.id, id, body.status);
   }
 
   @Put(':id/images')
   setImages(
     @CurrentAdmin() admin: AuthenticatedAdmin,
     @Param('id', ParseUUIDPipe) id: string,
-    @Body(zod(roomImagesSchema)) body: RoomImagesInput,
+    @Body(zod(roomTypeImagesSchema)) body: RoomTypeImagesInput,
   ) {
-    return this.rooms.setImages(admin.id, id, body);
+    return this.roomTypes.setImages(admin.id, id, body);
   }
 
   @Delete(':id')
   @HttpCode(204)
   async remove(@CurrentAdmin() admin: AuthenticatedAdmin, @Param('id', ParseUUIDPipe) id: string) {
-    await this.rooms.remove(admin.id, id);
+    await this.roomTypes.remove(admin.id, id);
   }
 }

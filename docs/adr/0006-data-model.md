@@ -1,6 +1,6 @@
 # 0006 — Data model, seeds and operational scripts
 
-- Status: Accepted (amended by [0015](0015-amenities-and-hero-slides.md): `Service` removed, `Amenity.scope` HOTEL/ROOM, `HeroSlide`)
+- Status: Accepted (amended by [0015](0015-amenities-and-hero-slides.md): `Service` removed, `Amenity.scope` HOTEL/ROOM, `HeroSlide`; and by [0016](0016-room-types-and-single-sources.md): `RoomType` level, `NearbyPlace`, no `Promotion`, `WhatsAppTemplate`, per-room SEO fields or `EDITOR` role, `LandingSection` reduced to enable/order)
 - Date: 2026-11-04
 
 ## Context

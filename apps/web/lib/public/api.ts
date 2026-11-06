@@ -5,8 +5,8 @@ import { cache } from 'react';
 import type {
   PublicFaq,
   PublicGalleryItem,
+  PublicNearbyPlace,
   PublicPolicy,
-  PublicPromotion,
   PublicRoomDetail,
   PublicRoomSummary,
   PublicSite,
@@ -24,8 +24,6 @@ import type {
  */
 
 const DEFAULT_TTL = 3600;
-/** Promotions end by date: keep their cache short so expired ones disappear (requirement 21). */
-const PROMOTIONS_TTL = 60;
 
 function apiBase(): string {
   return `${(process.env.API_INTERNAL_URL ?? 'http://localhost:4000').replace(/\/$/, '')}/api/v1`;
@@ -57,18 +55,26 @@ async function optional<T>(load: Promise<T | null>, fallback: T): Promise<T> {
 export const getSite = cache(async (): Promise<PublicSite> => {
   const site = await publicGet<PublicSite>('/site', [CACHE_TAGS.site]);
   if (!site) throw new Error('Public site profile not found');
-  // A payload cached before ADR 0015 (hero slides, hotel amenities) may still be served until
-  // the `site` tag is revalidated: default the newer lists instead of failing the page.
+  // A payload cached before ADR 0015/0016 may still be served until the `site` tag is
+  // revalidated: default the newer fields instead of failing the page.
   return {
     ...site,
+    hotel: {
+      ...site.hotel,
+      tagline: site.hotel.tagline ?? null,
+      country: site.hotel.country ?? null,
+      whatsappGreeting: site.hotel.whatsappGreeting ?? null,
+    },
     heroSlides: site.heroSlides ?? [],
     hotelAmenities: site.hotelAmenities ?? [],
     homeAmenities: site.homeAmenities ?? [],
+    sections: (site.sections ?? []).map(({ key, sortOrder }) => ({ key, sortOrder })),
   };
 });
 
-export const getRooms = cache(() =>
-  optional(publicGet<PublicRoomSummary[]>('/rooms', [CACHE_TAGS.rooms]), []),
+/** Published room types with their published room counts (ADR 0016). */
+export const getRoomTypes = cache(() =>
+  optional(publicGet<PublicRoomSummary[]>('/room-types', [CACHE_TAGS.rooms]), []),
 );
 
 export type RoomResult =
@@ -76,16 +82,23 @@ export type RoomResult =
   | { kind: 'redirect'; slug: string }
   | { kind: 'not-found' };
 
-export const getRoom = cache(async (slug: string): Promise<RoomResult> => {
+/**
+ * Room type page data. An old slug (a renamed type, or a former per-room URL mapped by the
+ * migration) answers `{ redirectTo }`, which the page turns into a permanent redirect.
+ */
+export const getRoomType = cache(async (slug: string): Promise<RoomResult> => {
   const data = await publicGet<PublicRoomDetail | { redirectTo: string }>(
-    `/rooms/${encodeURIComponent(slug)}`,
-    [CACHE_TAGS.rooms, roomCacheTag(slug), CACHE_TAGS.promotions, CACHE_TAGS.amenities],
-    PROMOTIONS_TTL * 5,
+    `/room-types/${encodeURIComponent(slug)}`,
+    [CACHE_TAGS.rooms, roomCacheTag(slug), CACHE_TAGS.amenities],
   );
   if (!data) return { kind: 'not-found' };
   if ('redirectTo' in data) return { kind: 'redirect', slug: data.redirectTo };
   return { kind: 'room', room: data };
 });
+
+export const getNearbyPlaces = cache(() =>
+  optional(publicGet<PublicNearbyPlace[]>('/nearby-places', [CACHE_TAGS.nearby]), []),
+);
 
 export const getGallery = cache(() =>
   optional(publicGet<PublicGalleryItem[]>('/gallery', [CACHE_TAGS.gallery]), []),
@@ -95,11 +108,4 @@ export const getFaqs = cache(() => optional(publicGet<PublicFaq[]>('/faq', [CACH
 
 export const getPolicies = cache(() =>
   optional(publicGet<PublicPolicy[]>('/policies', [CACHE_TAGS.policies]), []),
-);
-
-export const getPromotions = cache(() =>
-  optional(
-    publicGet<PublicPromotion[]>('/promotions', [CACHE_TAGS.promotions], PROMOTIONS_TTL),
-    [],
-  ),
 );

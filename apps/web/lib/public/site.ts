@@ -4,14 +4,13 @@ import type {
   PublicHotel,
   PublicMedia,
   PublicRoomSummary,
-  PublicSection,
   PublicSite,
   SectionKey,
 } from './types';
 
-/** Enabled landing section by key (disabled sections are not returned by the API). */
-export function sectionOf(site: PublicSite, key: SectionKey): PublicSection | null {
-  return site.sections.find((section) => section.key === key) ?? null;
+/** Whether a home section is on (disabled sections are not returned by the API). */
+export function isSectionEnabled(site: PublicSite, key: SectionKey): boolean {
+  return site.sections.some((section) => section.key === key);
 }
 
 /** "Calle 8 # 7-10, Mocoa, Putumayo" from whatever parts the hotel configured. */
@@ -51,11 +50,12 @@ export function mapLinks(
 }
 
 /**
- * Home "Sobre nosotros" text: the ABOUT body, else the hotel description. Null without real text:
- * the intro is then hidden (a heading and facts with no story read as filler).
+ * Home "Sobre nosotros" text: the hotel description, the single description source (ADR 0016).
+ * Null without real text: the intro is then hidden (a heading and facts with no story read as
+ * filler).
  */
-export function introText(body: string | null, description: string | null): string | null {
-  return body?.trim() || description?.trim() || null;
+export function introText(description: string | null): string | null {
+  return description?.trim() || null;
 }
 
 /** Hotel-wide amenities for the home panel (admin › Comodidades, scope "Todo el hotel"). */
@@ -64,9 +64,10 @@ export function homeHotelAmenities(site: PublicSite): PublicHotelAmenity[] {
 }
 
 /**
- * Hero photos: the admin hero slides in their order (caption on the media). Without slides, the
- * D2 fallback: the configured hero, then featured gallery photos, then room covers, max 3. Only real
- * hotel photos with alt text (the API exposes nothing else).
+ * Hero photos: the admin hero slides in their order (caption on the media), the single hero source
+ * (ADR 0016). Without slides, the D2 fallback: featured gallery photos, then the other gallery
+ * photos, then room type covers, max 3. Only real hotel photos with alt text (the API exposes
+ * nothing else).
  */
 export function heroImages(
   site: PublicSite,
@@ -79,10 +80,7 @@ export function heroImages(
       caption: slide.caption ?? slide.media.caption,
     }));
   }
-  const heroSection = sectionOf(site, 'HERO');
   const candidates = [
-    site.hotel.hero,
-    heroSection?.media ?? null,
     ...gallery.filter((item) => item.featured).map((item) => item.media),
     ...gallery.map((item) => item.media),
     ...rooms.map((room) => room.cover),

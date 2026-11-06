@@ -75,7 +75,7 @@ export class MediaService {
         take: params.pageSize,
         include: {
           galleryItems: { select: { id: true, category: true, published: true } },
-          _count: { select: { roomImages: true, heroSlides: true, sections: true } },
+          _count: { select: { roomTypeImages: true, heroSlides: true, hotelLogos: true } },
         },
       }),
       this.prisma.mediaAsset.count({ where }),
@@ -188,7 +188,7 @@ export class MediaService {
 
   /**
    * Deletes the row (gallery entries cascade) and then the stored objects. Assets still used by a
-   * room, hero slide, landing section or the hotel profile are refused with 409. Failed object
+   * room type, a hero slide or the hotel logo are refused with 409. Failed object
    * deletions are queued in PendingStorageDeletion (requirement 10).
    */
   async remove(actorId: string, id: string): Promise<void> {
@@ -199,12 +199,9 @@ export class MediaService {
         variants: true,
         _count: {
           select: {
-            roomImages: true,
+            roomTypeImages: true,
             heroSlides: true,
-            sections: true,
             hotelLogos: true,
-            hotelHeroes: true,
-            hotelVideos: true,
           },
         },
       },
@@ -213,8 +210,7 @@ export class MediaService {
     const usage = Object.entries(asset._count).filter(([, count]) => count > 0);
     if (usage.length > 0) {
       throw new ConflictException({
-        message:
-          'Media is in use. Remove it from rooms, hero slides, sections or the hotel profile first.',
+        message: 'Media is in use. Remove it from room types, hero slides or the hotel logo first.',
         usage: Object.fromEntries(usage),
       });
     }

@@ -31,7 +31,7 @@ import { changedFields } from '../audit/audit.service.js';
 
 /**
  * "Comodidades" (ADR 0015): HOTEL amenities apply to the whole hotel (Wi-Fi, solar panels) and show
- * in the home hotel panel; ROOM amenities are assigned per room and show on room cards and details.
+ * in the home hotel panel; ROOM amenities are assigned per room type and show on room type cards and pages.
  */
 const TAGS = [CACHE_TAGS.amenities, CACHE_TAGS.rooms, CACHE_TAGS.site];
 
@@ -45,7 +45,7 @@ export class AmenitiesService {
   list() {
     return this.prisma.amenity.findMany({
       orderBy: [{ sortOrder: 'asc' }, { name: 'asc' }],
-      include: { _count: { select: { rooms: true } } },
+      include: { _count: { select: { roomTypes: true } } },
     });
   }
 
@@ -80,10 +80,10 @@ export class AmenitiesService {
   async update(actorId: string, id: string, input: AmenityUpdateInput) {
     if (
       input.scope === 'HOTEL' &&
-      (await this.prisma.roomAmenity.count({ where: { amenityId: id } }))
+      (await this.prisma.roomTypeAmenity.count({ where: { amenityId: id } }))
     ) {
       throw new ConflictException(
-        'Remove the amenity from every room before making it hotel-wide.',
+        'Remove the amenity from every room type before making it hotel-wide.',
       );
     }
     const amenity = await this.prisma.amenity.update({ where: { id }, data: input });
@@ -100,7 +100,7 @@ export class AmenitiesService {
     return amenity;
   }
 
-  /** Amenities assigned to rooms are protected by the FK (409); deactivate them instead. */
+  /** Amenities assigned to room types are protected by the FK (409); deactivate them instead. */
   async remove(actorId: string, id: string) {
     await this.prisma.amenity.delete({ where: { id } });
     await this.changes.record(

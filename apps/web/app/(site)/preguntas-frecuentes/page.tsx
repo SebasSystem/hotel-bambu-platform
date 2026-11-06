@@ -11,7 +11,6 @@ import { pageMetadata } from '@/lib/seo/metadata';
 import { faqJsonLd } from '@/lib/seo/json-ld';
 import { routes } from '@/lib/public/navigation';
 import { getFaqs, getSite } from '@/lib/public/api';
-import { sectionOf } from '@/lib/public/site';
 import { whatsAppLink } from '@/lib/public/whatsapp';
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -27,18 +26,12 @@ export async function generateMetadata(): Promise<Metadata> {
 /** FAQ (spec §4): rows styled as mockup detail blocks, a WhatsApp card on the side. */
 export default async function FaqPage() {
   const [site, faqs] = await Promise.all([getSite(), getFaqs()]);
-  const section = sectionOf(site, 'FAQ');
   const whatsappUrl = whatsAppLink(site, { kind: 'general' });
 
   return (
     <>
       {faqs.length > 0 ? <JsonLd data={faqJsonLd(faqs)} /> : null}
-      <PageHeader
-        path={routes.faq}
-        title={ui.nav.faq}
-        kicker={section?.subtitle}
-        intro={section?.body}
-      />
+      <PageHeader path={routes.faq} title={ui.nav.faq} kicker={null} intro={null} />
       <div className={`${container} grid gap-12 pt-12 pb-[110px] desk:grid-cols-[1.4fr_0.6fr]`}>
         <div>
           {faqs.length > 0 ? (

@@ -6,31 +6,40 @@ import { MediaThumb } from '@/components/admin/media-thumb';
 import { ReorderButtons, moveItem } from '@/components/admin/reorder-buttons';
 import { Button, EmptyState, StatusBadge } from '@/components/admin/ui';
 import { browserApi } from '@/lib/api/browser';
-import type { Room } from '@/lib/api/types';
+import type { RoomType } from '@/lib/api/types';
 import { ROOM_TYPE_LABELS } from '@/lib/labels';
-import { formatPrice } from './room-format';
+import { formatPrice } from './room-type-format';
 
-export function RoomsTable({ rooms }: { rooms: Room[] }) {
+export function RoomTypesTable({ rooms }: { rooms: RoomType[] }) {
   const { run, busy } = useAction();
 
-  if (rooms.length === 0) return <EmptyState>Todavía no hay habitaciones.</EmptyState>;
+  if (rooms.length === 0) return <EmptyState>Todavía no hay tipos de habitación.</EmptyState>;
 
   const move = (from: number, to: number) => {
     const ids = moveItem(rooms, from, to).map((room) => room.id);
-    void run('order', () => browserApi.put('/admin/rooms/order', { ids }), 'Orden actualizado.');
+    void run(
+      'order',
+      () => browserApi.put('/admin/room-types/order', { ids }),
+      'Orden actualizado.',
+    );
   };
 
   return (
     <div className="overflow-x-auto rounded-md border border-border bg-card">
       <table className="w-full text-left text-sm">
-        <caption className="sr-only">Habitaciones en el orden en que aparecen en el sitio</caption>
+        <caption className="sr-only">
+          Tipos de habitación en el orden en que aparecen en el sitio
+        </caption>
         <thead className="border-b border-border bg-muted">
           <tr>
             <th scope="col" className="p-3">
-              Habitación
+              Tipo de habitación
             </th>
             <th scope="col" className="p-3">
-              Tipo
+              Categoría
+            </th>
+            <th scope="col" className="p-3">
+              Habitaciones publicadas
             </th>
             <th scope="col" className="p-3">
               Tarifa
@@ -61,7 +70,7 @@ export function RoomsTable({ rooms }: { rooms: Room[] }) {
                     />
                     <div>
                       <Link
-                        href={`/admin/rooms/${room.id}`}
+                        href={`/admin/room-types/${room.id}`}
                         className="font-semibold text-primary underline-offset-4 hover:underline"
                       >
                         {room.name}
@@ -73,6 +82,9 @@ export function RoomsTable({ rooms }: { rooms: Room[] }) {
                   </div>
                 </td>
                 <td className="p-3">{ROOM_TYPE_LABELS[room.type]}</td>
+                <td className="p-3 tabular-nums">
+                  {room.publishedRoomCount} de {room.roomCount}
+                </td>
                 <td className="p-3 tabular-nums">{formatPrice(room) ?? 'Sin tarifa'}</td>
                 <td className="p-3">
                   <StatusBadge status={room.status} />
@@ -96,17 +108,19 @@ export function RoomsTable({ rooms }: { rooms: Room[] }) {
                         void run(
                           `status:${room.id}`,
                           () =>
-                            browserApi.patch(`/admin/rooms/${room.id}/status`, {
+                            browserApi.patch(`/admin/room-types/${room.id}/status`, {
                               status: published ? 'DRAFT' : 'PUBLISHED',
                             }),
-                          published ? 'Habitación despublicada.' : 'Habitación publicada.',
+                          published
+                            ? 'Tipo de habitación despublicado.'
+                            : 'Tipo de habitación publicado.',
                         )
                       }
                     >
                       {published ? 'Despublicar' : 'Publicar'}
                     </Button>
                     <Link
-                      href={`/admin/rooms/${room.id}`}
+                      href={`/admin/room-types/${room.id}`}
                       className="inline-flex min-h-9 items-center px-2 text-sm text-primary underline underline-offset-4"
                     >
                       Editar<span className="sr-only"> {room.name}</span>

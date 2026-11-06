@@ -8,7 +8,7 @@ import { MediaThumb } from '@/components/admin/media-thumb';
 import { ReorderButtons, moveItem } from '@/components/admin/reorder-buttons';
 import { Button, Card, EmptyState } from '@/components/admin/ui';
 import { browserApi } from '@/lib/api/browser';
-import type { Room } from '@/lib/api/types';
+import type { RoomType } from '@/lib/api/types';
 
 interface ImageRow {
   mediaAssetId: string;
@@ -17,7 +17,7 @@ interface ImageRow {
   altText: string | null;
 }
 
-function fromRoom(room: Room): ImageRow[] {
+function fromRoom(room: RoomType): ImageRow[] {
   return room.images.map((image) => ({
     mediaAssetId: image.mediaAssetId,
     isCover: image.isCover,
@@ -26,8 +26,8 @@ function fromRoom(room: Room): ImageRow[] {
   }));
 }
 
-/** Ordered image set with one cover; saved as a whole (PUT /admin/rooms/:id/images). */
-export function RoomImages({ room }: { room: Room }) {
+/** Ordered image set of a room type with one cover; saved as a whole (PUT /admin/room-types/:id/images). */
+export function RoomTypeImages({ room }: { room: RoomType }) {
   const [rows, setRows] = useState<ImageRow[]>(() => fromRoom(room));
   const [dirty, setDirty] = useState(false);
   const [picking, setPicking] = useState(false);
@@ -43,7 +43,7 @@ export function RoomImages({ room }: { room: Room }) {
     const saved = await run(
       'images',
       () =>
-        browserApi.put<Room>(`/admin/rooms/${room.id}/images`, {
+        browserApi.put<RoomType>(`/admin/room-types/${room.id}/images`, {
           images: rows.map(({ mediaAssetId, isCover }) => ({ mediaAssetId, isCover })),
         }),
       'Imágenes guardadas.',

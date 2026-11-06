@@ -1,6 +1,6 @@
 'use client';
 
-import { BED_TYPES, roomCreateSchema, roomUpdateSchema } from '@hotel-bambu/shared';
+import { BED_TYPES, roomTypeCreateSchema, roomTypeUpdateSchema } from '@hotel-bambu/shared';
 import { Plus, Trash2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
@@ -17,7 +17,7 @@ import {
 import { useUnsavedChangesWarning } from '@/components/admin/hooks';
 import { Button } from '@/components/admin/ui';
 import { browserApi } from '@/lib/api/browser';
-import type { Amenity, Room } from '@/lib/api/types';
+import type { Amenity, RoomType } from '@/lib/api/types';
 import { applyApiError } from '@/lib/forms/form-errors';
 import { asNullableNumber, formResolver } from '@/lib/forms/resolver';
 import { BED_TYPE_LABELS, PRICE_UNIT_LABELS, ROOM_TYPE_LABELS, toOptions } from '@/lib/labels';
@@ -26,7 +26,6 @@ const FIELD_NAMES = [
   'name',
   'slug',
   'type',
-  'shortDescription',
   'description',
   'capacity',
   'beds',
@@ -35,17 +34,14 @@ const FIELD_NAMES = [
   'priceUnit',
   'taxesIncluded',
   'priceNotes',
-  'seoTitle',
-  'seoDescription',
   'amenityIds',
 ];
 
-function toFormValues(room: Room | null): FieldValues {
+function toFormValues(room: RoomType | null): FieldValues {
   return {
     name: room?.name ?? '',
     slug: room?.slug ?? '',
     type: room?.type ?? 'COUPLE',
-    shortDescription: room?.shortDescription ?? '',
     description: room?.description ?? '',
     capacity: room?.capacity ?? 2,
     beds: room?.beds ?? [],
@@ -54,19 +50,17 @@ function toFormValues(room: Room | null): FieldValues {
     priceUnit: room?.priceUnit ?? 'PER_NIGHT',
     taxesIncluded: room?.taxesIncluded ?? true,
     priceNotes: room?.priceNotes ?? '',
-    seoTitle: room?.seoTitle ?? '',
-    seoDescription: room?.seoDescription ?? '',
     amenityIds: room?.amenityIds ?? [],
   };
 }
 
 type ErrorMap = Record<string, { message?: string } | undefined>;
 
-export function RoomForm({
+export function RoomTypeForm({
   room,
   amenities: catalog,
 }: {
-  room: Room | null;
+  room: RoomType | null;
   amenities: Amenity[];
 }) {
   // Only room equipment is assigned per room; hotel-wide amenities apply everywhere (ADR 0015).
@@ -82,7 +76,7 @@ export function RoomForm({
     setError,
     formState: { errors, isSubmitting, isDirty },
   } = useForm<FieldValues, unknown, FieldValues>({
-    resolver: formResolver(room ? roomUpdateSchema : roomCreateSchema) as never,
+    resolver: formResolver(room ? roomTypeUpdateSchema : roomTypeCreateSchema) as never,
     defaultValues: toFormValues(room),
   });
   const beds = useFieldArray({ control, name: 'beds' });
@@ -95,15 +89,15 @@ export function RoomForm({
     setFormError(null);
     try {
       if (room) {
-        const saved = await browserApi.patch<Room>(`/admin/rooms/${room.id}`, values);
+        const saved = await browserApi.patch<RoomType>(`/admin/room-types/${room.id}`, values);
         reset(toFormValues(saved));
-        toast.success('Habitación guardada.');
+        toast.success('Tipo de habitación guardado.');
         router.refresh();
       } else {
-        const created = await browserApi.post<Room>('/admin/rooms', values);
+        const created = await browserApi.post<RoomType>('/admin/room-types', values);
         reset(toFormValues(created));
-        toast.success('Habitación creada como borrador. Ahora agregue sus imágenes.');
-        router.push(`/admin/rooms/${created.id}`);
+        toast.success('Tipo de habitación creado como borrador. Ahora agregue sus imágenes.');
+        router.push(`/admin/room-types/${created.id}`);
       }
     } catch (error) {
       setFormError(applyApiError(error, setError, FIELD_NAMES).message);
@@ -115,7 +109,7 @@ export function RoomForm({
       onSubmit={onSubmit}
       noValidate
       className="flex flex-col gap-6"
-      aria-label="Datos de la habitación"
+      aria-label="Datos del tipo de habitación"
     >
       <FormAlert message={formError} />
       <FormSection title="Información básica">
@@ -124,7 +118,7 @@ export function RoomForm({
           label="Identificador en la URL (slug)"
           hint={
             room
-              ? 'Si la habitación está publicada, el enlace anterior seguirá funcionando (redirección).'
+              ? 'Si el tipo está publicado, el enlace anterior seguirá funcionando (redirección).'
               : 'Opcional: se genera a partir del nombre. Solo minúsculas, números y guiones.'
           }
           error={err('slug')}
@@ -133,7 +127,8 @@ export function RoomForm({
           })}
         />
         <SelectField
-          label="Tipo"
+          label="Categoría"
+          hint="Define la etiqueta pública y el filtro de «Habitaciones»."
           required
           options={toOptions(ROOM_TYPE_LABELS)}
           error={err('type')}
@@ -149,15 +144,8 @@ export function RoomForm({
         />
         <TextAreaField
           className="md:col-span-2"
-          label="Descripción corta"
-          hint="Se muestra en el listado de habitaciones. Obligatoria para publicar."
-          rows={2}
-          error={err('shortDescription')}
-          registration={register('shortDescription')}
-        />
-        <TextAreaField
-          className="md:col-span-2"
-          label="Descripción completa"
+          label="Descripción"
+          hint="Opcional. El primer párrafo se muestra en las tarjetas; sepárelos con una línea en blanco. Escriba solo datos reales."
           rows={6}
           error={err('description')}
           registration={register('description')}
@@ -283,28 +271,9 @@ export function RoomForm({
         />
       </FormSection>
 
-      <FormSection
-        title="Buscadores (opcional)"
-        description="Si se dejan vacíos se usan el nombre y la descripción corta."
-      >
-        <TextField
-          label="Título SEO"
-          hint="Máximo 70 caracteres."
-          error={err('seoTitle')}
-          registration={register('seoTitle')}
-        />
-        <TextAreaField
-          label="Descripción SEO"
-          hint="Máximo 170 caracteres."
-          rows={2}
-          error={err('seoDescription')}
-          registration={register('seoDescription')}
-        />
-      </FormSection>
-
       <div className="sticky bottom-0 flex items-center gap-3 border-t border-border bg-background py-3">
         <Button type="submit" loading={isSubmitting}>
-          {room ? 'Guardar cambios' : 'Crear habitación'}
+          {room ? 'Guardar cambios' : 'Crear tipo de habitación'}
         </Button>
         {isDirty ? (
           <span className="text-sm text-muted-foreground">Hay cambios sin guardar.</span>

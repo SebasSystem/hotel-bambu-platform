@@ -17,10 +17,11 @@ import { HealthModule } from './modules/health/health.module.js';
 import { HeroSlidesModule } from './modules/hero-slides/hero-slides.js';
 import { HotelModule } from './modules/hotel/hotel.js';
 import { MediaModule } from './modules/media/media.module.js';
+import { NearbyPlacesModule } from './modules/nearby-places/nearby-places.js';
 import { PoliciesModule } from './modules/policies/policies.js';
-import { PromotionsModule } from './modules/promotions/promotions.js';
 import { PublicModule } from './modules/public/public.js';
-import { RoomsModule } from './modules/rooms/rooms.module.js';
+import { RoomTypesModule } from './modules/room-types/room-types.module.js';
+import { RoomsModule } from './modules/rooms/rooms.js';
 import { SocialLinksModule } from './modules/social-links/social-links.js';
 import { PrismaModule } from './prisma/prisma.module.js';
 
@@ -72,9 +73,10 @@ import { PrismaModule } from './prisma/prisma.module.js';
     HealthModule,
     AuthModule,
     HotelModule,
+    RoomTypesModule,
     RoomsModule,
     AmenitiesModule,
-    PromotionsModule,
+    NearbyPlacesModule,
     MediaModule,
     GalleryModule,
     HeroSlidesModule,

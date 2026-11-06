@@ -1,11 +1,14 @@
 'use client';
 
-import { hotelProfileUpdateSchema } from '@hotel-bambu/shared';
+import {
+  DEFAULT_WHATSAPP_GREETING,
+  buildWhatsAppMessage,
+  hotelProfileUpdateSchema,
+} from '@hotel-bambu/shared';
 import { Plus, Trash2 } from 'lucide-react';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { Controller, useFieldArray, useForm, type FieldValues } from 'react-hook-form';
+import { Controller, useFieldArray, useForm, useWatch, type FieldValues } from 'react-hook-form';
 import { useToast } from '@/components/admin/feedback';
 import { FormAlert, FormSection, TextAreaField, TextField } from '@/components/admin/fields';
 import { useUnsavedChangesWarning } from '@/components/admin/hooks';
@@ -21,15 +24,19 @@ const TEXT_FIELDS = [
   'legalName',
   'rntNumber',
   'escnnaNotice',
+  'tagline',
   'shortDescription',
   'description',
   'address',
   'municipality',
   'department',
+  'country',
   'mapUrl',
   'directions',
   'nearbyAttractions',
   'phone',
+  'whatsappNumber',
+  'whatsappGreeting',
   'email',
 ] as const;
 
@@ -41,7 +48,6 @@ const FIELD_NAMES = [
   'checkInTime',
   'checkOutTime',
   'logoMediaId',
-  'heroMediaId',
 ];
 
 function toFormValues(profile: HotelProfile): FieldValues {
@@ -55,7 +61,6 @@ function toFormValues(profile: HotelProfile): FieldValues {
     checkInTime: profile.checkInTime,
     checkOutTime: profile.checkOutTime,
     logoMediaId: profile.logoMediaId,
-    heroMediaId: profile.heroMediaId,
   };
 }
 
@@ -65,10 +70,7 @@ export function HotelForm({ profile }: { profile: HotelProfile }) {
   const router = useRouter();
   const toast = useToast();
   const [formError, setFormError] = useState<string | null>(null);
-  const [previews, setPreviews] = useState<Record<'logo' | 'hero', Preview>>({
-    logo: profile.logoMedia,
-    hero: profile.heroMedia,
-  });
+  const [logoPreview, setLogoPreview] = useState<Preview>(profile.logoMedia);
   const {
     register,
     control,
@@ -80,6 +82,7 @@ export function HotelForm({ profile }: { profile: HotelProfile }) {
     resolver: formResolver(hotelProfileUpdateSchema) as never,
     defaultValues: toFormValues(profile),
   });
+  const greeting = (useWatch({ control, name: 'whatsappGreeting' }) as string | undefined) ?? null;
   const hours = useFieldArray({ control, name: 'openingHours' });
   useUnsavedChangesWarning(isDirty);
 
@@ -128,24 +131,35 @@ export function HotelForm({ profile }: { profile: HotelProfile }) {
           error={err('escnnaNotice')}
           registration={register('escnnaNotice')}
         />
+        <TextField
+          className="md:col-span-2"
+          label="Lema"
+          hint="Frase corta de la portada (máximo 160 caracteres)."
+          error={err('tagline')}
+          registration={register('tagline')}
+        />
         <TextAreaField
           className="md:col-span-2"
           label="Descripción corta"
-          hint="Una o dos frases (máximo 300 caracteres)."
+          hint="Una o dos frases para buscadores y redes (máximo 300 caracteres)."
           rows={2}
           error={err('shortDescription')}
           registration={register('shortDescription')}
         />
         <TextAreaField
           className="md:col-span-2"
-          label="Descripción completa"
+          label="Sobre nosotros"
+          hint="Texto de «Sobre nosotros» en el inicio. Separe los párrafos con una línea en blanco."
           rows={6}
           error={err('description')}
           registration={register('description')}
         />
       </FormSection>
 
-      <FormSection title="Imágenes">
+      <FormSection
+        title="Imágenes"
+        description="Las fotos de la portada se gestionan en «Contenido de la landing › Carrusel principal»."
+      >
         <Controller
           control={control}
           name="logoMediaId"
@@ -153,28 +167,11 @@ export function HotelForm({ profile }: { profile: HotelProfile }) {
             <MediaField
               label="Logo"
               value={field.value as string | null}
-              preview={previews.logo}
+              preview={logoPreview}
               error={fieldState.error?.message}
               onChange={(id, media) => {
                 field.onChange(id);
-                setPreviews((p) => ({ ...p, logo: media ?? null }));
-              }}
-            />
-          )}
-        />
-        <Controller
-          control={control}
-          name="heroMediaId"
-          render={({ field, fieldState }) => (
-            <MediaField
-              label="Imagen principal"
-              hint="Se muestra en la portada del sitio."
-              value={field.value as string | null}
-              preview={previews.hero}
-              error={fieldState.error?.message}
-              onChange={(id, media) => {
-                field.onChange(id);
-                setPreviews((p) => ({ ...p, hero: media ?? null }));
+                setLogoPreview(media ?? null);
               }}
             />
           )}
@@ -196,13 +193,33 @@ export function HotelForm({ profile }: { profile: HotelProfile }) {
           error={err('email')}
           registration={register('email')}
         />
-        <p className="text-sm text-muted-foreground md:col-span-2">
-          El número de WhatsApp y los mensajes predefinidos se editan en{' '}
-          <Link href="/admin/whatsapp" className="text-primary underline underline-offset-4">
-            WhatsApp
-          </Link>
-          .
-        </p>
+      </FormSection>
+
+      <FormSection
+        title="WhatsApp"
+        description="Sin número, los botones del sitio no abren WhatsApp. Los mensajes están predefinidos; aquí solo se edita el saludo con el que empiezan."
+      >
+        <TextField
+          label="Número de WhatsApp"
+          hint="Con indicativo de país, por ejemplo 57 310 000 0000."
+          type="tel"
+          inputMode="tel"
+          error={err('whatsappNumber')}
+          registration={register('whatsappNumber')}
+        />
+        <TextField
+          label="Saludo de los mensajes"
+          hint={`Opcional. Por defecto: «${DEFAULT_WHATSAPP_GREETING}».`}
+          error={err('whatsappGreeting')}
+          registration={register('whatsappGreeting')}
+        />
+        <div className="text-sm text-muted-foreground md:col-span-2">
+          <p className="font-semibold text-foreground">Vista previa</p>
+          <p className="mt-1">{buildWhatsAppMessage({ kind: 'general' }, greeting)}</p>
+          <p className="mt-1">
+            {buildWhatsAppMessage({ kind: 'roomType', name: 'Habitación de pareja' }, greeting)}
+          </p>
+        </div>
       </FormSection>
 
       <FormSection title="Ubicación">
@@ -217,6 +234,7 @@ export function HotelForm({ profile }: { profile: HotelProfile }) {
           error={err('municipality')}
           registration={register('municipality')}
         />
+        <TextField label="País" error={err('country')} registration={register('country')} />
         <TextField
           label="Departamento"
           error={err('department')}

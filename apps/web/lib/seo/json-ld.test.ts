@@ -18,11 +18,13 @@ const hotel: PublicHotel = {
   legalName: null,
   rntNumber: null,
   escnnaNotice: null,
+  tagline: null,
   shortDescription: 'Hotel en el centro',
   description: null,
   address: null,
   municipality: null,
   department: null,
+  country: null,
   latitude: null,
   longitude: null,
   mapUrl: null,
@@ -30,19 +32,18 @@ const hotel: PublicHotel = {
   nearbyAttractions: null,
   phone: null,
   whatsappNumber: null,
+  whatsappGreeting: null,
   email: null,
   openingHours: null,
   checkInTime: null,
   checkOutTime: null,
   updatedAt: '2026-11-01T00:00:00.000Z',
   logo: null,
-  hero: null,
 };
 
 const site: PublicSite = {
   hotel,
   socialLinks: [],
-  whatsappTemplates: [],
   heroSlides: [],
   hotelAmenities: [],
   homeAmenities: [],
@@ -50,26 +51,23 @@ const site: PublicSite = {
 };
 
 const room: PublicRoomDetail = {
-  slug: 'pareja-101',
-  name: 'Habitación 101',
+  slug: 'habitacion-pareja',
+  name: 'Habitación de pareja',
   type: 'COUPLE',
-  shortDescription: 'Cama doble',
+  description: 'Cama doble y luz natural.',
   capacity: 2,
   basePrice: null,
   currency: 'COP',
   priceUnit: 'NIGHT',
   taxesIncluded: true,
   cover: media,
-  amenities: [{ name: 'Wi-Fi', iconKey: 'wifi' }],
-  description: null,
+  amenities: [{ name: 'Baño privado', iconKey: 'bath' }],
+  publishedRoomCount: 8,
   beds: [{ type: 'DOUBLE', count: 1 }],
   areaM2: null,
   priceNotes: null,
-  seoTitle: null,
-  seoDescription: null,
   updatedAt: '2026-11-01T00:00:00.000Z',
   images: [media],
-  promotions: [],
 };
 
 beforeEach(() => {
@@ -117,9 +115,11 @@ describe('hotelJsonLd', () => {
       },
       [
         { ...room, basePrice: 90000 },
-        { ...room, basePrice: 150000 },
+        { ...room, basePrice: 150000, publishedRoomCount: 7 },
       ],
     );
+    // Published rooms of every type, not the number of types (ADR 0016).
+    expect(data.numberOfRooms).toBe(15);
     expect(data.address).toMatchObject({
       '@type': 'PostalAddress',
       streetAddress: 'Calle 8 # 7-10',
@@ -144,7 +144,8 @@ describe('roomJsonLd', () => {
     expect(data['@type']).toBe('HotelRoom');
     expect(data).toMatchObject({
       occupancy: { '@type': 'QuantitativeValue', maxValue: 2 },
-      url: 'https://hotel.test/habitaciones/pareja-101',
+      url: 'https://hotel.test/habitaciones/habitacion-pareja',
+      description: 'Cama doble y luz natural.',
     });
   });
 

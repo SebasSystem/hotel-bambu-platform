@@ -5,7 +5,7 @@ export interface AuthenticatedAdmin {
   id: string;
   email: string;
   name: string | null;
-  role: 'ADMIN' | 'EDITOR';
+  role: 'ADMIN';
 }
 
 export interface AuthenticatedSession {

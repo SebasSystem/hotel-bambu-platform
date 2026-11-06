@@ -7,14 +7,14 @@ Private, Spanish-language panel for hotel staff (requirements 9, 10, 18.2). Code
 | Route | Content |
 |---|---|
 | `/admin/login` | Login (generic error on any credential failure) |
-| `/admin` | Dashboard: rooms by status, active services, current promotions, incomplete content, last change, 30-day aggregates |
-| `/admin/hotel` | Profile, logo/hero image, contact, location, check-in/out, opening hours, RNT, ESCNNA notice |
-| `/admin/whatsapp` | WhatsApp number and message templates (allowed variables, preview, test link) |
-| `/admin/rooms`, `/new`, `/[id]` | List (order, publish/unpublish), create, edit (fields, beds, amenities, rate), images (order, cover), status, delete, "Ver en el sitio" |
-| `/admin/amenities`, `/services`, `/promotions`, `/faq`, `/policies`, `/social` | Generic list + inline form (`ResourceManager`) with toggles, ordering and delete confirmation |
+| `/admin` | Dashboard: published rooms and room types, active hotel amenities and nearby places, incomplete content, last change, 30-day aggregates |
+| `/admin/hotel` | Profile (name, tagline, "Sobre nosotros", meta description), logo, contact, WhatsApp number and greeting (with a preview of the default messages), location, check-in/out, opening hours, RNT, ESCNNA notice |
+| `/admin/room-types`, `/new`, `/[id]` | "Tipos de habitación" (ADR 0016): list (order, publish/unpublish, published room count), create, edit (description, beds, amenities, rate), images (order, cover), status, delete, "Ver en el sitio" |
+| `/admin/rooms` | Lightweight room list: number or name, type, status ("Inactivo" also means out of service), order |
+| `/admin/amenities`, `/nearby-places`, `/faq`, `/policies`, `/social` | Generic list + inline form (`ResourceManager`) with toggles, ordering and delete confirmation |
 | `/admin/media` | Upload (alt text required), preview, edit alt/caption, delete (409 when in use), filter "sin texto alternativo" |
 | `/admin/gallery` | Add from media, category, publish, featured, order, remove (media is kept) |
-| `/admin/content` | Fixed landing sections (title, subtitle, text, CTA label, image, enabled) |
+| `/admin/content` | "Carrusel principal" (hero slides, the single hero source) and the home sections: show/hide and order only |
 | `/admin/account` | Session info, change password (rotates the session and CSRF token) |
 
 ## Data flow
@@ -36,7 +36,7 @@ Local, dependency-free components in `components/admin/` (shadcn/ui-style classe
 
 ## Media previews
 
-Embedded media (rooms, gallery, sections, hotel) carries stored variant keys; the panel builds preview URLs with the same `S3_PUBLIC_URL` variable as the API (default `http://localhost:9000/hotel-media`), read by the panel layout on the server. It must be reachable from the browser.
+Embedded media (room types, gallery, hero slides, hotel logo) carries stored variant keys; the panel builds preview URLs with the same `S3_PUBLIC_URL` variable as the API (default `http://localhost:9000/hotel-media`), read by the panel layout on the server. It must be reachable from the browser.
 
 ## Tests
 

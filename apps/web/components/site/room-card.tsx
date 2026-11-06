@@ -5,7 +5,7 @@ import { cardClass } from '@/components/ui/card';
 import { ui } from '@/lib/i18n/es';
 import { formatRoomPrice } from '@/lib/public/format';
 import { routes } from '@/lib/public/navigation';
-import { roomTypeLabel } from '@/lib/public/rooms';
+import { roomExcerpt, roomTypeLabel } from '@/lib/public/rooms';
 import type { PublicRoomSummary } from '@/lib/public/types';
 import { Picture } from './picture';
 import { WhatsAppLink } from './whatsapp-link';
@@ -30,6 +30,7 @@ export function RoomCard({
   headingLevel: Heading = 'h3',
 }: RoomCardProps) {
   const price = formatRoomPrice(room);
+  const excerpt = roomExcerpt(room.description);
   const meta = [ui.rooms.upTo(room.capacity), ...room.amenities.slice(0, 2).map((a) => a.name)];
   return (
     <article
@@ -60,10 +61,8 @@ export function RoomCard({
             {room.name}
           </Link>
         </Heading>
-        {room.shortDescription ? (
-          <p className="mt-2.5 line-clamp-2 text-card text-muted-foreground">
-            {room.shortDescription}
-          </p>
+        {excerpt ? (
+          <p className="mt-2.5 line-clamp-2 text-card text-muted-foreground">{excerpt}</p>
         ) : null}
         <p className="mt-3.5 text-meta font-bold text-charcoal">{meta.join(' · ')}</p>
         {price ? (

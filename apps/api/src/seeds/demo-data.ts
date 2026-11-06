@@ -1,59 +1,52 @@
-import { uniqueSlug } from '@hotel-bambu/shared';
-import type { RoomType } from '../generated/prisma/enums.js';
+import type { RoomKind } from '../generated/prisma/enums.js';
 
 /**
  * Demo content (requirement 15.5): local/staging only, every visible text marked [DEMO].
- * Facts used here are the owner-confirmed ones: 16 rooms, individual and couple types, and
- * private bathroom / TV / fan / Wi-Fi in every room. Rates, floors and the exact type split are
- * unknown: rates stay null (TODO(hotel)) and numbering is illustrative.
+ * Facts used here are the owner-confirmed ones: individual and couple room types, and private
+ * bathroom / TV / fan in every room. Rates, beds, descriptions and how many rooms of each type the
+ * hotel has are unknown, so the demo invents none of them: types have no description and no rate,
+ * and there is one example room per type (ADR 0016).
  */
 
 export const DEMO_MARKER = '[DEMO]';
-export const DEMO_ROOM_COUNT = 16;
 
-export interface DemoRoom {
+export interface DemoRoomType {
   slug: string;
   name: string;
-  type: RoomType;
+  type: RoomKind;
   capacity: number;
-  beds: Array<{ type: 'SINGLE' | 'DOUBLE'; count: number }>;
-  shortDescription: string;
-  description: string;
   sortOrder: number;
 }
 
-const TYPE_COPY: Record<
-  'INDIVIDUAL' | 'COUPLE',
-  { label: string; capacity: number; text: string }
-> = {
-  INDIVIDUAL: { label: 'Individual', capacity: 1, text: 'para una persona' },
-  COUPLE: { label: 'Pareja', capacity: 2, text: 'para dos personas' },
-};
+/** The two types the owner confirmed; capacity follows from the type itself (1 and 2 people). */
+export const DEMO_ROOM_TYPES: readonly DemoRoomType[] = [
+  {
+    slug: 'habitacion-individual',
+    name: 'Habitación individual',
+    type: 'INDIVIDUAL',
+    capacity: 1,
+    sortOrder: 0,
+  },
+  {
+    slug: 'habitacion-pareja',
+    name: 'Habitación de pareja',
+    type: 'COUPLE',
+    capacity: 2,
+    sortOrder: 1,
+  },
+];
 
-const AMENITY_SENTENCE = 'Incluye baño privado, televisor, ventilador y Wi-Fi.';
+export interface DemoRoom {
+  name: string;
+  typeSlug: string;
+}
 
-/** 16 rooms on two illustrative floors (101–108, 201–208), alternating couple / individual. */
-export function buildDemoRooms(count: number = DEMO_ROOM_COUNT): DemoRoom[] {
-  const taken = new Set<string>();
-  return Array.from({ length: count }, (_, index) => {
-    const floor = Math.floor(index / 8) + 1;
-    const number = floor * 100 + (index % 8) + 1;
-    const type = index % 2 === 0 ? 'COUPLE' : 'INDIVIDUAL';
-    const copy = TYPE_COPY[type];
-    const name = `${DEMO_MARKER} Habitación ${copy.label} ${number}`;
-    const slug = uniqueSlug(name, taken, 'habitacion');
-    taken.add(slug);
-    return {
-      slug,
-      name,
-      type,
-      capacity: copy.capacity,
-      beds: [{ type: type === 'COUPLE' ? 'DOUBLE' : 'SINGLE', count: 1 }],
-      shortDescription: `${DEMO_MARKER} Habitación ${copy.text}. ${AMENITY_SENTENCE}`,
-      description: `${DEMO_MARKER} Texto de ejemplo: habitación ${copy.text} con baño privado, televisor, ventilador y conexión Wi-Fi. La descripción real la redacta el hotel desde el panel.`,
-      sortOrder: index,
-    };
-  });
+/** One example room per type; real numbers and the real split are set in /admin. */
+export function buildDemoRooms(): DemoRoom[] {
+  return DEMO_ROOM_TYPES.map((type) => ({
+    name: `${DEMO_MARKER} ${type.name} de ejemplo`,
+    typeSlug: type.slug,
+  }));
 }
 
 export const DEMO_FAQS: ReadonlyArray<{ question: string; answer: string; showOnHome: boolean }> = [
@@ -64,12 +57,12 @@ export const DEMO_FAQS: ReadonlyArray<{ question: string; answer: string; showOn
   },
   {
     question: `${DEMO_MARKER} ¿Las habitaciones tienen baño privado?`,
-    answer: `${DEMO_MARKER} Sí, todas las habitaciones tienen baño privado, televisor, ventilador y Wi-Fi.`,
+    answer: `${DEMO_MARKER} Sí, todas las habitaciones tienen baño privado, televisor y ventilador.`,
     showOnHome: true,
   },
   {
     question: `${DEMO_MARKER} ¿Hay internet en el hotel?`,
-    answer: `${DEMO_MARKER} Sí, hay internet en todos los pisos.`,
+    answer: `${DEMO_MARKER} Sí, hay Wi-Fi en todo el hotel.`,
     showOnHome: true,
   },
   {
