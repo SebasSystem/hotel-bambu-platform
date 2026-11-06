@@ -87,7 +87,8 @@ function PageViews({ enabled }: { enabled: boolean }) {
   return null;
 }
 
-const categoryRow = 'flex items-start justify-between gap-6 border-t border-sand-200 py-4 sm:py-5';
+const categoryRow =
+  'flex items-start justify-between gap-6 border-t border-line-strong py-4 sm:py-5';
 
 /**
  * Cookie consent manager (requirement 17.5): first-visit banner with three equally prominent
@@ -141,11 +142,11 @@ export function ConsentProvider({
       */}
       {!consent ? (
         <section aria-labelledby="consent-title" className="consent-banner" data-consent-banner>
-          <div className="mx-auto grid max-w-5xl gap-4 rounded-xl border border-sand-200 bg-card p-5 shadow-lg sm:p-6 lg:grid-cols-[1fr_auto] lg:items-center lg:gap-8">
+          <div className="mx-auto grid max-w-5xl gap-4 rounded-xl border border-line-strong bg-card p-5 shadow-lg sm:p-6 lg:grid-cols-[1fr_auto] lg:items-center lg:gap-8">
             <div>
               <h2
                 id="consent-title"
-                className="text-base font-semibold text-bamboo-900 [font-family:var(--font-sans)]"
+                className="text-base font-semibold text-green-900 [font-family:var(--font-sans)]"
               >
                 {ui.consent.bannerTitle}
               </h2>
@@ -200,12 +201,12 @@ export function ConsentProvider({
           }}
         >
           <div className="flex items-start justify-between gap-4">
-            <h2 id="consent-dialog-title" className="text-2xl font-medium text-bamboo-900">
+            <h2 id="consent-dialog-title" className="text-2xl font-medium text-green-900">
               {ui.consent.dialogTitle}
             </h2>
             <button
               type="button"
-              className="-mt-2 -mr-2 inline-flex size-11 shrink-0 items-center justify-center rounded-pill text-bamboo-900 hover:bg-sand-100"
+              className="-mt-2 -mr-2 inline-flex size-11 shrink-0 items-center justify-center rounded-pill text-green-900 hover:bg-sand"
               onClick={() => dialogRef.current?.close()}
             >
               <X aria-hidden="true" strokeWidth={1.75} className="size-6" />
@@ -225,21 +226,21 @@ export function ConsentProvider({
           <div className="mt-6">
             <div className={categoryRow}>
               <div>
-                <p className="font-semibold text-bamboo-900" id="consent-necessary">
+                <p className="font-semibold text-green-900" id="consent-necessary">
                   {ui.consent.categories.necessary.title}
                 </p>
                 <p className="mt-1 text-sm leading-normal text-muted-foreground">
                   {ui.consent.categories.necessary.text}
                 </p>
               </div>
-              <span className="shrink-0 text-sm font-semibold text-bamboo-700">
+              <span className="shrink-0 text-sm font-semibold text-green">
                 {ui.consent.alwaysOn}
               </span>
             </div>
             {(['functional', 'analytics'] as const).map((key) => (
               <div key={key} className={categoryRow}>
                 <div>
-                  <label htmlFor={`consent-${key}`} className="font-semibold text-bamboo-900">
+                  <label htmlFor={`consent-${key}`} className="font-semibold text-green-900">
                     {ui.consent.categories[key].title}
                   </label>
                   <p

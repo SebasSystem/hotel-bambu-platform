@@ -2,7 +2,7 @@
 
 import { policyCreateSchema, policyUpdateSchema } from '@hotel-bambu/shared';
 import { ResourceManager } from '@/components/admin/resource-manager';
-import { BooleanBadge } from '@/components/admin/ui';
+import { BooleanBadge, WarningBadge } from '@/components/admin/ui';
 import type { Policy } from '@/lib/api/types';
 
 export function PoliciesManager({ items }: { items: Policy[] }) {
@@ -43,10 +43,13 @@ export function PoliciesManager({ items }: { items: Policy[] }) {
       toggles={[{ name: 'published', on: 'Despublicar', off: 'Publicar' }]}
       renderSummary={(item) => (
         <>
-          <p className="font-semibold">{item.title}</p>
+          <p className="font-bold">{item.title}</p>
           <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{item.content}</p>
-          <div className="mt-2">
+          <div className="mt-2 flex flex-wrap gap-2">
             <BooleanBadge value={item.published} on="Publicada" off="No publicada" />
+            {/\[demo\]/i.test(`${item.title} ${item.content}`) ? (
+              <WarningBadge>Texto de ejemplo [DEMO]</WarningBadge>
+            ) : null}
           </div>
         </>
       )}

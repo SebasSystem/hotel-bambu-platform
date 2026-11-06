@@ -1,8 +1,29 @@
+import { ArrowRight, Check, History } from 'lucide-react';
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { Card, PageHeader } from '@/components/admin/ui';
+import { Card, CardHeader, PageHeader, cx } from '@/components/admin/ui';
+import { collapseActivity, describeAction, timeAgo } from '@/lib/admin/activity';
+import {
+  publishChecklist,
+  readinessKpis,
+  type ChecklistItem,
+  type Kpi,
+} from '@/lib/admin/readiness';
 import { serverApi } from '@/lib/api/server';
-import type { DashboardSummary } from '@/lib/api/types';
+import type {
+  AuditLogEntry,
+  DashboardSummary,
+  Faq,
+  HeroSlide,
+  HotelProfile,
+  MediaAsset,
+  NearbyPlace,
+  Paginated,
+  Policy,
+  RoomType,
+  SessionInfo,
+  SocialLink,
+} from '@/lib/api/types';
 
 export const metadata: Metadata = { title: 'Resumen' };
 
@@ -14,126 +35,265 @@ const EVENT_LABELS: Record<string, string> = {
   SOCIAL_CLICK: 'Clics en redes sociales',
 };
 
-const dateFormat = new Intl.DateTimeFormat('es-CO', {
-  dateStyle: 'medium',
-  timeStyle: 'short',
-  timeZone: 'America/Bogota',
-});
+function greeting(now: Date): string {
+  const hour = Number(
+    new Intl.DateTimeFormat('en-US', {
+      hour: 'numeric',
+      hourCycle: 'h23',
+      timeZone: 'America/Bogota',
+    }).format(now),
+  );
+  if (hour < 12) return 'Buenos días';
+  if (hour < 19) return 'Buenas tardes';
+  return 'Buenas noches';
+}
 
-function Stat({ label, value, href }: { label: string; value: number; href: string }) {
+function KpiCard({ kpi }: { kpi: Kpi }) {
   return (
-    <Card>
-      <p className="text-sm text-muted-foreground">{label}</p>
-      <p className="mt-1 font-display text-4xl font-semibold text-bamboo-900">{value}</p>
-      <Link
-        href={href}
-        className="mt-2 inline-block text-sm text-primary underline underline-offset-4"
+    <Link
+      href={kpi.href}
+      className="group flex flex-col rounded-2xl border border-line bg-white p-4 transition-colors hover:border-green tab:p-5"
+    >
+      <span className="text-[0.8125rem] text-muted-foreground">{kpi.label}</span>
+      <span className="mt-2 text-[1.3rem] leading-none font-bold tracking-[-0.02em] tabular-nums xs:text-[1.6rem] tab:text-[2rem]">
+        {kpi.value}
+      </span>
+      <span
+        className={cx(
+          'mt-2.5 inline-flex items-center gap-1.5 text-[0.8125rem] font-semibold',
+          kpi.done ? 'text-green' : 'text-warn-fg',
+        )}
       >
-        Gestionar
-      </Link>
-    </Card>
+        <span
+          aria-hidden="true"
+          className={cx('size-2 shrink-0 rounded-full', kpi.done ? 'bg-green' : 'bg-gold')}
+        />
+        {kpi.note}
+      </span>
+    </Link>
   );
 }
 
-/** Content status only — never bookings or revenue (requirement 9.2). */
+function ChecklistRow({ item }: { item: ChecklistItem }) {
+  return (
+    <li>
+      <Link
+        href={item.href}
+        className={cx(
+          'group flex items-start gap-3 rounded-sm p-3.5 transition-colors',
+          item.done ? 'bg-white hover:bg-ivory' : 'bg-ivory hover:bg-sand/60',
+        )}
+      >
+        {item.done ? (
+          <span className="mt-0.5 inline-flex size-[18px] shrink-0 items-center justify-center rounded-full bg-green text-white">
+            <Check aria-hidden="true" className="size-3" strokeWidth={3} />
+          </span>
+        ) : (
+          <span
+            aria-hidden="true"
+            className="mt-[5px] ml-[4.5px] size-[9px] shrink-0 rounded-full bg-gold"
+          />
+        )}
+        <span className="min-w-0 flex-1">
+          <span
+            className={cx(
+              'block text-[0.875rem] leading-snug font-bold',
+              item.done && 'text-muted-foreground',
+            )}
+          >
+            {item.title}
+            <span className="sr-only">{item.done ? ' (listo)' : ' (pendiente)'}</span>
+          </span>
+          <span className="mt-0.5 block text-[0.8125rem] leading-snug text-muted-foreground">
+            {item.note}
+          </span>
+        </span>
+        <ArrowRight
+          aria-hidden="true"
+          className="mt-0.5 size-4 shrink-0 text-ink-muted opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100"
+        />
+      </Link>
+    </li>
+  );
+}
+
+/** Content status only — never bookings, occupancy or revenue (requirement 9.2, owner Q4). */
 export default async function DashboardPage() {
-  const summary = await serverApi.get<DashboardSummary>('/admin/dashboard');
+  const [
+    summary,
+    session,
+    hotel,
+    roomTypes,
+    heroSlides,
+    nearbyPlaces,
+    policies,
+    faqs,
+    socialLinks,
+    media,
+    audit,
+  ] = await Promise.all([
+    serverApi.get<DashboardSummary>('/admin/dashboard'),
+    serverApi.get<SessionInfo>('/auth/me'),
+    serverApi.get<HotelProfile>('/admin/hotel'),
+    serverApi.get<RoomType[]>('/admin/room-types'),
+    serverApi.get<HeroSlide[]>('/admin/hero-slides'),
+    serverApi.get<NearbyPlace[]>('/admin/nearby-places'),
+    serverApi.get<Policy[]>('/admin/policies'),
+    serverApi.get<Faq[]>('/admin/faq'),
+    serverApi.get<SocialLink[]>('/admin/social-links'),
+    serverApi.get<Paginated<MediaAsset>>('/admin/media', { query: { page: 1, pageSize: 1 } }),
+    serverApi.get<Paginated<AuditLogEntry>>('/admin/audit-logs', {
+      query: { page: 1, pageSize: 50 },
+    }),
+  ]);
+
+  const data = {
+    hotel,
+    roomTypes,
+    heroSlides,
+    nearbyPlaces,
+    policies,
+    faqs,
+    socialLinks,
+    media: { total: media.total, missingAlt: summary.incomplete.mediaMissingAlt },
+  };
+  const kpis = readinessKpis(data);
+  const checklist = publishChecklist(data);
+  const ready = checklist.filter((item) => item.done).length;
+  const pending = checklist.filter((item) => !item.done);
+  const done = checklist.filter((item) => item.done);
+
+  const now = new Date();
+  const activity = collapseActivity(audit.items).slice(0, 6);
   const totals = new Map<string, number>();
   for (const row of summary.analytics.totals) {
     totals.set(row.type, (totals.get(row.type) ?? 0) + row.count);
   }
-  const incomplete = [
-    {
-      count: summary.incomplete.mediaMissingAlt,
-      label: 'imágenes sin texto alternativo',
-      href: '/admin/media?missingAlt=true',
-    },
-    {
-      count: summary.incomplete.publishedRoomTypesWithoutPrice,
-      label: 'tipos de habitación publicados sin tarifa',
-      href: '/admin/room-types',
-    },
-    {
-      count: summary.incomplete.roomTypesWithoutCover,
-      label: 'tipos de habitación sin imagen principal',
-      href: '/admin/room-types',
-    },
-  ].filter((item) => item.count > 0);
+  const firstName = session.user.name?.split(' ')[0];
 
   return (
     <>
-      <PageHeader title="Resumen" description="Estado del contenido del sitio." />
-      <section aria-labelledby="status-heading" className="mb-8">
-        <h2 id="status-heading" className="sr-only">
+      <PageHeader
+        title="Resumen"
+        description={`${greeting(now)}${firstName ? `, ${firstName}` : ''}. Así va el contenido del sitio.`}
+      />
+
+      <section aria-labelledby="kpi-heading" className="mb-[18px]">
+        <h2 id="kpi-heading" className="sr-only">
           Estado del contenido
         </h2>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <Stat
-            label="Habitaciones publicadas"
-            value={summary.rooms.PUBLISHED ?? 0}
-            href="/admin/rooms"
-          />
-          <Stat
-            label="Tipos de habitación publicados"
-            value={summary.roomTypes.PUBLISHED ?? 0}
-            href="/admin/room-types"
-          />
-          <Stat
-            label="Comodidades del hotel"
-            value={summary.activeHotelAmenities}
-            href="/admin/amenities"
-          />
-          <Stat
-            label="Lugares cercanos activos"
-            value={summary.activeNearbyPlaces}
-            href="/admin/nearby-places"
-          />
-        </div>
+        <ul className="grid grid-cols-2 gap-3 tab:gap-3.5 desk:grid-cols-4">
+          {kpis.map((kpi) => (
+            <li key={kpi.id} className="grid">
+              <KpiCard kpi={kpi} />
+            </li>
+          ))}
+        </ul>
       </section>
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        <Card>
-          <h2 className="text-xl font-semibold">Contenido pendiente</h2>
-          {incomplete.length === 0 ? (
-            <p className="mt-2 text-sm text-muted-foreground">No hay contenido incompleto.</p>
-          ) : (
-            <ul className="mt-3 flex flex-col gap-2 text-sm">
-              {incomplete.map((item) => (
-                <li key={item.label}>
-                  <Link href={item.href} className="text-primary underline underline-offset-4">
-                    {item.count} {item.label}
-                  </Link>
-                </li>
+      <div className="grid items-start gap-[18px] desk:grid-cols-[minmax(0,1fr)_minmax(320px,400px)]">
+        <Card className="desk:order-2">
+          <section aria-labelledby="checklist-heading">
+            <CardHeader
+              id="checklist-heading"
+              title="Antes de publicar"
+              description="Lo que falta para que el sitio se vea terminado. Cada punto lleva a la sección que lo resuelve."
+            />
+            <div className="mb-4">
+              <p className="flex items-baseline justify-between text-sm">
+                <span className="font-bold">
+                  {ready} de {checklist.length} listos
+                </span>
+                <span className="text-muted-foreground tabular-nums">
+                  {Math.round((ready / checklist.length) * 100)} %
+                </span>
+              </p>
+              <div
+                role="progressbar"
+                aria-label="Avance antes de publicar"
+                aria-valuemin={0}
+                aria-valuemax={checklist.length}
+                aria-valuenow={ready}
+                aria-valuetext={`${ready} de ${checklist.length} listos`}
+                className="mt-2 h-2 overflow-hidden rounded-pill bg-neutral-bg"
+              >
+                <div
+                  className="h-full rounded-pill bg-green"
+                  style={{ width: `${(ready / checklist.length) * 100}%` }}
+                />
+              </div>
+            </div>
+            <ul className="grid gap-2.5">
+              {[...pending, ...done].map((item) => (
+                <ChecklistRow key={item.id} item={item} />
               ))}
             </ul>
-          )}
-          <p className="mt-4 text-sm text-muted-foreground">
-            Última actualización:{' '}
-            {summary.lastChange
-              ? dateFormat.format(new Date(summary.lastChange.createdAt))
-              : 'sin cambios registrados'}
-          </p>
+          </section>
         </Card>
-        <Card>
-          <h2 className="text-xl font-semibold">
-            Actividad (últimos {summary.analytics.days} días)
-          </h2>
-          {totals.size === 0 ? (
-            <p className="mt-2 text-sm text-muted-foreground">
-              Aún no hay métricas. Se registran solo con el consentimiento de analítica de los
-              visitantes.
-            </p>
-          ) : (
-            <dl className="mt-3 grid grid-cols-[1fr_auto] gap-x-4 gap-y-2 text-sm">
-              {[...totals].map(([type, count]) => (
-                <div key={type} className="contents">
-                  <dt>{EVENT_LABELS[type] ?? type}</dt>
-                  <dd className="text-right font-semibold tabular-nums">{count}</dd>
-                </div>
-              ))}
-            </dl>
-          )}
-        </Card>
+
+        <div className="grid gap-[18px] desk:order-1">
+          <Card>
+            <section aria-labelledby="activity-heading">
+              <CardHeader
+                id="activity-heading"
+                title="Actividad reciente"
+                description="Últimos cambios de contenido hechos en el panel."
+              />
+              {activity.length === 0 ? (
+                <p className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <History aria-hidden="true" className="size-4" /> Aún no hay cambios registrados.
+                </p>
+              ) : (
+                <ol className="divide-y divide-line">
+                  {activity.map((entry) => (
+                    <li
+                      key={entry.id}
+                      className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-0.5 py-3 first:pt-0 last:pb-0"
+                    >
+                      <span className="min-w-0 text-sm font-semibold">
+                        {describeAction(entry.action)}
+                        {entry.count > 1 ? (
+                          <span className="font-normal text-muted-foreground">
+                            {' '}
+                            · {entry.count} veces
+                          </span>
+                        ) : null}
+                      </span>
+                      <span className="text-[0.8125rem] text-muted-foreground">
+                        {entry.adminUser?.name ?? entry.adminUser?.email ?? 'Sistema'} ·{' '}
+                        <time dateTime={entry.createdAt}>{timeAgo(entry.createdAt, now)}</time>
+                      </span>
+                    </li>
+                  ))}
+                </ol>
+              )}
+            </section>
+          </Card>
+
+          <Card>
+            <section aria-labelledby="metrics-heading">
+              <CardHeader
+                id="metrics-heading"
+                title={`Visitas e interés (últimos ${summary.analytics.days} días)`}
+                description="Solo se cuentan visitantes que aceptaron la analítica."
+              />
+              {totals.size === 0 ? (
+                <p className="text-sm text-muted-foreground">Aún no hay métricas registradas.</p>
+              ) : (
+                <dl className="grid grid-cols-2 gap-3 tab:grid-cols-3">
+                  {[...totals].map(([type, count]) => (
+                    <div key={type} className="rounded-sm bg-ivory p-3.5">
+                      <dt className="text-[0.8125rem] text-muted-foreground">
+                        {EVENT_LABELS[type] ?? type}
+                      </dt>
+                      <dd className="mt-1 text-xl font-bold tabular-nums">{count}</dd>
+                    </div>
+                  ))}
+                </dl>
+              )}
+            </section>
+          </Card>
+        </div>
       </div>
     </>
   );

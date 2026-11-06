@@ -96,15 +96,11 @@ describe('tokens.css mirrors docs/design/tokens.json', () => {
     expect(cssVar('font-sans')).toBe(`var(--font-dm-sans), ${fallback(tokens.font.family.sans)}`);
   });
 
-  it('legacy palette aliases only point at current primitives (removed with the admin restyle)', () => {
-    const legacy = [...declarations].filter(([name = '']) =>
+  it('declares no legacy palette aliases (bamboo, sand-100, ink-900… were removed in D4)', () => {
+    const legacy = [...declarations.keys()].filter((name = '') =>
       /^--color-(bamboo|cane|sand|ink|earth|error)-\d+$/.test(name),
     );
-    expect(legacy.length).toBeGreaterThan(0);
-    for (const [name, value] of legacy) {
-      const target = /^var\(--color-([\w-]+)\)$/.exec(value)?.[1];
-      expect(target && target in colors, `${name}: ${value}`).toBe(true);
-    }
+    expect(legacy).toEqual([]);
   });
 });
 

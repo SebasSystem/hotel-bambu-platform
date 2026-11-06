@@ -25,7 +25,22 @@ export interface AdminApi {
   dispose(): Promise<void>;
 }
 
-export async function adminApi(): Promise<AdminApi> {
+/**
+ * One API session per worker, shared by every test: the login route is rate limited per minute
+ * (requirement 16.1), and a fresh session per test exceeded it once the suite grew. `dispose()` is a
+ * no-op for callers; the session ends with the worker.
+ */
+let shared: Promise<AdminApi> | null = null;
+
+export function adminApi(): Promise<AdminApi> {
+  shared ??= createAdminApi().catch((error: unknown) => {
+    shared = null;
+    throw error;
+  });
+  return shared;
+}
+
+async function createAdminApi(): Promise<AdminApi> {
   const context = await playwrightRequest.newContext({ baseURL: BASE_URL });
   const login = await context.post('/api/v1/auth/login', {
     data: { email: ADMIN_EMAIL, password: ADMIN_PASSWORD },
@@ -69,8 +84,7 @@ export async function adminApi(): Promise<AdminApi> {
       return parse<T>(response, `POST ${path}`);
     },
     async dispose() {
-      await context.post('/api/v1/auth/logout', { headers: { 'x-csrf-token': csrfToken } });
-      await context.dispose();
+      // Shared session (see adminApi): kept open for the next test.
     },
   };
 }

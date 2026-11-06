@@ -110,11 +110,14 @@ export function FeedbackProvider({ children }: { children: ReactNode }) {
             event.preventDefault();
             close(false);
           }}
-          className="m-auto w-[min(28rem,calc(100%-2rem))] rounded-md border border-border bg-card p-6 shadow-lg backdrop:bg-ink-900/50"
+          className="m-auto w-[min(28rem,calc(100%-2rem))] rounded-2xl border border-line bg-white p-6 text-foreground shadow-lg backdrop:bg-charcoal/50"
         >
           {pending ? (
             <>
-              <h2 id="confirm-title" className="text-xl font-semibold">
+              <h2
+                id="confirm-title"
+                className="font-sans text-lg leading-snug font-bold tracking-normal"
+              >
                 {pending.title}
               </h2>
               {pending.description ? (
@@ -139,16 +142,14 @@ export function FeedbackProvider({ children }: { children: ReactNode }) {
         <div
           aria-live="polite"
           role="status"
-          className="pointer-events-none fixed right-4 bottom-4 z-(--z-toast) flex w-[min(24rem,calc(100%-2rem))] flex-col gap-2"
+          className="pointer-events-none fixed bottom-4 left-1/2 z-(--z-toast) flex w-[min(420px,calc(100%-32px))] -translate-x-1/2 flex-col gap-2"
         >
           {toasts.map((toast) => (
             <div
               key={toast.id}
               className={cx(
-                'pointer-events-auto rounded-sm px-4 py-3 text-sm font-semibold shadow-md',
-                toast.tone === 'success'
-                  ? 'bg-bamboo-900 text-on-surface-dark'
-                  : 'bg-destructive text-destructive-foreground',
+                'pointer-events-auto rounded-sm px-4 py-[13px] text-center text-[0.875rem] font-semibold shadow-md',
+                toast.tone === 'success' ? 'bg-charcoal text-white' : 'bg-danger text-white',
               )}
             >
               {toast.message}

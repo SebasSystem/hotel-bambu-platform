@@ -1,42 +1,50 @@
 import type { Metadata } from 'next';
-import { Card, PageHeader } from '@/components/admin/ui';
+import Link from 'next/link';
+import { Card, CardHeader, Notice, PageHeader } from '@/components/admin/ui';
 import { serverApi } from '@/lib/api/server';
-import type { HeroSlide, LandingSection } from '@/lib/api/types';
-import { HeroSlidesManager } from './hero-slides-manager';
+import type { LandingSection } from '@/lib/api/types';
 import { SectionsManager } from './section-form';
 
-export const metadata: Metadata = { title: 'Contenido de la landing' };
+export const metadata: Metadata = { title: 'Secciones de la portada' };
 
 export default async function ContentPage() {
-  const [sections, slides] = await Promise.all([
-    serverApi.get<LandingSection[]>('/admin/content'),
-    serverApi.get<HeroSlide[]>('/admin/hero-slides'),
-  ]);
+  const sections = await serverApi.get<LandingSection[]>('/admin/content');
   return (
     <>
       <PageHeader
-        title="Contenido de la landing"
-        description="Fotos de la portada y secciones visibles del inicio, en su orden. Los títulos son parte del diseño del sitio y los textos del hotel se editan en «Información del hotel»."
+        title="Secciones de la portada"
+        description="Muestre u oculte cada bloque de la página de inicio. El orden y los títulos son parte del diseño; los textos del hotel se editan en «Datos del hotel»."
       />
-      <div className="flex flex-col gap-6">
+      <div className="grid gap-[18px]">
         <Card>
-          <section aria-labelledby="carrusel-title" className="flex flex-col gap-4">
-            <div>
-              <h2 id="carrusel-title" className="text-lg font-semibold">
+          <CardHeader
+            title="Bloques del inicio, en orden"
+            description="Una sección sin datos (por ejemplo, la ubicación sin dirección) no aparece aunque esté visible."
+          />
+          <div className="mb-4 flex items-start gap-3 rounded-sm bg-ivory p-3.5">
+            <span
+              aria-hidden="true"
+              className="mt-0.5 inline-flex size-6 shrink-0 items-center justify-center rounded-full bg-white text-xs font-bold text-ink-muted"
+            >
+              1
+            </span>
+            <p className="text-[0.8125rem] leading-snug text-muted-foreground">
+              <span className="block text-[0.95rem] font-bold text-foreground">
+                Portada con carrusel
+              </span>
+              Siempre visible. Sus fotos se gestionan en{' '}
+              <Link href="/admin/hero-slides" className="font-semibold text-green underline">
                 Carrusel principal
-              </h2>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Fotos del inicio, en este orden. Es la única fuente de la portada: sin diapositivas
-                visibles se usan las fotos destacadas de la galería y las de los tipos de
-                habitación.
-              </p>
-            </div>
-            <HeroSlidesManager items={slides} />
-          </section>
-        </Card>
-        <Card>
+              </Link>
+              .
+            </p>
+          </div>
           <SectionsManager sections={sections} />
         </Card>
+        <Notice title="Cambios al instante">
+          Cada cambio se publica en el sitio en unos segundos. Las opiniones de huéspedes aparecerán
+          cuando se conecte el perfil de Google del hotel.
+        </Notice>
       </div>
     </>
   );

@@ -8,7 +8,7 @@ import {
 import { Pencil, Trash2, Upload } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useEffect, useId, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useForm, type FieldValues } from 'react-hook-form';
 import { useConfirm, useToast } from '@/components/admin/feedback';
 import {
@@ -20,7 +20,7 @@ import {
   inputClasses,
 } from '@/components/admin/fields';
 import { MediaThumb } from '@/components/admin/media-thumb';
-import { Badge, Button, Card, EmptyState } from '@/components/admin/ui';
+import { Badge, Button, Card, EmptyState, cx } from '@/components/admin/ui';
 import { browserApi } from '@/lib/api/browser';
 import { isApiError } from '@/lib/api/client';
 import type { MediaAsset, Paginated } from '@/lib/api/types';
@@ -41,7 +41,7 @@ const STATUS_LABELS: Record<MediaAsset['status'], string> = {
 function UploadForm() {
   const router = useRouter();
   const toast = useToast();
-  const fileId = useId();
+  const fileRef = useRef<HTMLInputElement>(null);
   const [file, setFile] = useState<File | null>(null);
   const [fileError, setFileError] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
@@ -87,7 +87,7 @@ function UploadForm() {
     setFormError(null);
     if (!file) {
       setFileError('Seleccione una imagen.');
-      document.getElementById(fileId)?.focus();
+      fileRef.current?.focus();
       return;
     }
     // Text fields must precede the file part (API contract, docs/api.md).
@@ -120,7 +120,7 @@ function UploadForm() {
         className="flex flex-col gap-4"
         aria-label="Subir imagen"
       >
-        <h2 className="text-xl font-semibold">Subir imagen</h2>
+        <h2 className="text-lg">Subir imagen</h2>
         <FormAlert message={formError} />
         <div className="grid gap-4 md:grid-cols-[1fr_12rem]">
           <div className="flex flex-col gap-4">
@@ -133,10 +133,14 @@ function UploadForm() {
               {(control) => (
                 <input
                   {...control}
-                  id={fileId}
+                  ref={fileRef}
                   type="file"
                   accept={ACCEPTED.join(',')}
-                  className={inputClasses}
+                  className={cx(
+                    inputClasses,
+                    'min-h-[110px] cursor-pointer border-[1.5px] border-dashed bg-ivory/50 py-8 text-center',
+                    'file:mr-3 file:cursor-pointer file:rounded-pill file:border-0 file:bg-green file:px-4 file:py-2 file:text-sm file:font-bold file:text-white',
+                  )}
                   onChange={(event) => chooseFile(event.target.files?.[0] ?? null)}
                 />
               )}
@@ -289,7 +293,7 @@ export function MediaLibrary({
     <div className="flex flex-col gap-6">
       <UploadForm />
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-2xl font-semibold">Biblioteca ({data.total})</h2>
+        <h2 className="text-lg">Biblioteca ({data.total})</h2>
         <Link
           href={missingAlt ? '/admin/media' : '/admin/media?missingAlt=true'}
           className="text-sm text-primary underline underline-offset-4"
@@ -306,7 +310,7 @@ export function MediaLibrary({
           return (
             <li
               key={item.id}
-              className="flex flex-col overflow-hidden rounded-md border border-border bg-card shadow-xs"
+              className="flex flex-col overflow-hidden rounded-2xl border border-line bg-white"
             >
               <MediaThumb
                 variants={item.variants}

@@ -15,7 +15,7 @@ export interface LegalTodo {
 export function Fill({ value, label }: { value: string | null | undefined; label: string }) {
   if (value) return <>{value}</>;
   return (
-    <mark className="rounded-xs bg-promo/40 px-1 font-semibold text-ink-900">
+    <mark className="rounded-xs bg-promo/40 px-1 font-semibold text-charcoal">
       [pendiente: {label}]
     </mark>
   );
@@ -25,12 +25,12 @@ export function DraftBanner({ todos }: { todos: LegalTodo[] }) {
   return (
     <aside
       aria-labelledby="borrador-titulo"
-      className="rounded-xl border-2 border-dashed border-earth-600 bg-card p-6"
+      className="rounded-xl border-2 border-dashed border-promo bg-card p-6"
       data-legal-draft
     >
       <p
         id="borrador-titulo"
-        className="text-sm font-semibold tracking-kicker text-earth-600 uppercase"
+        className="text-sm font-semibold tracking-kicker text-promo uppercase"
       >
         Borrador pendiente de aprobación
       </p>

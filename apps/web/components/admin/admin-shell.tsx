@@ -2,46 +2,76 @@
 
 import {
   BedDouble,
-  BedSingle,
-  CircleHelp,
+  DoorOpen,
+  ExternalLink,
   FileText,
+  GalleryHorizontal,
   Hotel,
+  ImageUp,
   Images,
   LayoutDashboard,
   LayoutTemplate,
   LogOut,
   MapPin,
-  Menu,
   Share2,
+  Sparkles,
   UserRound,
-  Wifi,
-  X,
+  type LucideIcon,
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useState, type ReactNode } from 'react';
+import { BrandLogo } from '@/components/brand/brand-logo';
 import { browserApi, setCsrfToken } from '@/lib/api/browser';
-import { useAdmin } from './admin-context';
-import { useToast } from './feedback';
 import { describeApiError } from '@/lib/forms/form-errors';
-import { Button, cx } from './ui';
+import { useAdmin } from './admin-context';
+import { AdminDrawer } from './admin-drawer';
+import { useToast } from './feedback';
+import { buttonClasses, cx } from './ui';
 
-/** Navigation per requirement 9.1. */
-export const ADMIN_NAV = [
-  { href: '/admin', label: 'Resumen', icon: LayoutDashboard },
-  { href: '/admin/hotel', label: 'Información del hotel', icon: Hotel },
-  { href: '/admin/room-types', label: 'Tipos de habitación', icon: BedDouble },
-  { href: '/admin/rooms', label: 'Habitaciones', icon: BedSingle },
-  { href: '/admin/amenities', label: 'Comodidades', icon: Wifi },
-  { href: '/admin/nearby-places', label: 'Lugares cercanos', icon: MapPin },
-  { href: '/admin/media', label: 'Medios', icon: Images },
-  { href: '/admin/gallery', label: 'Galería', icon: Images },
-  { href: '/admin/content', label: 'Contenido de la landing', icon: LayoutTemplate },
-  { href: '/admin/faq', label: 'Preguntas frecuentes', icon: CircleHelp },
-  { href: '/admin/policies', label: 'Políticas del hotel', icon: FileText },
-  { href: '/admin/social', label: 'Redes sociales', icon: Share2 },
-  { href: '/admin/account', label: 'Mi cuenta', icon: UserRound },
-] as const;
+export interface AdminNavItem {
+  href: string;
+  label: string;
+  icon: LucideIcon;
+}
+
+export interface AdminNavGroup {
+  /** Null for the ungrouped first item (Resumen). */
+  label: string | null;
+  items: readonly AdminNavItem[];
+}
+
+/** Grouped navigation in Spanish (docs/research/admin-ux.md §3.1, adapted to the C2/C3 routes). */
+export const ADMIN_NAV: readonly AdminNavGroup[] = [
+  { label: null, items: [{ href: '/admin', label: 'Resumen', icon: LayoutDashboard }] },
+  {
+    label: 'Hotel',
+    items: [
+      { href: '/admin/hotel', label: 'Datos del hotel', icon: Hotel },
+      { href: '/admin/nearby-places', label: 'Ubicación y lugares cercanos', icon: MapPin },
+    ],
+  },
+  {
+    label: 'Habitaciones',
+    items: [
+      { href: '/admin/room-types', label: 'Tipos de habitación', icon: BedDouble },
+      { href: '/admin/rooms', label: 'Habitaciones', icon: DoorOpen },
+      { href: '/admin/amenities', label: 'Comodidades', icon: Sparkles },
+    ],
+  },
+  {
+    label: 'Contenido',
+    items: [
+      { href: '/admin/content', label: 'Secciones de la portada', icon: LayoutTemplate },
+      { href: '/admin/hero-slides', label: 'Carrusel principal', icon: GalleryHorizontal },
+      { href: '/admin/gallery', label: 'Galería', icon: Images },
+      { href: '/admin/media', label: 'Fotos y medios', icon: ImageUp },
+      { href: '/admin/policies', label: 'Políticas y preguntas', icon: FileText },
+      { href: '/admin/social', label: 'Redes sociales', icon: Share2 },
+    ],
+  },
+  { label: 'Cuenta', items: [{ href: '/admin/account', label: 'Mi cuenta', icon: UserRound }] },
+];
 
 export function isActive(pathname: string, href: string): boolean {
   return href === '/admin'
@@ -49,13 +79,111 @@ export function isActive(pathname: string, href: string): boolean {
     : pathname === href || pathname.startsWith(`${href}/`);
 }
 
+/** Group and item for the topbar breadcrumb. */
+export function activeNav(pathname: string): { group: string | null; item: AdminNavItem } | null {
+  for (const group of ADMIN_NAV) {
+    const item = group.items.find((entry) => isActive(pathname, entry.href));
+    if (item) return { group: group.label, item };
+  }
+  return null;
+}
+
+function AdminNav({ pathname, idPrefix }: { pathname: string; idPrefix: string }) {
+  return (
+    <nav aria-label="Panel" className="mt-6 flex-1">
+      {ADMIN_NAV.map((group, index) => {
+        const headingId = group.label ? `${idPrefix}-group-${index}` : undefined;
+        return (
+          <div key={group.label ?? 'root'} className={index > 0 ? 'mt-5' : undefined}>
+            {group.label ? (
+              <p
+                id={headingId}
+                className="mb-1.5 px-[13px] text-[0.6875rem] font-bold tracking-label text-sage uppercase"
+              >
+                {group.label}
+              </p>
+            ) : null}
+            <ul aria-labelledby={headingId} className="grid gap-0.5">
+              {group.items.map(({ href, label, icon: Icon }) => {
+                const active = isActive(pathname, href);
+                return (
+                  <li key={href}>
+                    <Link
+                      href={href}
+                      aria-current={active ? 'page' : undefined}
+                      className={cx(
+                        'flex min-h-11 items-center gap-[11px] rounded-[10px] px-[13px] py-2 text-[0.9rem] leading-snug transition-colors duration-(--duration-fast)',
+                        active
+                          ? 'bg-white/12 font-bold text-white'
+                          : 'text-on-dark-muted hover:bg-white/8 hover:text-white',
+                      )}
+                    >
+                      <Icon aria-hidden="true" className="size-[18px] shrink-0" strokeWidth={1.5} />
+                      {label}
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        );
+      })}
+    </nav>
+  );
+}
+
+function initials(name: string): string {
+  const parts = name.split(/[\s@._-]+/).filter(Boolean);
+  return ((parts[0]?.[0] ?? '') + (parts[1]?.[0] ?? '')).toUpperCase() || 'A';
+}
+
+function UserBlock({ onLogout, loggingOut }: { onLogout: () => void; loggingOut: boolean }) {
+  const { user } = useAdmin();
+  const name = user.name ?? user.email;
+  return (
+    <div className="mt-6 border-t border-white/13 pt-4">
+      <div className="flex items-center gap-3 px-1">
+        <span
+          aria-hidden="true"
+          className="inline-flex size-9 shrink-0 items-center justify-center rounded-pill bg-white/12 text-xs font-bold text-white"
+        >
+          {initials(name)}
+        </span>
+        <div className="min-w-0 text-[0.8rem] leading-snug">
+          <p className="truncate font-bold text-white" title={name}>
+            {name}
+          </p>
+          {user.name ? (
+            <p className="truncate text-sage" title={user.email}>
+              {user.email}
+            </p>
+          ) : null}
+        </div>
+      </div>
+      <button
+        type="button"
+        onClick={onLogout}
+        disabled={loggingOut}
+        aria-busy={loggingOut || undefined}
+        className="mt-3 flex min-h-11 w-full items-center gap-[11px] rounded-[10px] px-[13px] text-[0.9rem] text-on-dark-muted transition-colors hover:bg-white/8 hover:text-white disabled:opacity-60"
+      >
+        <LogOut aria-hidden="true" className="size-[18px]" strokeWidth={1.5} /> Cerrar sesión
+      </button>
+    </div>
+  );
+}
+
+/**
+ * Admin shell on the mockup layout: a 260 px deep-green sidebar (brand, grouped nav, user block)
+ * and a 74 px white topbar with the breadcrumb and "Ver sitio". Below the desktop breakpoint the
+ * sidebar becomes a modal drawer (AdminDrawer) and nothing overflows the viewport.
+ */
 export function AdminShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { user } = useAdmin();
   const toast = useToast();
-  const [menuOpen, setMenuOpen] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
+  const current = activeNav(pathname);
 
   const logout = async () => {
     setLoggingOut(true);
@@ -70,94 +198,73 @@ export function AdminShell({ children }: { children: ReactNode }) {
     }
   };
 
+  const brand = (
+    <Link href="/admin" className="inline-flex flex-col gap-2 rounded-sm px-1">
+      <BrandLogo tone="dark" cutColor="var(--color-green-900)" decorative />
+      <span className="pl-[51px] text-[0.6875rem] font-bold tracking-label text-sage uppercase">
+        Administración
+      </span>
+      <span className="sr-only">Hotel Bambú Plaza, ir al resumen del panel</span>
+    </Link>
+  );
+
   return (
-    <div className="min-h-dvh md:grid md:grid-cols-[16rem_1fr]">
+    <div className="min-h-dvh bg-admin-bg desk:grid desk:grid-cols-[260px_minmax(0,1fr)]">
       <a
         href="#admin-main"
-        className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-(--z-overlay) focus:rounded-sm focus:bg-card focus:p-3"
+        data-surface="dark"
+        className="fixed top-4 left-4 z-(--z-skip-link) -translate-y-[200%] rounded-xs bg-charcoal px-4 py-3 font-bold text-white focus:translate-y-0"
       >
         Saltar al contenido
       </a>
-      <header className="flex items-center justify-between border-b border-border bg-surface-dark px-4 py-3 text-on-surface-dark md:hidden">
-        <span className="font-display text-lg font-semibold">Hotel Bambú Plaza</span>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="text-on-surface-dark hover:bg-bamboo-800"
-          aria-expanded={menuOpen}
-          aria-controls="admin-nav"
-          onClick={() => setMenuOpen((open) => !open)}
-        >
-          {menuOpen ? (
-            <X aria-hidden="true" className="size-5" />
-          ) : (
-            <Menu aria-hidden="true" className="size-5" />
-          )}
-          Menú
-        </Button>
-      </header>
-      <aside
-        className={cx(
-          'bg-surface-dark text-on-surface-dark md:sticky md:top-0 md:flex md:h-dvh md:flex-col',
-          menuOpen ? 'flex flex-col' : 'hidden',
-        )}
-      >
-        <div className="hidden px-5 pt-6 pb-4 md:block">
-          <p className="font-display text-xl font-semibold">Hotel Bambú Plaza</p>
-          <p className="text-xs text-on-surface-dark-muted">Panel de administración</p>
-        </div>
-        <nav id="admin-nav" aria-label="Panel" className="flex-1 overflow-y-auto px-3 py-2">
-          <ul className="flex flex-col gap-0.5">
-            {ADMIN_NAV.map(({ href, label, icon: Icon }) => {
-              const active = isActive(pathname, href);
-              return (
-                <li key={href}>
-                  <Link
-                    href={href}
-                    aria-current={active ? 'page' : undefined}
-                    onClick={() => setMenuOpen(false)}
-                    className={cx(
-                      'flex min-h-10 items-center gap-3 rounded-sm px-3 text-sm',
-                      active
-                        ? 'bg-bamboo-700 font-semibold text-white'
-                        : 'text-on-surface-dark hover:bg-bamboo-800',
-                    )}
-                  >
-                    <Icon aria-hidden="true" className="size-4 shrink-0" strokeWidth={1.5} />
-                    {label}
-                  </Link>
-                </li>
-              );
-            })}
-          </ul>
-        </nav>
-        <div className="border-t border-bamboo-800 p-4 text-sm">
-          <p className="truncate text-on-surface-dark-muted" title={user.email}>
-            {user.name ?? user.email}
-          </p>
-          <div className="mt-2 flex gap-2">
-            <Link
-              href="/"
-              className="text-on-surface-dark underline underline-offset-4"
-              target="_blank"
-            >
-              Ver el sitio
-            </Link>
-          </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="mt-3 w-full justify-start text-on-surface-dark hover:bg-bamboo-800"
-            loading={loggingOut}
-            onClick={() => void logout()}
-          >
-            <LogOut aria-hidden="true" className="size-4" /> Cerrar sesión
-          </Button>
+      {/* The green column spans the whole page; its content sticks to the viewport (defect 9). */}
+      <aside data-admin-inert="" data-surface="dark" className="hidden bg-green-900 desk:block">
+        <div className="sticky top-0 flex h-dvh flex-col overflow-y-auto px-[18px] py-6 text-ivory">
+          {brand}
+          <AdminNav pathname={pathname} idPrefix="sidebar" />
+          <UserBlock onLogout={() => void logout()} loggingOut={loggingOut} />
         </div>
       </aside>
-      <main id="admin-main" className="mx-auto w-full max-w-6xl px-4 py-8 md:px-8">
-        {children}
-      </main>
+      <div className="flex min-w-0 flex-col">
+        <header
+          data-admin-inert=""
+          className="sticky top-0 z-(--z-header) flex h-[74px] items-center gap-3 border-b border-line bg-white px-[clamp(16px,4vw,48px)]"
+        >
+          <AdminDrawer>
+            {brand}
+            <AdminNav pathname={pathname} idPrefix="drawer" />
+            <UserBlock onLogout={() => void logout()} loggingOut={loggingOut} />
+          </AdminDrawer>
+          <p className="min-w-0 flex-1 truncate text-[0.95rem] leading-tight tab:text-[1.05rem]">
+            {current?.group && current.group !== current.item.label ? (
+              <span className="hidden text-muted-foreground tab:inline">
+                {current.group}
+                <span aria-hidden="true" className="px-2">
+                  /
+                </span>
+              </span>
+            ) : null}
+            <span className="font-bold">{current?.item.label ?? 'Panel'}</span>
+          </p>
+          <Link
+            href="/"
+            target="_blank"
+            className={buttonClasses('secondary', 'md', 'shrink-0 px-3 tab:px-5')}
+          >
+            <ExternalLink aria-hidden="true" className="size-4" />
+            <span className="max-tab:sr-only">Ver sitio</span>
+            <span className="sr-only"> (se abre en una pestaña nueva)</span>
+          </Link>
+        </header>
+        <main
+          id="admin-main"
+          data-admin-inert=""
+          tabIndex={-1}
+          className="mx-auto w-full max-w-[1200px] flex-1 px-[clamp(16px,4vw,46px)] py-[clamp(22px,4vw,40px)] outline-none"
+        >
+          {children}
+        </main>
+      </div>
     </div>
   );
 }

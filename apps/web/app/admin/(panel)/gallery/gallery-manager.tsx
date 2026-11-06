@@ -86,7 +86,7 @@ export function GalleryManager({ items }: { items: GalleryItem[] }) {
           return (
             <li
               key={item.id}
-              className="flex flex-wrap items-center gap-3 rounded-md border border-border bg-card p-3 shadow-xs"
+              className="flex flex-wrap items-center gap-3 rounded-2xl border border-line bg-white p-3"
             >
               <MediaThumb
                 variants={item.mediaAsset.variants}

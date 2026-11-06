@@ -1,14 +1,31 @@
 'use client';
 
+import { CircleAlert } from 'lucide-react';
 import { useId, type ReactNode } from 'react';
 import type { FieldError, UseFormRegisterReturn } from 'react-hook-form';
 import { cx } from './ui';
 
+/**
+ * Form controls (mockup `.field`, defect 10 fixed): 48 px tall, 12 px radius, regular 15 px text.
+ * The mockup inputs inherited the label's 11.5 px bold; labels are separate elements here.
+ */
 export const inputClasses = cx(
-  'block w-full rounded-sm border border-input bg-card px-3 py-2 text-base text-foreground',
-  'placeholder:text-muted-foreground aria-invalid:border-destructive',
-  'disabled:cursor-not-allowed disabled:opacity-60',
+  'block min-h-12 w-full rounded-sm border border-input bg-white px-3.5 py-2.5',
+  'text-[0.95rem] leading-snug font-normal text-foreground transition-colors',
+  'placeholder:text-ink-muted hover:border-ink-muted',
+  'aria-invalid:border-danger aria-invalid:bg-[#fdf6f6]',
+  'disabled:cursor-not-allowed disabled:bg-ivory disabled:opacity-70',
 );
+
+/** Error line under a control: icon + text, announced through aria-describedby. */
+function FieldError({ id, message }: { id?: string; message: string }) {
+  return (
+    <p id={id} className="flex items-start gap-1.5 text-[0.8125rem] font-semibold text-danger">
+      <CircleAlert aria-hidden="true" className="mt-px size-4 shrink-0" strokeWidth={2} />
+      {message}
+    </p>
+  );
+}
 
 interface ControlProps {
   id: string;
@@ -32,7 +49,7 @@ export function Field({ label, hint, error, required, className, children }: Fie
   const errorId = error?.message ? `${id}-error` : undefined;
   const describedBy = [hintId, errorId].filter(Boolean).join(' ') || undefined;
   return (
-    <div className={cx('flex flex-col gap-1.5', className)}>
+    <div className={cx('flex min-w-0 flex-col gap-1.5', className)}>
       <label htmlFor={id} className="text-sm font-semibold text-foreground">
         {label}
         {required ? (
@@ -49,15 +66,11 @@ export function Field({ label, hint, error, required, className, children }: Fie
         'aria-invalid': errorId ? true : undefined,
       })}
       {hint ? (
-        <p id={hintId} className="text-xs text-muted-foreground">
+        <p id={hintId} className="text-[0.8125rem] leading-snug text-muted-foreground">
           {hint}
         </p>
       ) : null}
-      {errorId ? (
-        <p id={errorId} className="text-sm font-semibold text-destructive">
-          {error?.message}
-        </p>
-      ) : null}
+      {errorId ? <FieldError id={errorId} message={error?.message ?? ''} /> : null}
     </div>
   );
 }
@@ -98,7 +111,12 @@ export function TextAreaField({ registration, rows = 4, ...field }: BaseProps & 
   return (
     <Field {...field}>
       {(control) => (
-        <textarea {...control} {...registration} rows={rows} className={inputClasses} />
+        <textarea
+          {...control}
+          {...registration}
+          rows={rows}
+          className={cx(inputClasses, 'min-h-28 resize-y leading-normal')}
+        />
       )}
     </Field>
   );
@@ -113,7 +131,7 @@ export function SelectField({
   return (
     <Field {...field}>
       {(control) => (
-        <select {...control} {...registration} className={inputClasses}>
+        <select {...control} {...registration} className={cx(inputClasses, 'pr-9')}>
           {placeholder !== undefined ? <option value="">{placeholder}</option> : null}
           {options.map((option) => (
             <option key={option.value} value={option.value}>
@@ -141,7 +159,7 @@ export function CheckboxField({
   const id = useId();
   const hintId = hint ? `${id}-hint` : undefined;
   return (
-    <div className="flex items-start gap-3">
+    <div className="flex items-start gap-3 rounded-sm border border-line bg-ivory/60 px-3.5 py-3">
       <input
         id={id}
         type="checkbox"
@@ -149,38 +167,46 @@ export function CheckboxField({
         aria-describedby={hintId}
         className="mt-0.5 size-5 shrink-0 accent-(--primary)"
       />
-      <div>
+      <div className="min-w-0">
         <label htmlFor={id} className="text-sm font-semibold">
           {label}
         </label>
         {hint ? (
-          <p id={hintId} className="text-xs text-muted-foreground">
+          <p id={hintId} className="mt-0.5 text-[0.8125rem] leading-snug text-muted-foreground">
             {hint}
           </p>
         ) : null}
-        {error?.message ? (
-          <p className="text-sm font-semibold text-destructive">{error.message}</p>
-        ) : null}
+        {error?.message ? <FieldError message={error.message} /> : null}
       </div>
     </div>
   );
 }
 
+/** A titled group of fields in a white card; `id` makes it a deep-link target (dashboard). */
 export function FormSection({
+  id,
   title,
   description,
   children,
 }: {
+  id?: string;
   title: string;
   description?: string;
   children: ReactNode;
 }) {
+  const titleId = useId();
   return (
-    <fieldset className="rounded-md border border-border bg-card p-5">
-      <legend className="px-1 text-base font-semibold text-bamboo-900">{title}</legend>
-      {description ? <p className="mb-4 text-sm text-muted-foreground">{description}</p> : null}
-      <div className="grid gap-4 md:grid-cols-2">{children}</div>
-    </fieldset>
+    <section
+      id={id}
+      aria-labelledby={titleId}
+      className="scroll-mt-24 rounded-2xl border border-line bg-white p-5 tab:p-6"
+    >
+      <h2 id={titleId} className="font-sans text-base leading-snug font-bold tracking-normal">
+        {title}
+      </h2>
+      {description ? <p className="mt-1 text-sm text-muted-foreground">{description}</p> : null}
+      <div className="mt-5 grid gap-5 md:grid-cols-2">{children}</div>
+    </section>
   );
 }
 
@@ -190,8 +216,9 @@ export function FormAlert({ message }: { message?: string | null }) {
   return (
     <div
       role="alert"
-      className="rounded-sm border border-destructive bg-card p-3 text-sm font-semibold text-destructive"
+      className="flex items-start gap-2 rounded-sm border border-danger bg-[#fdf6f6] p-3.5 text-sm font-semibold text-danger"
     >
+      <CircleAlert aria-hidden="true" className="mt-px size-4 shrink-0" strokeWidth={2} />
       {message}
     </div>
   );

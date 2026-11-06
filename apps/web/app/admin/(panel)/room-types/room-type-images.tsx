@@ -58,7 +58,7 @@ export function RoomTypeImages({ room }: { room: RoomType }) {
     <Card>
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 className="text-xl font-semibold">Imágenes</h2>
+          <h2 className="text-lg">Imágenes</h2>
           <p className="text-sm text-muted-foreground">
             La imagen principal es obligatoria para publicar. El orden es el de la galería de la
             habitación.

@@ -45,7 +45,7 @@ function formatDate(value: string | null): string | null {
 export function legalTodos(doc: LegalDocKey, { hotel, effectiveDate }: LegalContext): LegalTodo[] {
   const c = controller(hotel);
   const todos: LegalTodo[] = [];
-  const where = 'Panel › Información del hotel';
+  const where = 'Panel › Datos del hotel';
   if (!c.name) todos.push({ label: 'razón social y NIT del responsable del tratamiento', where });
   if (!c.address) todos.push({ label: 'domicilio (dirección, municipio, departamento)', where });
   if (!c.email) todos.push({ label: 'correo para consultas y reclamos', where });

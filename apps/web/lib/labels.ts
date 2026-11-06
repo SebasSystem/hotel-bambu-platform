@@ -42,8 +42,8 @@ export const GALLERY_CATEGORY_LABELS: Record<(typeof GALLERY_CATEGORIES)[number]
 
 /** Amenity scope (ADR 0015): hotel-wide, or assigned per room. */
 export const AMENITY_SCOPE_LABELS: Record<(typeof AMENITY_SCOPES)[number], string> = {
-  HOTEL: 'Todo el hotel',
-  ROOM: 'Habitaciones',
+  HOTEL: 'Del hotel',
+  ROOM: 'De habitación',
 };
 
 export const SOCIAL_PLATFORM_LABELS: Record<(typeof SOCIAL_PLATFORMS)[number], string> = {

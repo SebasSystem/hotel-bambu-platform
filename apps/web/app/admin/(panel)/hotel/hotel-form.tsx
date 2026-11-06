@@ -104,7 +104,7 @@ export function HotelForm({ profile }: { profile: HotelProfile }) {
     <form onSubmit={onSubmit} noValidate className="flex flex-col gap-6">
       <FormAlert message={formError} />
 
-      <FormSection title="Datos generales">
+      <FormSection id="datos" title="Datos generales">
         <TextField
           label="Nombre comercial"
           required
@@ -157,8 +157,9 @@ export function HotelForm({ profile }: { profile: HotelProfile }) {
       </FormSection>
 
       <FormSection
+        id="imagenes"
         title="Imágenes"
-        description="Las fotos de la portada se gestionan en «Contenido de la landing › Carrusel principal»."
+        description="Las fotos de la portada se gestionan en «Contenido › Carrusel principal»."
       >
         <Controller
           control={control}
@@ -178,7 +179,7 @@ export function HotelForm({ profile }: { profile: HotelProfile }) {
         />
       </FormSection>
 
-      <FormSection title="Contacto">
+      <FormSection id="contacto" title="Contacto">
         <TextField
           label="Teléfono"
           type="tel"
@@ -196,6 +197,7 @@ export function HotelForm({ profile }: { profile: HotelProfile }) {
       </FormSection>
 
       <FormSection
+        id="whatsapp"
         title="WhatsApp"
         description="Sin número, los botones del sitio no abren WhatsApp. Los mensajes están predefinidos; aquí solo se edita el saludo con el que empiezan."
       >
@@ -222,7 +224,7 @@ export function HotelForm({ profile }: { profile: HotelProfile }) {
         </div>
       </FormSection>
 
-      <FormSection title="Ubicación">
+      <FormSection id="ubicacion" title="Ubicación">
         <TextField
           className="md:col-span-2"
           label="Dirección"
@@ -279,7 +281,7 @@ export function HotelForm({ profile }: { profile: HotelProfile }) {
         />
       </FormSection>
 
-      <FormSection title="Horarios">
+      <FormSection id="horarios" title="Horarios">
         <TextField
           label="Hora de check-in"
           type="time"
@@ -341,12 +343,15 @@ export function HotelForm({ profile }: { profile: HotelProfile }) {
         </div>
       </FormSection>
 
-      <div className="sticky bottom-0 flex items-center gap-3 border-t border-border bg-background py-3">
+      <div className="sticky bottom-3 z-10 flex flex-wrap items-center gap-3 rounded-2xl border border-line bg-white/95 px-4 py-3 shadow-md backdrop-blur-sm tab:px-5">
         <Button type="submit" loading={isSubmitting}>
           Guardar cambios
         </Button>
         {isDirty ? (
-          <span className="text-sm text-muted-foreground">Hay cambios sin guardar.</span>
+          <span className="inline-flex items-center gap-2 text-sm font-semibold text-warn-fg">
+            <span aria-hidden="true" className="size-2 rounded-full bg-gold" />
+            Hay cambios sin guardar.
+          </span>
         ) : null}
       </div>
     </form>

@@ -1,3 +1,4 @@
+import { ArrowLeft } from 'lucide-react';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
@@ -25,8 +26,11 @@ export default async function EditRoomPage({ params }: { params: Promise<{ id: s
   ]);
   return (
     <>
-      <Link href="/admin/room-types" className="text-sm text-primary underline underline-offset-4">
-        ← Tipos de habitación
+      <Link
+        href="/admin/room-types"
+        className="mb-3 inline-flex min-h-9 items-center gap-1.5 text-sm font-semibold text-green hover:underline"
+      >
+        <ArrowLeft aria-hidden="true" className="size-4" /> Tipos de habitación
       </Link>
       <PageHeader title={room.name} />
       <div className="flex flex-col gap-6">

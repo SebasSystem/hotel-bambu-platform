@@ -199,6 +199,7 @@ export function RoomTypeForm({
       </FormSection>
 
       <FormSection
+        id="tarifa"
         title="Tarifa informativa"
         description="Precio de referencia en pesos colombianos. Se muestra como «desde» con nota de confirmación por WhatsApp."
       >
@@ -271,12 +272,15 @@ export function RoomTypeForm({
         />
       </FormSection>
 
-      <div className="sticky bottom-0 flex items-center gap-3 border-t border-border bg-background py-3">
+      <div className="sticky bottom-3 z-10 flex flex-wrap items-center gap-3 rounded-2xl border border-line bg-white/95 px-4 py-3 shadow-md backdrop-blur-sm tab:px-5">
         <Button type="submit" loading={isSubmitting}>
           {room ? 'Guardar cambios' : 'Crear tipo de habitación'}
         </Button>
         {isDirty ? (
-          <span className="text-sm text-muted-foreground">Hay cambios sin guardar.</span>
+          <span className="inline-flex items-center gap-2 text-sm font-semibold text-warn-fg">
+            <span aria-hidden="true" className="size-2 rounded-full bg-gold" />
+            Hay cambios sin guardar.
+          </span>
         ) : null}
       </div>
     </form>

@@ -1,8 +1,10 @@
 'use client';
 
 import { roomCreateSchema, roomUpdateSchema } from '@hotel-bambu/shared';
+import { BedDouble } from 'lucide-react';
+import { PublishSwitch } from '@/components/admin/publish-switch';
 import { ResourceManager } from '@/components/admin/resource-manager';
-import { Badge, StatusBadge } from '@/components/admin/ui';
+import { Badge, WarningBadge } from '@/components/admin/ui';
 import type { Room, RoomType } from '@/lib/api/types';
 import { PUBLICATION_STATUS_OPTIONS, ROOM_TYPE_LABELS } from '@/lib/labels';
 
@@ -54,16 +56,17 @@ export function RoomsManager({ items, types }: { items: Room[]; types: RoomType[
         status: item.status,
       })}
       itemLabel={(item) => item.name}
+      emptyText="Todavía no hay habitaciones."
+      renderActions={(item) => (
+        <PublishSwitch endpoint={`/admin/rooms/${item.id}`} name={item.name} status={item.status} />
+      )}
       renderSummary={(item) => (
         <>
-          <p className="font-semibold">{item.name}</p>
-          <div className="mt-2 flex flex-wrap gap-2">
-            <Badge>{item.roomType.name}</Badge>
-            <StatusBadge status={item.status} />
+          <p className="text-[0.95rem] font-bold">{item.name}</p>
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            <Badge icon={BedDouble}>{item.roomType.name}</Badge>
             {item.status === 'PUBLISHED' && item.roomType.status !== 'PUBLISHED' ? (
-              <span className="text-xs text-muted-foreground">
-                El tipo no está publicado: no cuenta en el sitio.
-              </span>
+              <WarningBadge>El tipo no está publicado: no cuenta en el sitio</WarningBadge>
             ) : null}
           </div>
         </>

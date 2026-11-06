@@ -4,7 +4,7 @@ import { serverApi } from '@/lib/api/server';
 import type { MediaAsset, Paginated } from '@/lib/api/types';
 import { MediaLibrary } from './media-library';
 
-export const metadata: Metadata = { title: 'Medios' };
+export const metadata: Metadata = { title: 'Fotos y medios' };
 
 export default async function MediaPage({
   searchParams,
@@ -20,7 +20,7 @@ export default async function MediaPage({
   return (
     <>
       <PageHeader
-        title="Medios"
+        title="Fotos y medios"
         description="Biblioteca de imágenes del sitio. Toda imagen necesita texto alternativo para poder publicarse."
       />
       <MediaLibrary data={data} missingAlt={missingAlt} />

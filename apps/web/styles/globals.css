@@ -26,6 +26,14 @@
     letter-spacing: var(--tracking-h2);
   }
 
+  /* Admin panel (mockup admin): every heading is DM Sans bold; Gilda stays in the brand mark. */
+  [data-admin] :is(h1, h2, h3) {
+    font-family: var(--font-sans);
+    font-weight: 700;
+    letter-spacing: normal;
+    line-height: var(--leading-snug);
+  }
+
   /*
    * Focus ring (mockup defect 11): the mockup's gold ring is 2.1:1 on ivory. Green on light
    * surfaces (≥ 5.6:1) and gold on dark ones (≥ 5.9:1); both checked in styles/tokens.test.ts.
@@ -36,11 +44,16 @@
   [data-surface='dark'],
   .bg-surface-dark,
   .bg-charcoal,
-  .bg-green-900,
-  .bg-bamboo-800,
-  .bg-bamboo-900 {
+  .bg-green-900 {
     --focus-ring: var(--color-ring-on-dark);
   }
+  /* Plain muted grey is 4.3:1 on sand; sand surfaces switch to the stronger grey (4.7:1). */
+  .bg-sand,
+  .bg-muted,
+  .bg-secondary {
+    --muted-foreground: var(--color-ink-muted-strong);
+  }
+
   :focus-visible {
     outline: 2px solid var(--focus-ring);
     outline-offset: 3px;

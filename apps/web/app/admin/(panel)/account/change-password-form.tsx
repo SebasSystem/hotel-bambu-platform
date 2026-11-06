@@ -47,7 +47,7 @@ export function ChangePasswordForm() {
         className="flex flex-col gap-4"
         aria-labelledby="password-heading"
       >
-        <h2 id="password-heading" className="text-xl font-semibold">
+        <h2 id="password-heading" className="text-lg">
           Cambiar contraseña
         </h2>
         <FormAlert message={formError} />

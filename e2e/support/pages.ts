@@ -1,4 +1,5 @@
-import type { Page } from '@playwright/test';
+import { expect, type Page } from '@playwright/test';
+import { ADMIN_EMAIL, ADMIN_PASSWORD } from './api';
 
 export const CONSENT_COOKIE = 'hb_consent';
 
@@ -21,4 +22,13 @@ export async function firstRoomPath(page: Page): Promise<string> {
 export async function jsonLd(page: Page): Promise<Record<string, unknown>[]> {
   const blocks = await page.locator('script[type="application/ld+json"]').allTextContents();
   return blocks.map((text) => JSON.parse(text) as Record<string, unknown>);
+}
+
+/** Signs in through the login form and waits for the dashboard (counts against the login limit). */
+export async function loginAsAdmin(page: Page): Promise<void> {
+  await page.goto('/admin/login');
+  await page.getByLabel('Correo electrónico').fill(ADMIN_EMAIL);
+  await page.getByLabel('Contraseña').fill(ADMIN_PASSWORD);
+  await page.getByRole('button', { name: 'Ingresar' }).click();
+  await expect(page).toHaveURL(/\/admin\/?$/);
 }

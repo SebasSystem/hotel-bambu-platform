@@ -13,8 +13,10 @@ function mediaBaseUrl(): string {
 export default async function PanelLayout({ children }: { children: ReactNode }) {
   const session = await serverApi.get<SessionInfo>('/auth/me');
   return (
-    <AdminProvider session={session} mediaBaseUrl={mediaBaseUrl()}>
-      <AdminShell>{children}</AdminShell>
-    </AdminProvider>
+    <div data-admin="">
+      <AdminProvider session={session} mediaBaseUrl={mediaBaseUrl()}>
+        <AdminShell>{children}</AdminShell>
+      </AdminProvider>
+    </div>
   );
 }

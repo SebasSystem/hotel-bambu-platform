@@ -4,14 +4,14 @@ import { serverApi } from '@/lib/api/server';
 import type { HotelProfile } from '@/lib/api/types';
 import { HotelForm } from './hotel-form';
 
-export const metadata: Metadata = { title: 'Información del hotel' };
+export const metadata: Metadata = { title: 'Datos del hotel' };
 
 export default async function HotelPage() {
   const profile = await serverApi.get<HotelProfile>('/admin/hotel');
   return (
     <>
       <PageHeader
-        title="Información del hotel"
+        title="Datos del hotel"
         description="Datos que aparecen en el sitio: descripción, contacto, ubicación y horarios. Deje vacío lo que aún no tenga."
       />
       <HotelForm profile={profile} />

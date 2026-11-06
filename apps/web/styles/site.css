@@ -15,14 +15,6 @@
     scroll-padding-top: calc(var(--header-h) + 1rem);
   }
 
-  /* Plain muted grey is 4.3:1 on sand; sand surfaces switch to the stronger grey (4.7:1). */
-  .bg-sand,
-  .bg-sand-100,
-  .bg-muted,
-  .bg-secondary {
-    --muted-foreground: var(--color-ink-muted-strong);
-  }
-
   /* ─── Skip link ─────────────────────────────────────────────────────────── */
   .skip-link {
     position: fixed;

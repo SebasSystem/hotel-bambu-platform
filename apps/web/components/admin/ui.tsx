@@ -1,7 +1,11 @@
+import { Check, CircleAlert, Pause, Pencil, type LucideIcon } from 'lucide-react';
 import Link from 'next/link';
 import type { ButtonHTMLAttributes, ComponentProps, ReactNode } from 'react';
 
-/** Small local UI primitives for the admin panel (shadcn/ui-style classes on brand tokens). */
+/**
+ * Admin UI primitives on the mockup admin look (docs/design/mockup-design-spec.md §3 "Admin shell"):
+ * white 16 px cards with a hairline border, pill buttons, green / gray / gold status pills.
+ */
 
 export function cx(...classes: (string | false | null | undefined)[]): string {
   return classes.filter(Boolean).join(' ');
@@ -11,20 +15,21 @@ type Variant = 'primary' | 'secondary' | 'ghost' | 'danger';
 type Size = 'sm' | 'md';
 
 const VARIANTS: Record<Variant, string> = {
-  primary: 'bg-primary text-primary-foreground hover:bg-primary-hover',
-  secondary: 'border border-border bg-card text-foreground hover:bg-muted',
-  ghost: 'text-foreground hover:bg-muted',
-  danger: 'bg-destructive text-destructive-foreground hover:opacity-90',
+  primary: 'border border-transparent bg-primary text-primary-foreground hover:bg-primary-hover',
+  secondary: 'border border-line-strong bg-white text-foreground hover:border-green hover:bg-ivory',
+  ghost: 'border border-transparent text-foreground hover:bg-ivory',
+  danger: 'border border-danger bg-white text-danger hover:bg-danger hover:text-white',
 };
 
 const SIZES: Record<Size, string> = {
-  sm: 'min-h-9 px-3 text-sm',
-  md: 'min-h-11 px-4 text-sm',
+  sm: 'min-h-9 px-3.5 text-sm',
+  md: 'min-h-11 px-5 text-sm',
 };
 
 export function buttonClasses(variant: Variant = 'primary', size: Size = 'md', extra?: string) {
   return cx(
-    'inline-flex items-center justify-center gap-2 rounded-sm font-semibold transition-colors',
+    'inline-flex items-center justify-center gap-2 rounded-pill font-bold whitespace-nowrap',
+    'transition-colors duration-(--duration-fast)',
     'disabled:cursor-not-allowed disabled:opacity-60',
     VARIANTS[variant],
     SIZES[size],
@@ -76,14 +81,39 @@ export function ButtonLink({
   return <Link className={buttonClasses(variant, size, className)} {...props} />;
 }
 
+/** Mockup `.panel`: white, hairline border, 16 px radius. */
+export const panelClasses = 'rounded-2xl border border-line bg-white';
+
 export function Card({ className, children }: { className?: string; children: ReactNode }) {
+  return <div className={cx(panelClasses, 'p-5 tab:p-[22px]', className)}>{children}</div>;
+}
+
+/** Card heading row (mockup `.panel-head`). */
+export function CardHeader({
+  title,
+  id,
+  description,
+  actions,
+}: {
+  title: string;
+  id?: string;
+  description?: ReactNode;
+  actions?: ReactNode;
+}) {
   return (
-    <div className={cx('rounded-md border border-border bg-card p-5 shadow-xs', className)}>
-      {children}
+    <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+      <div className="min-w-0">
+        <h2 id={id} className="font-sans text-base leading-snug font-bold tracking-normal">
+          {title}
+        </h2>
+        {description ? <p className="mt-1 text-sm text-muted-foreground">{description}</p> : null}
+      </div>
+      {actions ? <div className="flex flex-wrap items-center gap-2">{actions}</div> : null}
     </div>
   );
 }
 
+/** Page title (mockup `.admin-heading`): one h1 per page, a muted subline, actions on the right. */
 export function PageHeader({
   title,
   description,
@@ -94,11 +124,13 @@ export function PageHeader({
   actions?: ReactNode;
 }) {
   return (
-    <header className="mb-6 flex flex-wrap items-end justify-between gap-4">
-      <div>
-        <h1 className="text-3xl font-semibold text-bamboo-900">{title}</h1>
+    <header className="mb-7 flex flex-wrap items-end justify-between gap-4">
+      <div className="min-w-0">
+        <h1 className="font-sans text-[1.55rem] leading-tight font-bold tracking-[-0.02em] tab:text-[1.7rem]">
+          {title}
+        </h1>
         {description ? (
-          <p className="mt-1 max-w-2xl text-sm text-muted-foreground">{description}</p>
+          <p className="mt-1.5 max-w-3xl text-sm text-muted-foreground">{description}</p>
         ) : null}
       </div>
       {actions ? <div className="flex flex-wrap gap-2">{actions}</div> : null}
@@ -109,45 +141,94 @@ export function PageHeader({
 type Tone = 'success' | 'neutral' | 'warning' | 'danger';
 
 const TONES: Record<Tone, string> = {
-  success: 'bg-accent text-accent-foreground',
-  neutral: 'bg-muted text-muted-foreground',
-  warning: 'bg-sand-200 text-ink-900',
-  danger: 'bg-destructive text-destructive-foreground',
+  success: 'bg-notice-bg text-green',
+  neutral: 'bg-neutral-bg text-ink-muted',
+  warning: 'bg-warn-bg text-warn-fg',
+  danger: 'bg-[#fbeaea] text-danger',
 };
 
-export function Badge({ tone = 'neutral', children }: { tone?: Tone; children: ReactNode }) {
+/** Mockup `.state` pill, at a readable 12 px; pass an icon so colour is never the only cue. */
+export function Badge({
+  tone = 'neutral',
+  icon: Icon,
+  children,
+}: {
+  tone?: Tone;
+  icon?: LucideIcon;
+  children: ReactNode;
+}) {
   return (
     <span
       className={cx(
-        'inline-flex items-center rounded-pill px-2.5 py-0.5 text-xs font-semibold',
+        'inline-flex items-center gap-1 rounded-pill px-2.5 py-1 text-xs leading-none font-bold whitespace-nowrap',
         TONES[tone],
       )}
     >
+      {Icon ? <Icon aria-hidden="true" className="size-3.5" strokeWidth={2} /> : null}
       {children}
     </span>
   );
 }
 
 const STATUS_LABELS = {
-  PUBLISHED: { label: 'Publicado', tone: 'success' },
-  DRAFT: { label: 'Borrador', tone: 'neutral' },
-  INACTIVE: { label: 'Inactivo', tone: 'warning' },
+  PUBLISHED: { label: 'Publicado', tone: 'success', icon: Check },
+  DRAFT: { label: 'Borrador', tone: 'neutral', icon: Pencil },
+  INACTIVE: { label: 'Inactivo', tone: 'warning', icon: Pause },
 } as const;
 
-/** Publication status as text + color (never color alone, 18.3). */
+/** Publication status as text + icon + colour (never colour alone, 18.3). */
 export function StatusBadge({ status }: { status: keyof typeof STATUS_LABELS }) {
-  const { label, tone } = STATUS_LABELS[status];
-  return <Badge tone={tone}>{label}</Badge>;
+  const { label, tone, icon } = STATUS_LABELS[status];
+  return (
+    <Badge tone={tone} icon={icon}>
+      {label}
+    </Badge>
+  );
 }
 
 export function BooleanBadge({ value, on, off }: { value: boolean; on: string; off: string }) {
-  return <Badge tone={value ? 'success' : 'neutral'}>{value ? on : off}</Badge>;
+  return (
+    <Badge tone={value ? 'success' : 'neutral'} icon={value ? Check : Pause}>
+      {value ? on : off}
+    </Badge>
+  );
+}
+
+export function WarningBadge({ children }: { children: ReactNode }) {
+  return (
+    <Badge tone="warning" icon={CircleAlert}>
+      {children}
+    </Badge>
+  );
 }
 
 export function EmptyState({ children }: { children: ReactNode }) {
   return (
-    <p className="rounded-md border border-dashed border-border bg-card p-6 text-center text-sm text-muted-foreground">
+    <p className="rounded-2xl border border-dashed border-line-strong bg-white p-8 text-center text-sm text-muted-foreground">
       {children}
     </p>
+  );
+}
+
+/** Mockup `.notice`: green tint for guidance, amber for warnings. */
+export function Notice({
+  title,
+  tone = 'info',
+  children,
+}: {
+  title?: string;
+  tone?: 'info' | 'warning';
+  children: ReactNode;
+}) {
+  return (
+    <div
+      className={cx(
+        'rounded-sm px-4 py-3.5 text-sm',
+        tone === 'info' ? 'bg-notice-bg text-notice-fg' : 'bg-warn-bg text-warn-fg',
+      )}
+    >
+      {title ? <p className="mb-1 font-bold">{title}</p> : null}
+      <div className="leading-normal">{children}</div>
+    </div>
   );
 }

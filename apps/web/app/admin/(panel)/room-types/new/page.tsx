@@ -1,3 +1,4 @@
+import { ArrowLeft } from 'lucide-react';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { PageHeader } from '@/components/admin/ui';
@@ -11,8 +12,11 @@ export default async function NewRoomPage() {
   const amenities = await serverApi.get<Amenity[]>('/admin/amenities');
   return (
     <>
-      <Link href="/admin/room-types" className="text-sm text-primary underline underline-offset-4">
-        ← Tipos de habitación
+      <Link
+        href="/admin/room-types"
+        className="mb-3 inline-flex min-h-9 items-center gap-1.5 text-sm font-semibold text-green hover:underline"
+      >
+        <ArrowLeft aria-hidden="true" className="size-4" /> Tipos de habitación
       </Link>
       <PageHeader
         title="Nuevo tipo de habitación"

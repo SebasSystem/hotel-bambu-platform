@@ -13,7 +13,7 @@ import { CheckboxField, FormAlert, SelectField, TextAreaField, TextField } from 
 import { useAction, useUnsavedChangesWarning } from './hooks';
 import { MediaField } from './media-picker';
 import { ReorderButtons, moveItem } from './reorder-buttons';
-import { Button, EmptyState } from './ui';
+import { Button, EmptyState, cx, panelClasses } from './ui';
 
 export interface FieldConfig {
   name: string;
@@ -50,6 +50,12 @@ export interface ResourceManagerProps<T extends { id: string }> {
     field: string,
   ) => { variants: unknown; altText: string | null } | null;
   deleteDescription?: string;
+  /** Extra inline controls before the toggles (e.g. a publish switch). */
+  renderActions?: (item: T) => ReactNode;
+  /** Label of the add button; defaults to "Agregar <noun>". */
+  addLabel?: string;
+  /** Text when the list is empty. */
+  emptyText?: string;
 }
 
 /**
@@ -83,25 +89,30 @@ export function ResourceManager<T extends { id: string }>(props: ResourceManager
     <div className="flex flex-col gap-4">
       <div>
         <Button onClick={() => setEditing('new')} disabled={editing === 'new'}>
-          <Plus aria-hidden="true" className="size-4" /> Agregar {noun}
+          <Plus aria-hidden="true" className="size-4" /> {props.addLabel ?? `Agregar ${noun}`}
         </Button>
       </div>
 
       {editing === 'new' ? (
-        <ResourceForm {...props} item={null} onDone={() => setEditing(null)} />
+        <div className={cx(panelClasses, 'p-5 tab:p-6')}>
+          <ResourceForm {...props} item={null} onDone={() => setEditing(null)} />
+        </div>
       ) : null}
 
-      {items.length === 0 ? <EmptyState>Todavía no hay elementos.</EmptyState> : null}
+      {items.length === 0 ? (
+        <EmptyState>{props.emptyText ?? 'Todavía no hay elementos.'}</EmptyState>
+      ) : null}
 
-      <ul className="flex flex-col gap-3">
+      <ul className="flex flex-col gap-2.5">
         {items.map((item, index) => (
-          <li key={item.id} className="rounded-md border border-border bg-card p-4 shadow-xs">
+          <li key={item.id} className={cx(panelClasses, 'p-4 tab:px-5')}>
             {editing !== 'new' && editing?.id === item.id ? (
               <ResourceForm {...props} item={item} onDone={() => setEditing(null)} />
             ) : (
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div className="min-w-0 flex-1">{props.renderSummary(item)}</div>
                 <div className="flex flex-wrap items-center gap-2">
+                  {props.renderActions?.(item)}
                   {toggles.map((toggle) => {
                     const value = Boolean(item[toggle.name]);
                     return (
@@ -220,7 +231,7 @@ function ResourceForm<T extends { id: string }>({
       aria-label={item ? `Editar ${noun}` : `Nuevo: ${noun}`}
     >
       <FormAlert message={formError} />
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid gap-5 md:grid-cols-2">
         {fields.map((field) => {
           const wide = field.wide || field.kind === 'textarea' ? 'md:col-span-2' : undefined;
           switch (field.kind) {
@@ -318,7 +329,7 @@ function ResourceForm<T extends { id: string }>({
           }
         })}
       </div>
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-2 border-t border-line pt-4">
         <Button type="submit" loading={isSubmitting}>
           {item ? 'Guardar cambios' : 'Agregar'}
         </Button>

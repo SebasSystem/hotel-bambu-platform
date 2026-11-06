@@ -3,8 +3,15 @@
 import { heroSlideCreateSchema, heroSlideUpdateSchema } from '@hotel-bambu/shared';
 import { MediaThumb } from '@/components/admin/media-thumb';
 import { ResourceManager } from '@/components/admin/resource-manager';
-import { Badge, BooleanBadge } from '@/components/admin/ui';
+import { BooleanBadge, WarningBadge } from '@/components/admin/ui';
+import { HERO_MIN_WIDTH, heroPhotoIssues } from '@/lib/admin/readiness';
 import type { HeroSlide } from '@/lib/api/types';
+
+const ISSUE_TEXT = {
+  portrait: 'Foto vertical: se recorta mucho en pantallas anchas',
+  small: `Menos de ${HERO_MIN_WIDTH} px de ancho: se verá borrosa`,
+  unknown: 'Tamaño desconocido (la foto aún se procesa)',
+} as const;
 
 /**
  * "Carrusel principal" (spec §7 Admin, mockup upload zone): ordered home hero slides. Without
@@ -16,6 +23,7 @@ export function HeroSlidesManager({ items }: { items: HeroSlide[] }) {
       endpoint="/admin/hero-slides"
       items={items}
       noun="diapositiva"
+      emptyText="Aún no hay fotos en el carrusel. Agregue la primera para la portada."
       createSchema={heroSlideCreateSchema}
       updateSchema={heroSlideUpdateSchema}
       reorderable
@@ -26,7 +34,7 @@ export function HeroSlidesManager({ items }: { items: HeroSlide[] }) {
           label: 'Imagen',
           kind: 'media',
           required: true,
-          hint: 'Mejor horizontal y de al menos 1600 px de ancho.',
+          hint: `Horizontal (más ancha que alta) y de al menos ${HERO_MIN_WIDTH} px de ancho, por ejemplo 1920 × 1080.`,
           wide: true,
         },
         {
@@ -50,29 +58,36 @@ export function HeroSlidesManager({ items }: { items: HeroSlide[] }) {
       }
       itemLabel={(item) => item.caption ?? item.altText ?? item.mediaAsset.altText ?? 'Diapositiva'}
       toggles={[{ name: 'active', on: 'Ocultar', off: 'Mostrar' }]}
-      renderSummary={(item) => (
-        <div className="flex items-start gap-4">
-          <MediaThumb
-            variants={item.mediaAsset.variants}
-            alt=""
-            className="h-20 w-32 shrink-0 rounded-sm"
-          />
-          <div className="min-w-0">
-            <p className="font-semibold">
-              {item.caption ?? item.altText ?? item.mediaAsset.altText ?? 'Sin texto alternativo'}
-            </p>
-            {item.altText ? (
-              <p className="text-sm text-muted-foreground">Texto alternativo propio</p>
-            ) : null}
-            <div className="mt-2 flex flex-wrap gap-2">
-              <BooleanBadge value={item.active} on="Visible" off="Oculta" />
-              {!item.altText && !item.mediaAsset.altText ? (
-                <Badge tone="warning">Falta texto alternativo</Badge>
-              ) : null}
+      renderSummary={(item) => {
+        const { width, height } = item.mediaAsset;
+        return (
+          <div className="flex flex-wrap items-start gap-4">
+            <MediaThumb
+              variants={item.mediaAsset.variants}
+              alt=""
+              className="aspect-video w-36 shrink-0 rounded-sm"
+            />
+            <div className="min-w-0 flex-1">
+              <p className="font-bold">
+                {item.caption ?? item.altText ?? item.mediaAsset.altText ?? 'Sin texto alternativo'}
+              </p>
+              <p className="mt-0.5 text-[0.8125rem] text-muted-foreground tabular-nums">
+                {width && height ? `${width} × ${height} px` : 'Sin medidas'}
+                {item.altText ? ' · texto alternativo propio' : ''}
+              </p>
+              <div className="mt-2 flex flex-wrap gap-2">
+                <BooleanBadge value={item.active} on="Visible" off="Oculta" />
+                {!item.altText && !item.mediaAsset.altText ? (
+                  <WarningBadge>Falta texto alternativo</WarningBadge>
+                ) : null}
+                {heroPhotoIssues(item.mediaAsset).map((issue) => (
+                  <WarningBadge key={issue}>{ISSUE_TEXT[issue]}</WarningBadge>
+                ))}
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        );
+      }}
     />
   );
 }

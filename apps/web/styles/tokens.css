@@ -20,6 +20,8 @@
   --color-ink-muted-strong: #56625a;
   --color-line: rgba(38, 49, 43, 0.14);
   --color-line-strong: #aeb7b0;
+  /* Form control boundary: 3.1:1 on white (WCAG 1.4.11); line-strong is decorative only. */
+  --color-input-border: #8a948d;
   --color-on-dark-muted: #d4ddce;
   --color-notice-bg: #edf3ea;
   --color-notice-fg: #365441;
@@ -32,19 +34,6 @@
   --color-whatsapp: #246f49;
   --color-admin-bg: #f3f2ed;
   --color-white: #ffffff;
-
-  /*
-   * Legacy palette names, re-pointed at the mockup palette. D2 rebuilt the public pages and
-   * removed the aliases nothing used any more; these remain for the admin (D4), the consent
-   * manager and the legal draft banner.
-   */
-  --color-bamboo-700: var(--color-green);
-  --color-bamboo-800: var(--color-green-900);
-  --color-bamboo-900: var(--color-green-900);
-  --color-sand-100: var(--color-sand);
-  --color-sand-200: var(--color-line-strong);
-  --color-earth-600: var(--color-promo);
-  --color-ink-900: var(--color-charcoal);
 
   --text-xs: 0.8125rem;
   --text-sm: 0.875rem;
@@ -167,7 +156,7 @@
   --destructive: var(--color-danger);
   --destructive-foreground: var(--color-white);
   --border: var(--color-line);
-  --input: var(--color-line-strong);
+  --input: var(--color-input-border);
   --ring: var(--color-green);
   --ring-on-dark: var(--color-gold);
   --surface-dark: var(--color-green-900);

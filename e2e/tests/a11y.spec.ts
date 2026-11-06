@@ -1,6 +1,6 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
-import { firstRoomPath, rejectCookies } from '../support/pages';
+import { firstRoomPath, loginAsAdmin, rejectCookies } from '../support/pages';
 
 const PAGES = [
   '/',
@@ -48,6 +48,43 @@ test.describe('accessibility (axe)', () => {
       expect(blocking(summary)).toEqual([]);
     });
   }
+
+  test('axe: every admin panel page @mobile', async ({ page }, testInfo) => {
+    test.setTimeout(240_000);
+    // One sign-in for all pages (the login is rate limited).
+    await loginAsAdmin(page);
+    await page.goto('/admin/room-types');
+    const roomType = await page
+      .locator('main a[href^="/admin/room-types/"]:not([href$="/new"])')
+      .first()
+      .getAttribute('href');
+    const pages = [
+      '/admin',
+      '/admin/hotel',
+      '/admin/nearby-places',
+      '/admin/room-types',
+      ...(roomType ? [roomType] : []),
+      '/admin/room-types/new',
+      '/admin/rooms',
+      '/admin/amenities',
+      '/admin/content',
+      '/admin/hero-slides',
+      '/admin/gallery',
+      '/admin/media',
+      '/admin/policies',
+      '/admin/social',
+      '/admin/account',
+    ];
+    const failures: Record<string, ReturnType<typeof summarize>> = {};
+    for (const path of pages) {
+      await page.goto(path);
+      const results = await new AxeBuilder({ page }).withTags(TAGS).analyze();
+      const summary = summarize(results.violations);
+      console.log(`[axe] ${testInfo.project.name} ${path}: ${JSON.stringify(summary)}`);
+      if (blocking(summary).length > 0) failures[path] = blocking(summary);
+    }
+    expect(failures).toEqual({});
+  });
 
   test('axe: consent banner and preferences dialog @mobile', async ({ page }) => {
     await page.goto('/');

@@ -4,17 +4,23 @@ Private, Spanish-language panel for hotel staff (requirements 9, 10, 18.2). Code
 
 ## Routes
 
+Navigation (`components/admin/admin-shell.tsx`, grouped, Spanish): Resumen · **Hotel** (Datos del hotel, Ubicación y lugares cercanos) · **Habitaciones** (Tipos de habitación, Habitaciones, Comodidades) · **Contenido** (Secciones de la portada, Carrusel principal, Galería, Fotos y medios, Políticas y preguntas, Redes sociales) · **Cuenta** (Mi cuenta).
+
 | Route | Content |
 |---|---|
-| `/admin/login` | Login (generic error on any credential failure) |
-| `/admin` | Dashboard: published rooms and room types, active hotel amenities and nearby places, incomplete content, last change, 30-day aggregates |
-| `/admin/hotel` | Profile (name, tagline, "Sobre nosotros", meta description), logo, contact, WhatsApp number and greeting (with a preview of the default messages), location, check-in/out, opening hours, RNT, ESCNNA notice |
-| `/admin/room-types`, `/new`, `/[id]` | "Tipos de habitación" (ADR 0016): list (order, publish/unpublish, published room count), create, edit (description, beds, amenities, rate), images (order, cover), status, delete, "Ver en el sitio" |
-| `/admin/rooms` | Lightweight room list: number or name, type, status ("Inactivo" also means out of service), order |
-| `/admin/amenities`, `/nearby-places`, `/faq`, `/policies`, `/social` | Generic list + inline form (`ResourceManager`) with toggles, ordering and delete confirmation |
-| `/admin/media` | Upload (alt text required), preview, edit alt/caption, delete (409 when in use), filter "sin texto alternativo" |
+| `/admin/login` | Login on the brand panel (generic error on any credential failure) |
+| `/admin` | "Resumen": content-readiness KPIs (published room types and how many have a rate, photos with alt text, profile completeness, WhatsApp configured), the "Antes de publicar" checklist (9 items computed from real data in `lib/admin/readiness.ts`, each linking to the section that fixes it), recent activity from the audit log (`lib/admin/activity.ts`), 30-day aggregates. No bookings, occupancy or revenue (owner decision) |
+| `/admin/hotel` | "Datos del hotel": profile (name, tagline, "Sobre nosotros", meta description), logo, contact, WhatsApp number and greeting (with a preview), location, check-in/out, opening hours, RNT, ESCNNA notice. Sections are anchors (`#datos`, `#whatsapp`, `#ubicacion`, `#horarios`) for the checklist |
+| `/admin/nearby-places` | "Ubicación y lugares cercanos": hotel location summary (edited in Datos del hotel) and the nearby places list |
+| `/admin/room-types`, `/new`, `/[id]` | "Tipos de habitación" (ADR 0016): table (cards on phones) with an inline publish switch, rate or "Sin tarifa" link, order; create, edit (description, beds, amenities, rate `#tarifa`), images (order, cover), status, delete, "Ver en el sitio" |
+| `/admin/rooms` | Lightweight room list with an inline publish switch: number or name, type, status ("Inactivo" also means out of service), order |
+| `/admin/amenities` | One catalog; "Todas" is grouped by scope (Del hotel / De habitación), with scope filters |
+| `/admin/content` | "Secciones de la portada": show/hide switches labelled by what they control since the home order is fixed in code (DB keys unchanged: SERVICES = amenities in the trust strip, FAQ = policies summary, CONTACT = final call to action); no order control |
+| `/admin/hero-slides` | "Carrusel principal" (the single hero source): landscape and ≥1600 px guidance, warnings on portrait, small or unprocessed photos |
+| `/admin/media` | "Fotos y medios": upload (alt text required), preview, edit alt/caption, delete (409 when in use), filter "sin texto alternativo" |
 | `/admin/gallery` | Add from media, category, publish, featured, order, remove (media is kept) |
-| `/admin/content` | "Carrusel principal" (hero slides, the single hero source) and the home sections: show/hide and order only |
+| `/admin/policies` | "Políticas y preguntas": policies and FAQ on one page (`#preguntas`; `/admin/faq` redirects here), `[DEMO]` texts flagged |
+| `/admin/social` | Social links (footer) |
 | `/admin/account` | Session info, change password (rotates the session and CSRF token) |
 
 ## Data flow
@@ -32,7 +38,7 @@ Private, Spanish-language panel for hotel staff (requirements 9, 10, 18.2). Code
 
 ## UI primitives
 
-Local, dependency-free components in `components/admin/` (shadcn/ui-style classes on the brand tokens in `styles/tokens.css`): `ui.tsx` (Button, Card, Badge, PageHeader…), `fields.tsx` (Field, TextField, SelectField, CheckboxField…), `feedback.tsx` (toasts + confirm), `media-picker.tsx` (library picker; only `READY` images with alt text are selectable), `resource-manager.tsx` (generic CRUD list). Icons: `lucide-react`.
+Local, dependency-free components in `components/admin/` on the mockup admin look (docs/design/mockup-design-spec.md §3: 260 px deep-green sidebar, 74 px white topbar, white 16 px cards, green/gray/gold status pills): `admin-shell.tsx` (sidebar, topbar breadcrumb, "Ver sitio"), `admin-drawer.tsx` (navigation drawer below 1000 px: modal, focus trap, Escape, backdrop, inert page), `publish-switch.tsx` (optimistic switch that reverts on API errors), `ui.tsx` (Button, Card, CardHeader, Badge, StatusBadge, Notice, PageHeader…), `fields.tsx` (Field, TextField, SelectField, CheckboxField, FormSection; 48 px inputs at 15 px regular, help text, icon + text errors; input borders use `--color-input-border`, 3.1:1), `feedback.tsx` (toasts + confirm), `media-picker.tsx` (library picker; only `READY` images with alt text are selectable), `resource-manager.tsx` (generic CRUD list). Icons: `lucide-react`.
 
 ## Media previews
 
@@ -40,7 +46,7 @@ Embedded media (room types, gallery, hero slides, hotel logo) carries stored var
 
 ## Tests
 
-`pnpm --filter @hotel-bambu/web test` (Vitest; component tests opt into jsdom with `// @vitest-environment jsdom`): API client (CSRF only on unsafe methods, 401 hook, error details, FormData), error-to-field mapping and Spanish messages, proxy guard, login form, `ResourceManager` server-error mapping.
+`pnpm --filter @hotel-bambu/web test` (Vitest; component tests opt into jsdom with `// @vitest-environment jsdom`): API client (CSRF only on unsafe methods, 401 hook, error details, FormData), error-to-field mapping and Spanish messages, proxy guard, login form, `ResourceManager` server-error mapping, readiness checklist and KPIs, activity wording, the navigation drawer (focus trap, Escape) and the publish switch (API call, optimistic state, revert). The e2e suite covers the dashboard, grouped navigation, inline publish, section switches, the phone drawer and axe on every admin page.
 
 ## Local development
 

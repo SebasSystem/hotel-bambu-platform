@@ -88,10 +88,10 @@ export function MediaPicker({
         event.preventDefault();
         onClose();
       }}
-      className="m-auto max-h-[90dvh] w-[min(60rem,calc(100%-2rem))] rounded-md border border-border bg-card p-0 shadow-lg backdrop:bg-ink-900/50"
+      className="m-auto max-h-[90dvh] w-[min(60rem,calc(100%-2rem))] rounded-2xl border border-line bg-white p-0 text-foreground shadow-lg backdrop:bg-charcoal/50"
     >
       <div className="flex items-center justify-between gap-4 border-b border-border p-4">
-        <h2 id="media-picker-title" className="text-xl font-semibold">
+        <h2 id="media-picker-title" className="text-lg">
           {title}
         </h2>
         <Button variant="ghost" size="sm" onClick={onClose}>
@@ -249,7 +249,7 @@ export function MediaField({
           </Button>
         ) : null}
       </div>
-      {hint ? <p className="text-xs text-muted-foreground">{hint}</p> : null}
+      {hint ? <p className="text-[0.8125rem] leading-snug text-muted-foreground">{hint}</p> : null}
       {error ? <p className="text-sm font-semibold text-destructive">{error}</p> : null}
       <MediaPicker
         open={open}
