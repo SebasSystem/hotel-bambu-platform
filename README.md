@@ -125,6 +125,7 @@ pnpm lighthouse     # budgets: LCP ≤ 2.5 s, CLS ≤ 0.1, TBT ≤ 300 ms, JS �
 ## Security, privacy and SEO
 
 - Security headers, CSP and threat model: [docs/security.md](docs/security.md).
+- Dependency audit, supply-chain settings (`allowBuilds`, `minimumReleaseAge`, `trustPolicy`) and update policy: [docs/security/dependency-audit-2026-11.md](docs/security/dependency-audit-2026-11.md). Never run `npx <name>` for a binary that is not in the workspace; use `pnpm exec`.
 - Cookie consent, legal pages and SEO: [docs/public-site.md](docs/public-site.md).
 - Legal checklist before publishing: [docs/legal-checklist.md](docs/legal-checklist.md). **The legal texts are templates: a lawyer must review them.**
 - Deployment flags: `SITE_URL`, `SITE_INDEXABLE` (opt-in indexing) and `LEGAL_APPROVED` ([docs/configuration.md](docs/configuration.md)).

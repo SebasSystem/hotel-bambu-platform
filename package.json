@@ -2,9 +2,9 @@
   "name": "hotel-bambu-platform",
   "private": true,
   "description": "Public website and admin panel for Hotel Bambú Plaza",
-  "packageManager": "pnpm@11.24.0",
+  "packageManager": "pnpm@11.28.11",
   "engines": {
-    "node": ">=24.11.0"
+    "node": ">=24.22.1"
   },
   "type": "module",
   "scripts": {

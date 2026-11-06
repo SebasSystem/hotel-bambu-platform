@@ -5,7 +5,7 @@
 # operational scripts (`node dist/scripts/<name>.js`): see deploy/README.md.
 # Debian slim (glibc): sharp, @node-rs/argon2 and the Prisma schema engine ship glibc binaries.
 
-ARG NODE_VERSION=24
+ARG NODE_VERSION=24.22.2
 ARG TURBO_VERSION=2.11.10
 
 FROM node:${NODE_VERSION}-bookworm-slim AS base

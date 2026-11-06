@@ -5,7 +5,7 @@
 # Runtime flags (SITE_URL, SITE_INDEXABLE, S3_PUBLIC_URL, LEGAL_*, REVALIDATE_SECRET) are read per
 # request; API_INTERNAL_URL is also compiled into the `/api/v1/*` rewrite at build time.
 
-ARG NODE_VERSION=24
+ARG NODE_VERSION=24.22.2
 ARG TURBO_VERSION=2.11.10
 
 FROM node:${NODE_VERSION}-bookworm-slim AS base

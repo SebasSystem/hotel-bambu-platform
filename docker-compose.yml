@@ -48,7 +48,7 @@ services:
   # One-shot job: creates the media bucket and allows anonymous read of objects only
   # (image variants are public; listing and writes require credentials).
   storage-init:
-    image: amazon/aws-cli:2.39.3
+    image: amazon/aws-cli:2.39.5
     depends_on:
       storage:
         condition: service_healthy
@@ -76,7 +76,7 @@ services:
   # host (`pnpm --filter @hotel-bambu/api dev`) and is reached via host.docker.internal.
   web:
     profiles: ['web']
-    image: node:24-bookworm-slim
+    image: node:24.22.2-bookworm-slim
     working_dir: /repo
     environment:
       COREPACK_ENABLE_DOWNLOAD_PROMPT: '0'

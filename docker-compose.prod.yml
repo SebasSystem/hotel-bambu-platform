@@ -140,7 +140,7 @@ services:
   # Primary ingress: TLS with the Cloudflare Origin CA certificate (ORIGIN_CERT_DIR on the host
   # holds origin.pem + origin.key). Only 443 is published; the firewall admits Cloudflare only.
   caddy:
-    image: caddy:2.11.8-alpine
+    image: caddy:2.11.9-alpine
     profiles: ['caddy']
     restart: unless-stopped
     environment:
@@ -221,7 +221,7 @@ services:
 
   # One-shot (profile storage): creates the bucket and allows anonymous GetObject only.
   storage-init:
-    image: amazon/aws-cli:2.39.3
+    image: amazon/aws-cli:2.39.5
     profiles: ['storage']
     depends_on:
       storage: { condition: service_healthy }

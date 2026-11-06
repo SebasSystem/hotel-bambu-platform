@@ -11,9 +11,27 @@ allowBuilds:
   # esbuild (via tsx) ships platform binaries as optional deps; its postinstall is only a check.
   esbuild: false
 
-minimumReleaseAgeExclude:
-  - lucide-react@1.68.0
-  - gsap@3.15.1
+# Supply chain (docs/security/dependency-audit-2026-11.md): only install versions published at
+# least 24 h ago (explicit, so resolution is strict), and fail if a package loses the trust
+# evidence (provenance / trusted publisher) its earlier releases had. Add a time-boxed
+# `minimumReleaseAgeExclude` entry only for an urgent security patch.
+minimumReleaseAge: 1440
+trustPolicy: no-downgrade
+# Reviewed 2026-11-06: legitimate publishers without provenance on these exact versions.
+trustPolicyExclude:
+  # Prisma publishes the CLI with its bot token since 7.10.0 (prisma/orm#30850); the client keeps provenance.
+  - prisma@7.10.1
+  # v3 maintenance line of the resolver (eslint-config-next pins ^3), published by its maintainer.
+  - eslint-import-resolver-typescript@3.10.1
+  # Published by the official chrome-devtools-npm account (via lighthouse/puppeteer, e2e only).
+  - chromium-bidi@157.0.8090-0
+
+# Vulnerable transitives that upstream has not fixed yet (pnpm audit, 2026-11-06).
+overrides:
+  # GHSA-c475-qrg2-pj4r and later basic-ftp fixes; get-uri (via @lhci/cli, lighthouse) still pins ^5.
+  basic-ftp: ^6.2.6
+  # GHSA-g3hv-75wg-m249; eslint, typescript-eslint and @nestjs/cli still depend on minimatch ^10.
+  'minimatch@>=10.0.0 <11.0.1': ^11.0.4
 
 # eslint-config-next bundles plugins (react, jsx-a11y, import) whose peer ranges do not list
 # ESLint 10 yet; Next.js documents ESLint 10 support since eslint-config-next 16.4.
