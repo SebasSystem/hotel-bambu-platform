@@ -9,7 +9,7 @@ export async function rejectCookies(page: Page): Promise<void> {
   await banner.waitFor({ state: 'detached' });
 }
 
-/** First published room slug, read from the rooms list. */
+/** First published room type page, read from the rooms list (ADR 0016). */
 export async function firstRoomPath(page: Page): Promise<string> {
   await page.goto('/habitaciones');
   const href = await page.locator('main a[href^="/habitaciones/"]').first().getAttribute('href');

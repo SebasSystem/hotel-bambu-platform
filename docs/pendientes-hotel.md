@@ -4,24 +4,29 @@ Everything below is a `TODO(hotel)` placeholder in seeds and UI until the hotel 
 
 ## A. Confirm data seen in the hotel's own photos
 
-These appear on framed prints / the RNT certificate in the photo set (`docs/assets/photo-inventory.md`). Confirm they are current and may be published:
+These appear on framed prints / the RNT certificate in the photo set (`docs/assets/photo-inventory.md`). Approved by the owner on 2026-11-05 and seeded by `db:seed:base` (ADR 0016):
 
-- [ ] City: **Mocoa, Putumayo**
-- [ ] Address: **Calle 8 # 7-10** (+ map coordinates/link, how-to-arrive directions)
-- [ ] Phone **310 679 8260** — is it the WhatsApp number for bookings?
-- [ ] RNT **232175** — publish on the site? (law requires it in advertising; hotel's decision)
-- [ ] Tagline "Hotel Bambú Plaza: descanso, comodidad y confianza en el corazón de Mocoa" — use on the site?
-- [ ] Mission and vision texts (framed) — use in "Sobre nosotros"?
+- [x] City: **Mocoa, Putumayo, Colombia**
+- [x] Address: **Calle 8 # 7-10**, coordinates 1.146883, -76.647940 (map link derived from them)
+- [x] Phone **310 679 8260** (published as a phone only)
+- [ ] Is 310 679 8260 also the WhatsApp number? Until confirmed, `whatsappNumber` stays empty and the WhatsApp buttons are hidden
+- [ ] How-to-arrive directions (text)
+- [x] RNT **232175** (shown in the footer)
+- [x] Tagline "Hotel Bambú Plaza: descanso, comodidad y confianza en el corazón de Mocoa"
+- [x] Mission: the source of the "Sobre nosotros" text (two paragraphs) and the meta description; review the wording in /admin
+- [ ] Vision text: not used yet
 - [ ] Legal name / data controller: the RNT certificate is issued to a natural person — confirm who is the data controller (privacy policy) and the legal/commercial name to publish
 
 ## B. Business decisions and content (req. 28)
 
 - [ ] Approval of logo, palette and typography (`docs/design/identity.md`) and the redesign art direction, A or B (`docs/research/art-direction-briefs.md`, which supersedes `docs/design/art-direction.md`)
 - [ ] Domain name
-- [ ] Room list: number, name, type (individual/couple), beds, capacity, specific amenities, and which photos belong to which room
-- [ ] Rates: amount in COP, unit (per night/per person), **taxes included?**, seasonal conditions, special conditions for foreign non-residents (Ley 1480)
+- [ ] Room list: number of each room and its type (how many individual and how many couple rooms); set in /admin › Habitaciones
+- [ ] Per room type: description, beds, area, capacity, specific amenities and which photos belong to it (/admin › Tipos de habitación)
+- [ ] Rates per room type: amount in COP, unit (per night/per person), **taxes included?**, seasonal conditions, special conditions for foreign non-residents (Ley 1480)
+- [ ] Nearby places with **measured** distance and travel time (terminal, airport, main park, waterfalls…); nothing is seeded
 - [ ] Real services list (beyond the known ones): see section E
-- [ ] WhatsApp number and preferred initial messages
+- [ ] WhatsApp number and, optionally, the greeting that opens the default messages
 - [ ] Policies: check-in / check-out times, pets, minors, cancellation, payment methods, deposits, ID requirements
 - [ ] Real FAQ (top questions guests ask)
 - [ ] Official social media accounts (URLs)

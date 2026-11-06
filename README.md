@@ -52,14 +52,14 @@ Prisma commands run from the API package, e.g. `pnpm --filter @hotel-bambu/api p
 
 Scripts live in the API package: run them as `pnpm --filter @hotel-bambu/api <script>`. Model and seed rules: [ADR 0006](docs/adr/0006-data-model.md).
 
-| Script              | Environments        | Does                                                                                                     |
-| ------------------- | ------------------- | -------------------------------------------------------------------------------------------------------- |
-| `db:migrate`        | local               | `prisma migrate dev` (then `db:generate`: Prisma 7 no longer generates or seeds automatically)           |
-| `db:migrate:deploy` | staging, production | Applies pending migrations only                                                                          |
-| `db:seed:base`      | all (idempotent)    | Hotel profile (name only, rest `TODO(hotel)`), landing sections, WhatsApp templates, amenities, services |
-| `db:seed:demo`      | local, staging      | 16 `[DEMO]` rooms, demo FAQ and policies. Refuses when `NODE_ENV` or `APP_ENV` is `production`           |
-| `media:import`      | local, staging      | Processes `assets-source/photos` per `docs/assets/assets-manifest.json`, uploads variants, links media   |
-| `admin:create`      | all                 | Creates an admin, interactively or one-shot with `ADMIN_EMAIL` + `ADMIN_PASSWORD`                        |
+| Script              | Environments        | Does                                                                                                                                                                         |
+| ------------------- | ------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `db:migrate`        | local               | `prisma migrate dev` (then `db:generate`: Prisma 7 no longer generates or seeds automatically)                                                                               |
+| `db:migrate:deploy` | staging, production | Applies pending migrations only                                                                                                                                              |
+| `db:seed:base`      | all (idempotent)    | Hotel profile (owner-approved facts, written only into empty fields), landing sections, amenities                                                                            |
+| `db:seed:demo`      | local, staging      | The two confirmed room types (no description or rate), one `[DEMO]` room per type without rooms, demo FAQ and policies. Refuses when `NODE_ENV` or `APP_ENV` is `production` |
+| `media:import`      | local, staging      | Processes `assets-source/photos` per `docs/assets/assets-manifest.json`, uploads variants, links media                                                                       |
+| `admin:create`      | all                 | Creates an admin, interactively or one-shot with `ADMIN_EMAIL` + `ADMIN_PASSWORD`                                                                                            |
 
 First run on a fresh database:
 
@@ -72,7 +72,7 @@ pnpm --filter @hotel-bambu/api media:import   # needs S3_ACCESS_KEY / S3_SECRET_
 pnpm --filter @hotel-bambu/api admin:create   # prompts for email and password (min 12 characters)
 ```
 
-- Order matters: `db:seed:demo` needs the amenity catalog from `db:seed:base`; `media:import` attaches room photos to the demo rooms and publishes the ones that get a cover image.
+- Order matters: `db:seed:demo` needs the amenity catalog from `db:seed:base`; `media:import` attaches room photos to the room types that have `[DEMO]` rooms and publishes the types (and their demo rooms) that get a cover image.
 - `media:import` skips `discard` photos and photos already imported (SHA-256), strips EXIF/GPS, and writes AVIF + WebP variants (640/960/1280/1920, never upscaled) under random keys. Re-running it is safe.
 - One-shot admin: `ADMIN_EMAIL=you@example.com ADMIN_PASSWORD='a long passphrase' pnpm --filter @hotel-bambu/api admin:create`, then clear it from your shell history. There are no default credentials. Add `-- --reset-password` to reset an existing admin (unlocks it and revokes its sessions).
 - From a build (e.g. inside the API container): `node dist/scripts/admin-create.js` (also `seed-base`, `seed-demo`, `media-import`).
@@ -87,7 +87,7 @@ REST under `/api/v1` (endpoint list: [docs/api.md](docs/api.md)). Public reads u
 
 ## Admin panel
 
-`/admin` (Spanish UI): login, dashboard, hotel info, rooms (order, publish, images), amenities, services, promotions, media library, gallery, landing sections, FAQ, policies, social links, WhatsApp number and templates, account. Architecture and conventions: [docs/admin-panel.md](docs/admin-panel.md).
+`/admin` (Spanish UI): login, dashboard, hotel info (with the WhatsApp number and greeting), room types (order, publish, images), rooms (number, type, status), amenities, nearby places, media library, gallery, landing content (hero slides, section order), FAQ, policies, social links, account. Architecture and conventions: [docs/admin-panel.md](docs/admin-panel.md).
 
 ### Web dev in a Linux container (Windows hosts with Application Control)
 
@@ -119,7 +119,7 @@ pnpm lighthouse     # budgets: LCP ≤ 2.5 s, CLS ≤ 0.1, TBT ≤ 300 ms, JS �
 ```
 
 - The tests log in with `E2E_ADMIN_EMAIL` / `E2E_ADMIN_PASSWORD` (default: the local dev admin). They temporarily set a WhatsApp number or coordinates when these are missing, and restore every change.
-- On an empty database (CI), the global setup publishes one demo room with a synthetic cover image.
+- On an empty database (CI), the global setup publishes one room type with a synthetic cover image and one published room.
 - CI (`.github/workflows/ci.yml`, job `e2e`): Postgres and storage from Compose, API and web on the runner, `pnpm e2e` (blocking), `pnpm lighthouse` (non-blocking), reports uploaded as artifacts.
 
 ## Security, privacy and SEO

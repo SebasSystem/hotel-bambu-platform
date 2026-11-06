@@ -51,6 +51,28 @@ test.describe('public site', () => {
     expect(services?.status()).toBe(404);
   });
 
+  test('room type pages generate their SEO title from the type and the city', async ({ page }) => {
+    await page.goto(await firstRoomPath(page));
+    const heading = (await page.getByRole('heading', { level: 1 }).textContent())?.trim() ?? '';
+    await expect(page).toHaveTitle(new RegExp(`^${heading} para \\d+ personas?( en [^–]+)? – `));
+    await expect(page.locator('meta[name="description"]')).toHaveAttribute(
+      'content',
+      new RegExp(`^${heading} para \\d+ personas? en `),
+    );
+  });
+
+  test('a former per-room URL answers a permanent redirect to its type page', async ({
+    request,
+  }) => {
+    // Slug of a demo room before ADR 0016; the migration maps it to its type.
+    const response = await request.get('/habitaciones/demo-habitacion-pareja-101', {
+      maxRedirects: 0,
+    });
+    test.skip(response.status() === 404, 'Needs a database migrated from per-room pages');
+    expect(response.status()).toBe(308);
+    expect(response.headers()['location']).toMatch(/\/habitaciones\/habitacion-pareja$/);
+  });
+
   test('unknown URLs answer a branded 404 with links to the rooms', async ({ page }) => {
     const response = await page.goto('/esta-pagina-no-existe');
     expect(response?.status()).toBe(404);
@@ -100,7 +122,7 @@ test.describe('catalogue and gallery (mockup port)', () => {
     await target.click();
     await expect(page).toHaveURL(/\?tipo=[a-z]+$/);
     await expect(chips.getByRole('link', { name: label })).toHaveAttribute('aria-current', 'page');
-    await expect(page.locator('main [aria-live="polite"]')).toHaveText(/\d+ habitaci/);
+    await expect(page.locator('main [aria-live="polite"]')).toHaveText(/\d+ tipos? de habitaci/);
     const kickers = await page.locator('main article p:first-of-type').allTextContents();
     expect(kickers.every((text) => text.trim().toLowerCase() === label.toLowerCase())).toBe(true);
   });
