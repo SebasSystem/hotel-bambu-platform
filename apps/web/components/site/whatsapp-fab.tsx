@@ -6,7 +6,7 @@ import { ui } from '@/lib/i18n/es';
 import { WhatsAppLink } from './whatsapp-link';
 
 /**
- * Floating WhatsApp button (requirement 5.1, motion spec): appears once the element marked
+ * Floating WhatsApp button (requirement 5.1, mockup `.whatsapp-fab` without "Por configurar"): appears once the element marked
  * `data-fab-sentinel` (the home hero) leaves the viewport, or after a short scroll elsewhere.
  * Without JS it is simply not shown (the header and section CTAs remain).
  */
@@ -33,8 +33,10 @@ export function WhatsAppFab({ href }: { href: string }) {
         href={href}
         source="floating"
         ariaLabel={`${ui.whatsapp.floating} ${ui.whatsapp.newTab}`}
-        className="inline-flex size-14 items-center justify-center rounded-pill bg-whatsapp text-whatsapp-foreground shadow-lg transition-[filter] duration-(--duration-fast) hover:brightness-95 [&_svg]:size-7"
-      />
+        className="inline-flex min-h-[55px] items-center gap-2 rounded-pill bg-whatsapp px-[15px] py-2 text-[0.78rem] font-bold text-white shadow-fab transition-colors duration-(--duration-fast) hover:bg-green-900 [&_svg]:size-[26px]"
+      >
+        {ui.whatsapp.short}
+      </WhatsAppLink>
     </div>
   );
 }

@@ -1,73 +1,130 @@
 /*
- * Design tokens v0.1 — mirror of docs/design/tokens.json (guarded by styles/tokens.test.ts).
- * Change values in tokens.json first, then here. Pending hotel approval (ADR 0003).
+ * Design tokens v1.0 — mirror of docs/design/tokens.json (guarded by styles/tokens.test.ts).
+ * Ported from the approved mockup (docs/design/mockup-design-spec.md §1). Change values in
+ * tokens.json first, then here.
  */
 
 /* Brand primitives. `static` emits every variable so semantic aliases can reference them. */
 @theme static {
   --color-*: initial;
-  --color-bamboo-100: #ddeee3;
-  --color-bamboo-300: #8ec3a4;
-  --color-bamboo-500: #3b8f69;
-  --color-bamboo-600: #267a58;
-  --color-bamboo-700: #1d6247;
-  --color-bamboo-800: #174c39;
-  --color-bamboo-900: #12392b;
-  --color-cane-500: #c9a55c;
-  --color-cane-700: #8a6a2b;
-  --color-sand-50: #f7f3ea;
-  --color-sand-100: #eee7d8;
-  --color-sand-200: #d9cfba;
-  --color-earth-600: #a8582f;
-  --color-ink-600: #56605a;
-  --color-ink-900: #1a1f1c;
-  --color-error-600: #b3261e;
+  --color-green: #315c45;
+  --color-green-900: #183b2c;
+  --color-green-50: #e2eadf;
+  --color-sage: #a8bea0;
+  --color-ivory: #f8f6f0;
+  --color-paper: #fffdf8;
+  --color-sand: #e8ddc7;
+  --color-charcoal: #26312b;
+  --color-gold: #c8a66a;
+  --color-ink-muted: #5f6862;
+  --color-ink-muted-strong: #56625a;
+  --color-line: rgba(38, 49, 43, 0.14);
+  --color-line-strong: #aeb7b0;
+  --color-on-dark-muted: #d4ddce;
+  --color-notice-bg: #edf3ea;
+  --color-notice-fg: #365441;
+  --color-warn-bg: #fff2d9;
+  --color-warn-fg: #7c5917;
+  --color-neutral-bg: #ececea;
+  --color-neutral-fg: #656b67;
+  --color-danger: #a23838;
+  --color-promo: #a8582f;
+  --color-whatsapp: #246f49;
+  --color-admin-bg: #f3f2ed;
   --color-white: #ffffff;
-  --color-whatsapp: #25d366;
+
+  /*
+   * Legacy palette names (pre-mockup pages and admin), re-pointed at the mockup palette so the
+   * existing screens inherit the new look. Remove once D2 (public pages) and D4 (admin) stop
+   * using them.
+   */
+  --color-bamboo-100: var(--color-green-50);
+  --color-bamboo-300: var(--color-sage);
+  --color-bamboo-500: var(--color-green);
+  --color-bamboo-600: var(--color-green);
+  --color-bamboo-700: var(--color-green);
+  --color-bamboo-800: var(--color-green-900);
+  --color-bamboo-900: var(--color-green-900);
+  --color-cane-500: var(--color-gold);
+  --color-cane-700: var(--color-warn-fg);
+  --color-sand-50: var(--color-ivory);
+  --color-sand-100: var(--color-sand);
+  --color-sand-200: var(--color-line-strong);
+  --color-earth-600: var(--color-promo);
+  --color-ink-600: var(--color-ink-muted);
+  --color-ink-900: var(--color-charcoal);
+  --color-error-600: var(--color-danger);
 
   --text-xs: 0.8125rem;
   --text-sm: 0.875rem;
-  --text-base: clamp(1rem, 0.96rem + 0.2vw, 1.0625rem);
-  --text-lg: clamp(1.125rem, 1.06rem + 0.3vw, 1.25rem);
-  --text-xl: clamp(1.25rem, 1.12rem + 0.6vw, 1.5rem);
-  --text-2xl: clamp(1.5rem, 1.28rem + 1vw, 2rem);
+  --text-base: 1rem;
+  --text-lg: 1.0625rem;
+  --text-xl: 1.25rem;
+  --text-2xl: 1.55rem;
   --text-3xl: clamp(1.875rem, 1.5rem + 1.8vw, 2.75rem);
   --text-4xl: clamp(2.25rem, 1.6rem + 3vw, 3.75rem);
   --text-5xl: clamp(2.75rem, 1.8rem + 4.5vw, 5rem);
+  --text-display: clamp(3rem, 7vw, 6.7rem);
+  --text-display-page: clamp(3.3rem, 7vw, 6.5rem);
+  --text-h2: clamp(2.25rem, 4.8vw, 4.5rem);
+  --text-h3: 1.55rem;
+  --text-feature: clamp(2.2rem, 4vw, 4rem);
+  --text-fact: 2.35rem;
+  --text-lead: 1.06rem;
+  --text-nav: 0.84rem;
+  --text-button: 0.88rem;
+  --text-card: 0.84rem;
+  --text-chip: 0.78rem;
+  --text-meta: 0.75rem;
+  --text-eyebrow: 0.72rem;
+  --text-pill: 0.67rem;
+  --text-wordmark: 1.14rem;
+  --text-wordmark-sub: 0.58rem;
 
+  --leading-heading: 1.05;
   --leading-tight: 1.1;
   --leading-snug: 1.25;
+  --leading-body: 1.55;
   --leading-normal: 1.6;
 
-  --tracking-display: -0.01em;
-  --tracking-kicker: 0.24em;
+  --tracking-display: -0.045em;
+  --tracking-h2: -0.035em;
+  --tracking-kicker: 0.16em;
+  --tracking-label: 0.12em;
+  --tracking-wordmark: 0.24em;
 
-  --radius-xs: 0.25rem;
-  --radius-sm: 0.5rem;
-  --radius-md: 0.75rem;
-  --radius-lg: 1rem;
-  --radius-xl: 1.5rem;
-  --radius-pill: 9999px;
+  --radius-xs: 0.5rem;
+  --radius-sm: 0.75rem;
+  --radius-md: 1.125rem;
+  --radius-lg: 1.5rem;
+  --radius-xl: 2rem;
+  --radius-pill: 999px;
 
-  --shadow-xs: 0 1px 2px rgb(18 57 43 / 0.06);
-  --shadow-sm: 0 2px 8px rgb(18 57 43 / 0.08);
-  --shadow-md: 0 8px 24px rgb(18 57 43 / 0.1);
-  --shadow-lg: 0 16px 48px rgb(18 57 43 / 0.14);
+  --shadow-xs: 0 1px 2px rgb(25 45 35 / 0.06);
+  --shadow-sm: 0 2px 8px rgb(25 45 35 / 0.08);
+  --shadow-md: 0 15px 40px rgb(28 48 38 / 0.09);
+  --shadow-lg: 0 24px 70px rgb(25 45 35 / 0.12);
+  --shadow-fab: 0 13px 35px rgb(16 67 40 / 0.3);
+
+  --breakpoint-xs: 26.25rem;
+  --breakpoint-tab: 47.5rem;
+  --breakpoint-desk: 62.5rem;
 
   --ease-standard: cubic-bezier(0.2, 0, 0, 1);
   --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
   --ease-in-out-soft: cubic-bezier(0.65, 0, 0.35, 1);
   --ease-in: cubic-bezier(0.4, 0, 1, 1);
+  --ease-mockup: ease;
 
   --spacing: 0.25rem;
-  --container-site: 80rem;
+  --container-site: 90rem;
 }
 
 /* Fonts come from next/font variables set on <html> (app/layout.tsx). */
 @theme inline {
-  --font-display: var(--font-fraunces), ui-serif, Georgia, 'Times New Roman', serif;
+  --font-display: var(--font-gilda), Georgia, 'Times New Roman', serif;
   --font-sans:
-    var(--font-manrope), ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+    var(--font-dm-sans), ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
 
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -90,57 +147,67 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
+  --color-ring-on-dark: var(--ring-on-dark);
   --color-surface-dark: var(--surface-dark);
   --color-on-surface-dark: var(--on-surface-dark);
   --color-on-surface-dark-muted: var(--on-surface-dark-muted);
-  --color-promo: var(--promo);
   --color-promo-foreground: var(--promo-foreground);
   --color-whatsapp-foreground: var(--whatsapp-foreground);
 }
 
 /* Semantic roles (shadcn/ui variable names) and non-Tailwind tokens. */
 :root {
-  --background: var(--color-sand-50);
-  --foreground: var(--color-ink-900);
-  --card: var(--color-white);
-  --card-foreground: var(--color-ink-900);
+  --background: var(--color-ivory);
+  --foreground: var(--color-charcoal);
+  --card: var(--color-paper);
+  --card-foreground: var(--color-charcoal);
   --popover: var(--color-white);
-  --popover-foreground: var(--color-ink-900);
-  --primary: var(--color-bamboo-700);
+  --popover-foreground: var(--color-charcoal);
+  --primary: var(--color-green);
   --primary-foreground: var(--color-white);
-  --primary-hover: var(--color-bamboo-600);
-  --secondary: var(--color-sand-100);
-  --secondary-foreground: var(--color-bamboo-900);
-  --muted: var(--color-sand-100);
-  --muted-foreground: var(--color-ink-600);
-  --accent: var(--color-bamboo-100);
-  --accent-foreground: var(--color-bamboo-900);
-  --accent-decorative: var(--color-cane-500);
-  --destructive: var(--color-error-600);
+  --primary-hover: var(--color-green-900);
+  --secondary: var(--color-sand);
+  --secondary-foreground: var(--color-charcoal);
+  --muted: var(--color-sand);
+  --muted-foreground: var(--color-ink-muted);
+  --accent: var(--color-green-50);
+  --accent-foreground: var(--color-green-900);
+  --accent-decorative: var(--color-gold);
+  --destructive: var(--color-danger);
   --destructive-foreground: var(--color-white);
-  --border: var(--color-sand-200);
-  --input: var(--color-sand-200);
-  --ring: var(--color-bamboo-600);
-  --surface-dark: var(--color-bamboo-900);
-  --on-surface-dark: var(--color-sand-50);
-  --on-surface-dark-muted: var(--color-bamboo-300);
-  --promo: var(--color-earth-600);
+  --border: var(--color-line);
+  --input: var(--color-line-strong);
+  --ring: var(--color-green);
+  --ring-on-dark: var(--color-gold);
+  --surface-dark: var(--color-green-900);
+  --on-surface-dark: var(--color-ivory);
+  --on-surface-dark-muted: var(--color-sage);
   --promo-foreground: var(--color-white);
-  --whatsapp: var(--color-whatsapp);
-  --whatsapp-foreground: var(--color-ink-900);
+  --whatsapp-foreground: var(--color-white);
 
   --duration-instant: 100ms;
-  --duration-fast: 180ms;
-  --duration-base: 320ms;
-  --duration-slow: 600ms;
-  --duration-slower: 900ms;
+  --duration-fast: 200ms;
+  --duration-base: 250ms;
+  --duration-slow: 450ms;
+  --duration-slower: 800ms;
   --duration-reveal: 1100ms;
 
-  --section-y: clamp(4rem, 2.5rem + 6vw, 8rem);
-  --gutter: clamp(1rem, 0.5rem + 2.5vw, 2.5rem);
+  --section-y: clamp(5rem, 10vw, 9.375rem);
+  --gutter: clamp(1.25rem, 6vw, 5.75rem);
+  --header-gutter: clamp(1.125rem, 5vw, 4.75rem);
+  --header-h: 4.875rem;
 
-  --z-header: 40;
-  --z-whatsapp-fab: 45;
-  --z-overlay: 50;
-  --z-toast: 60;
+  --z-whatsapp-fab: 70;
+  --z-header: 80;
+  --z-mobile-menu: 90;
+  --z-overlay: 200;
+  --z-toast: 300;
+  --z-skip-link: 1000;
+}
+
+/* Mockup ≤760 px: compact header. */
+@media (max-width: 47.499rem) {
+  :root {
+    --header-h: 4.375rem;
+  }
 }

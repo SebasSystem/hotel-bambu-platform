@@ -1,16 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-labelledby="t">
-  <title id="t">Hotel Bambú Plaza</title>
-  <g transform="translate(0 0) scale(1.0)">
-    <g fill="#1D6247">
-      <rect x="27" y="4" width="10" height="18" rx="3"/>
-      <rect x="27" y="25" width="10" height="16" rx="3"/>
-      <rect x="27" y="44" width="10" height="17" rx="3"/>
-      <rect x="25" y="21.5" width="14" height="4" rx="2"/>
-      <rect x="25" y="40.5" width="14" height="4" rx="2"/>
-    </g>
-    <g fill="#3B8F69">
-      <path d="M38 22.5C42 13.5 49.5 8.5 60 7C56.5 16 48.5 22 38 22.5Z"/>
-      <path d="M26 42.5C21.5 34.5 14 30 4 29.5C8 38.5 16 43.5 26 42.5Z"/>
-    </g>
-  </g>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" role="img" aria-label="Hotel Bambú Plaza">
+  <rect x="18" y="5" width="9" height="38" rx="4.5" fill="#315C45"/>
+  <path d="M12 17c7 0 10-4 11-10-7 0-11 3-11 10Zm15 11c7-1 11-5 12-12-8 0-12 4-12 12ZM8 32c7 0 11-3 13-10-8 0-12 3-13 10Z" fill="#315C45" opacity=".72"/>
+  <path d="M17 18h11M16 31h12" stroke="#F8F6F0" stroke-width="2.2" stroke-linecap="round"/>
 </svg>

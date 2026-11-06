@@ -21,7 +21,7 @@ interface PageHeaderProps {
 /** Inner-page header: breadcrumb, H1 and intro on sand. */
 export function PageHeader({ title, path, kicker, intro, crumbs = [], children }: PageHeaderProps) {
   return (
-    <div className="border-b border-sand-200 bg-sand-100">
+    <div className="border-b border-line bg-sand">
       {path ? (
         <JsonLd
           data={breadcrumbJsonLd([
@@ -31,13 +31,16 @@ export function PageHeader({ title, path, kicker, intro, crumbs = [], children }
           ])}
         />
       ) : null}
-      <div className={`${container} pt-10 pb-14 sm:pt-14 sm:pb-16`}>
-        <nav aria-label="Ruta de navegación" className="mb-8 text-sm text-muted-foreground">
+      <div className={`${container} pt-[clamp(2.5rem,6vw,5rem)] pb-[3.75rem]`}>
+        <nav
+          aria-label="Ruta de navegación"
+          className="mb-[clamp(1.5rem,4vw,3rem)] text-sm text-ink-muted-strong"
+        >
           <ol className="flex flex-wrap items-center gap-2">
             <li>
               <Link
                 href={routes.home}
-                className="underline-offset-4 hover:text-bamboo-700 hover:underline"
+                className="underline-offset-4 hover:text-green hover:underline"
               >
                 {ui.nav.home}
               </Link>
@@ -47,7 +50,7 @@ export function PageHeader({ title, path, kicker, intro, crumbs = [], children }
                 <span aria-hidden="true">/</span>
                 <Link
                   href={crumb.href}
-                  className="underline-offset-4 hover:text-bamboo-700 hover:underline"
+                  className="underline-offset-4 hover:text-green hover:underline"
                 >
                   {crumb.label}
                 </Link>
@@ -55,13 +58,13 @@ export function PageHeader({ title, path, kicker, intro, crumbs = [], children }
             ))}
             <li className="flex items-center gap-2">
               <span aria-hidden="true">/</span>
-              <span aria-current="page" className="text-foreground">
+              <span aria-current="page" className="text-charcoal">
                 {title}
               </span>
             </li>
           </ol>
         </nav>
-        <SectionHeading as="h1" kicker={kicker} title={title} intro={intro} />
+        <SectionHeading as="h1" surface="sand" kicker={kicker} title={title} intro={intro} />
         {children}
       </div>
     </div>

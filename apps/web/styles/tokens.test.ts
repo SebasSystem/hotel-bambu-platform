@@ -9,7 +9,7 @@ const css = readFileSync(path.join(import.meta.dirname, 'tokens.css'), 'utf8');
 
 /** Collects every `--name: value;` declaration (last one wins). */
 const declarations = new Map(
-  [...css.matchAll(/(--[\w-]+)\s*:\s*([^;]+);/g)].map((m) => [m[1], m[2]!.trim()]),
+  [...css.matchAll(/(--[\w.-]+)\s*:\s*([^;]+);/g)].map((m) => [m[1], m[2]!.trim()]),
 );
 
 /** Prettier rewrites `0.10` as `0.1`; compare numbers without trailing decimal zeros. */
@@ -21,34 +21,48 @@ function cssVar(name: string): string | undefined {
   return declarations.get(`--${name}`);
 }
 
+/** Flattens nested token groups, skipping `$note` metadata keys. */
 function flatten(obj: Record<string, unknown>, prefix: string): [string, string][] {
-  return Object.entries(obj).flatMap(([key, value]) =>
-    typeof value === 'object' && value !== null
-      ? flatten(value as Record<string, unknown>, `${prefix}-${key}`)
-      : [[`${prefix}-${key}`, String(value)]],
-  );
+  return Object.entries(obj)
+    .filter(([key]) => !key.startsWith('$'))
+    .flatMap(([key, value]) =>
+      typeof value === 'object' && value !== null
+        ? flatten(value as Record<string, unknown>, `${prefix}-${key}`)
+        : [[`${prefix}-${key}`, String(value)]],
+    );
 }
 
-/** Resolves `{color.sand.50}` references to the CSS variable that must hold them. */
+/** Resolves `{color.green-900}` references to the CSS variable that must hold them. */
 function referenceToVar(ref: string): string {
   const match = /^\{color\.(.+)\}$/.exec(ref);
   if (!match) throw new Error(`Unsupported token reference ${ref}`);
   return `var(--color-${match[1]!.replace(/\./g, '-')})`;
 }
 
+/** WCAG 2.2 relative luminance of an opaque `#rrggbb` colour. */
+function luminance(hex: string): number {
+  const channels = [1, 3, 5].map((i) => Number.parseInt(hex.slice(i, i + 2), 16) / 255);
+  const [r, g, b] = channels.map((c) => (c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4));
+  return 0.2126 * r! + 0.7152 * g! + 0.0722 * b!;
+}
+
+function contrast(foreground: string, background: string): number {
+  const [light, dark] = [luminance(foreground), luminance(background)].sort((a, b) => b - a);
+  return (light! + 0.05) / (dark! + 0.05);
+}
+
+const colors = tokens.color as Record<string, string>;
+
 describe('tokens.css mirrors docs/design/tokens.json', () => {
-  it.each(flatten(tokens.color, 'color'))('primitive %s = %s', (name, value) => {
-    expect(cssVar(name)?.toLowerCase()).toBe(value.toLowerCase());
+  it.each(Object.entries(colors))('primitive color-%s = %s', (name, value) => {
+    expect(cssVar(`color-${name}`)?.toLowerCase()).toBe(value.toLowerCase());
   });
 
   it.each(Object.entries(tokens.semantic as Record<string, string>))(
     'semantic %s maps to %s and is exposed as a Tailwind colour',
     (name, ref) => {
       expect(cssVar(name)).toBe(referenceToVar(ref));
-      // A role named like a primitive (`whatsapp`) is already a Tailwind colour via the primitive.
-      if (!(name in tokens.color)) {
-        expect(cssVar(`color-${name}`)).toBe(`var(--${name})`);
-      }
+      expect(cssVar(`color-${name}`)).toBe(`var(--${name})`);
     },
   );
 
@@ -58,6 +72,7 @@ describe('tokens.css mirrors docs/design/tokens.json', () => {
     ...flatten(tokens.font.size, 'text'),
     ...flatten(tokens.font['line-height'], 'leading'),
     ...flatten(tokens.font['letter-spacing'], 'tracking'),
+    ...flatten(tokens.breakpoint, 'breakpoint'),
     ...flatten(tokens.motion.easing, 'ease'),
     ...flatten(tokens.motion.duration, 'duration'),
     ...flatten(tokens.z, 'z'),
@@ -69,14 +84,54 @@ describe('tokens.css mirrors docs/design/tokens.json', () => {
     expect(cssVar('spacing')).toBe(tokens.spacing['base-unit']);
     expect(cssVar('section-y')).toBe(tokens.spacing['section-y']);
     expect(cssVar('gutter')).toBe(tokens.spacing.gutter);
+    expect(cssVar('header-gutter')).toBe(tokens.spacing['header-gutter']);
     expect(cssVar('container-site')).toBe(tokens.spacing['container-max']);
   });
 
   it('font stacks start with the next/font variable and keep the token fallbacks', () => {
     const fallback = (stack: string) => stack.split(',').slice(1).join(',').trim();
     expect(cssVar('font-display')).toBe(
-      `var(--font-fraunces), ${fallback(tokens.font.family.display)}`,
+      `var(--font-gilda), ${fallback(tokens.font.family.display)}`,
     );
-    expect(cssVar('font-sans')).toBe(`var(--font-manrope), ${fallback(tokens.font.family.sans)}`);
+    expect(cssVar('font-sans')).toBe(`var(--font-dm-sans), ${fallback(tokens.font.family.sans)}`);
+  });
+
+  it('legacy palette aliases only point at current primitives (removed with the admin restyle)', () => {
+    const legacy = [...declarations].filter(([name = '']) =>
+      /^--color-(bamboo|cane|sand|ink|earth|error)-\d+$/.test(name),
+    );
+    expect(legacy.length).toBeGreaterThan(0);
+    for (const [name, value] of legacy) {
+      const target = /^var\(--color-([\w-]+)\)$/.exec(value)?.[1];
+      expect(target && target in colors, `${name}: ${value}`).toBe(true);
+    }
+  });
+});
+
+describe('palette contrast (WCAG 2.2)', () => {
+  const pairs = (key: 'text' | 'non-text') =>
+    (tokens.contrast[key] as [string, string][]).map(([fg, bg]) => [
+      fg,
+      bg,
+      colors[fg]!,
+      colors[bg]!,
+    ]);
+
+  it.each(pairs('text'))('text %s on %s reaches 4.5:1', (_fg, _bg, fg, bg) => {
+    expect(contrast(fg, bg)).toBeGreaterThanOrEqual(4.5);
+  });
+
+  it.each(pairs('non-text'))('focus ring %s on %s reaches 3:1', (_fg, _bg, fg, bg) => {
+    expect(contrast(fg, bg)).toBeGreaterThanOrEqual(3);
+  });
+
+  it('the mockup muted grey would fail on ivory (regression guard for the fix)', () => {
+    expect(contrast('#6d756f', colors.ivory!)).toBeLessThan(4.5);
+    expect(contrast(colors['ink-muted']!, colors.ivory!)).toBeGreaterThanOrEqual(4.5);
+  });
+
+  it('the semantic focus rings use the checked colours', () => {
+    expect(tokens.semantic.ring).toBe('{color.green}');
+    expect(tokens.semantic['ring-on-dark']).toBe('{color.gold}');
   });
 });

@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import Image from 'next/image';
+import { BrandLogo } from '@/components/brand/brand-logo';
 import { LoginForm } from './login-form';
 
 export const metadata: Metadata = { title: 'Iniciar sesión' };
@@ -19,15 +19,9 @@ export default async function LoginPage({
   return (
     <main className="flex min-h-dvh items-center justify-center px-4 py-12">
       <div className="w-full max-w-sm rounded-md border border-border bg-card p-8 shadow-sm">
-        <Image
-          src="/brand/logo.svg"
-          alt="Hotel Bambú Plaza"
-          width={196}
-          height={50}
-          priority
-          unoptimized
-          className="mx-auto"
-        />
+        <div className="flex justify-center">
+          <BrandLogo label="Hotel Bambú Plaza" />
+        </div>
         <h1 className="mt-6 text-center text-2xl font-semibold text-bamboo-900">
           Panel de administración
         </h1>

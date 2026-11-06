@@ -6,22 +6,50 @@
     background-color: var(--color-background);
     color: var(--color-foreground);
     font-family: var(--font-sans);
+    line-height: var(--leading-body);
     -webkit-font-smoothing: antialiased;
   }
 
+  /* Mockup type: Gilda Display ships one weight, so never synthesize a faux bold. */
   h1,
   h2,
   h3 {
     font-family: var(--font-display);
-    font-variation-settings: 'SOFT' 50;
-    font-optical-sizing: auto;
+    font-weight: 400;
+    font-synthesis-weight: none;
+    line-height: var(--leading-heading);
+  }
+  h1 {
     letter-spacing: var(--tracking-display);
-    line-height: var(--leading-tight);
+  }
+  h2 {
+    letter-spacing: var(--tracking-h2);
   }
 
+  /*
+   * Focus ring (mockup defect 11): the mockup's gold ring is 2.1:1 on ivory. Green on light
+   * surfaces (≥ 5.6:1) and gold on dark ones (≥ 5.9:1); both checked in styles/tokens.test.ts.
+   */
+  :root {
+    --focus-ring: var(--color-ring);
+  }
+  [data-surface='dark'],
+  .bg-surface-dark,
+  .bg-charcoal,
+  .bg-green-900,
+  .bg-bamboo-800,
+  .bg-bamboo-900 {
+    --focus-ring: var(--color-ring-on-dark);
+  }
   :focus-visible {
-    outline: 2px solid var(--color-ring);
-    outline-offset: 2px;
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 3px;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    html {
+      scroll-behavior: smooth;
+    }
   }
 
   @media (prefers-reduced-motion: reduce) {

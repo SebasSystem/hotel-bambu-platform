@@ -40,7 +40,7 @@ export function Hero({ title, kicker, subtitle, body, ctaLabel, images, whatsapp
       id="inicio"
       data-fab-sentinel
       aria-labelledby="hero-title"
-      className="hero relative -mt-(--header-h) lg:mx-auto lg:mt-0 lg:grid lg:max-w-(--container-site) lg:grid-cols-12 lg:items-center lg:gap-12 lg:px-(--gutter) lg:pt-10 lg:pb-20"
+      className="hero relative lg:mx-auto lg:mt-0 lg:grid lg:max-w-(--container-site) lg:grid-cols-12 lg:items-center lg:gap-12 lg:px-(--gutter) lg:pt-10 lg:pb-20"
     >
       {slides.length > 0 ? (
         <div className="hero-media absolute inset-0 lg:relative lg:order-2 lg:col-span-7 lg:h-[min(80vh,46rem)]">
@@ -56,7 +56,7 @@ export function Hero({ title, kicker, subtitle, body, ctaLabel, images, whatsapp
       ) : null}
 
       <div
-        className={`relative z-[1] flex min-h-[100svh] flex-col justify-end px-(--gutter) pt-[calc(var(--header-h)+2rem)] pb-14 lg:order-1 lg:col-span-5 lg:min-h-0 lg:justify-center lg:p-0 ${
+        className={`relative z-[1] flex min-h-[calc(100svh-var(--header-h))] flex-col justify-end px-(--gutter) pt-8 pb-14 lg:order-1 lg:col-span-5 lg:min-h-0 lg:justify-center lg:p-0 ${
           slides.length > 0
             ? 'text-sand-50 lg:text-foreground'
             : 'bg-sand-100 text-foreground lg:bg-transparent'

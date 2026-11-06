@@ -1,18 +1,21 @@
-/** Shared class lists for public-site controls (tokens from styles/tokens.css). */
+import { buttonClass } from '@/components/ui/button';
 
-const base =
-  'inline-flex min-h-11 items-center justify-center gap-2 rounded-pill px-6 py-2.5 text-sm font-semibold transition-[background-color,color,border-color,filter] duration-(--duration-fast) ease-(--ease-standard)';
-
+/**
+ * Shared class lists for public-site controls. The keys predate the mockup port; they now map to
+ * the mockup button variants (components/ui/button.ts) so existing pages inherit the new look.
+ */
 export const button = {
-  primary: `${base} bg-primary text-primary-foreground hover:bg-primary-hover`,
-  /** `ink-900` on `#25D366` (8.43:1); never white text on WhatsApp green. */
-  whatsapp: `${base} bg-whatsapp text-whatsapp-foreground hover:brightness-95`,
-  outline: `${base} border border-bamboo-700 text-bamboo-700 hover:bg-bamboo-100`,
-  outlineOnDark: `${base} border border-sand-50/60 text-sand-50 hover:bg-sand-50/10`,
-  light: `${base} bg-sand-50 text-bamboo-900 hover:bg-white`,
+  primary: buttonClass('primary'),
+  /** WhatsApp CTAs use the brand primary (mockup "Consultar"); the FAB keeps WhatsApp green. */
+  whatsapp: buttonClass('primary'),
+  outline: buttonClass('ghost'),
+  outlineOnDark: buttonClass('ghostOnDark'),
+  light: buttonClass('light'),
+  dark: buttonClass('dark'),
 };
 
+/** Page container: content capped at 1440 px (mockup has none; spec §1.6). */
 export const container = 'mx-auto w-full max-w-(--container-site) px-(--gutter)';
 
 export const link =
-  'font-semibold text-primary underline decoration-bamboo-300 decoration-2 underline-offset-4 transition-colors duration-(--duration-fast) hover:decoration-primary';
+  'font-semibold text-primary underline decoration-sage decoration-2 underline-offset-4 transition-colors duration-(--duration-fast) hover:decoration-primary';

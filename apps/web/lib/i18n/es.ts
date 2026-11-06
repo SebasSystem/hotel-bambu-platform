@@ -18,6 +18,8 @@ export const ui = {
   whatsapp: {
     cta: 'Escríbenos por WhatsApp',
     short: 'WhatsApp',
+    stay: 'Consultar estadía',
+    viaWhatsApp: 'por WhatsApp',
     room: 'Consultar por WhatsApp',
     floating: 'Escribir por WhatsApp',
     newTab: '(se abre en una pestaña nueva)',
@@ -64,7 +66,8 @@ export const ui = {
   hero: { pause: 'Pausar presentación', play: 'Reanudar presentación' },
   footer: {
     contact: 'Contacto',
-    explore: 'Explora',
+    explore: 'Explorar',
+    info: 'Información',
     legal: 'Legal',
     social: 'Redes sociales',
     rnt: 'Registro Nacional de Turismo (RNT)',

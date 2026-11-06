@@ -36,10 +36,12 @@ export default async function SiteLayout({ children }: { children: ReactNode }) 
         {ui.skipToContent}
       </a>
       <Header hotelName={site.hotel.name} whatsappUrl={whatsappUrl} />
-      <main id="contenido" tabIndex={-1} className="pt-(--header-h) outline-none">
+      <main id="contenido" tabIndex={-1} data-menu-inert="" className="outline-none">
         {children}
       </main>
-      <Footer site={site} whatsappUrl={whatsappUrl} />
+      <div data-menu-inert="">
+        <Footer site={site} whatsappUrl={whatsappUrl} />
+      </div>
       {whatsappUrl ? <WhatsAppFab href={whatsappUrl} /> : null}
       <MotionBoot />
     </ConsentProvider>

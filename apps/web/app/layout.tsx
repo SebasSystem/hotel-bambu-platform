@@ -3,7 +3,7 @@ import type { ReactNode } from 'react';
 import { isIndexable, siteUrl } from '@/lib/seo/config';
 import { DEFAULT_OG_IMAGE } from '@/lib/seo/metadata';
 import '@/styles/globals.css';
-import { fraunces, manrope } from './fonts';
+import { dmSans, gildaDisplay } from './fonts';
 
 /**
  * Site-wide metadata, computed per request so deployment flags apply without a rebuild:
@@ -31,12 +31,16 @@ export function generateMetadata(): Metadata {
 }
 
 export const viewport: Viewport = {
-  themeColor: '#1D6247',
+  themeColor: '#315c45',
 };
 
 export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
   return (
-    <html lang="es-CO" className={`${fraunces.variable} ${manrope.variable}`}>
+    <html
+      lang="es-CO"
+      data-scroll-behavior="smooth"
+      className={`${dmSans.variable} ${gildaDisplay.variable}`}
+    >
       <body className="min-h-dvh bg-background text-foreground">{children}</body>
     </html>
   );
