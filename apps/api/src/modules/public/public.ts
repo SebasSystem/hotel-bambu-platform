@@ -20,6 +20,7 @@ import {
 } from '@hotel-bambu/shared';
 import { z } from 'zod';
 import type { Env } from '../../config/env.js';
+import { PrismaService } from '../../prisma/prisma.service.js';
 import { Public, RateLimit } from '../../common/request-context.js';
 import { zod } from '../../common/zod-validation.pipe.js';
 import { AmenitiesModule, AmenitiesService } from '../amenities/amenities.js';
@@ -62,6 +63,7 @@ export class PublicController {
     private readonly socialLinks: SocialLinksService,
     private readonly nearbyPlaces: NearbyPlacesService,
     private readonly analytics: AnalyticsService,
+    private readonly prisma: PrismaService,
     config: ConfigService<Env, true>,
   ) {
     this.mediaBase = config.get('S3_PUBLIC_URL', { infer: true });
@@ -102,11 +104,31 @@ export class PublicController {
     };
   }
 
-  /** Published room types with their count of published rooms (ADR 0016). */
+  /**
+   * Published room types with their count of published rooms (ADR 0016), plus the bed setup and
+   * area of each type (D6): the web's room cards need them, and one extra indexed query here
+   * replaces one detail request per type.
+   */
   @Get('room-types')
   @Header('Cache-Control', PUBLIC_CACHE)
-  listRoomTypes() {
-    return this.roomTypes.listPublished();
+  async listRoomTypes() {
+    const [types, facts] = await Promise.all([
+      this.roomTypes.listPublished(),
+      this.prisma.roomType.findMany({
+        where: { status: 'PUBLISHED' },
+        select: { slug: true, beds: true, areaM2: true },
+      }),
+    ]);
+    const bySlug = new Map(facts.map((fact) => [fact.slug, fact]));
+    return types.map((type) => {
+      const fact = bySlug.get(type.slug);
+      const area = fact?.areaM2 ?? null;
+      return {
+        ...type,
+        beds: (fact?.beds ?? null) as { type: string; count: number }[] | null,
+        areaM2: area === null ? null : Number(area),
+      };
+    });
   }
 
   /** Type detail; an old slug (renamed type or former room URL) answers { redirectTo }. */

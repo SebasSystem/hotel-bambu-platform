@@ -31,6 +31,8 @@ function room(
     cover: null,
     publishedRoomCount: 1,
     updatedAt: '2026-11-01T00:00:00.000Z',
+    beds: null,
+    areaM2: null,
     amenities: [
       { name: 'Wi-Fi', iconKey: 'wifi' },
       ...(slug.endsWith('tv') ? [{ name: 'Televisor', iconKey: 'tv' }] : []),

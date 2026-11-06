@@ -24,7 +24,6 @@ import {
   getGallery,
   getNearbyPlaces,
   getPolicies,
-  getRoomTypeDetails,
   getRoomTypes,
   getSite,
   getSiteImages,
@@ -58,10 +57,9 @@ export async function generateMetadata(): Promise<Metadata> {
  * only switches sections on or off. Headings are code (ADR 0016), facts come from the API.
  */
 export default async function HomePage() {
-  const [site, rooms, details, gallery, nearby, policies, faqs, images] = await Promise.all([
+  const [site, rooms, gallery, nearby, policies, faqs, images] = await Promise.all([
     getSite(),
     getRoomTypes(),
-    getRoomTypeDetails(),
     getGallery(),
     getNearbyPlaces(),
     getPolicies(),
@@ -103,7 +101,6 @@ export default async function HomePage() {
       {isSectionEnabled(site, 'ROOMS') ? (
         <RoomTypesSection
           rooms={rooms}
-          details={details}
           roomCount={roomCount}
           ctaFor={(room) => contactCta(site, { kind: 'roomType', name: room.name })}
         />

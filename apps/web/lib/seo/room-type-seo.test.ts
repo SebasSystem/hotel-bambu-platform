@@ -20,11 +20,26 @@ const type = {
 
 describe('roomTypeSeo (generated from the type and the city, ADR 0016)', () => {
   it('titles the page with the type, the capacity and the city, brand last', () => {
+    expect(roomTypeSeo({ ...type, name: 'Suite' }, hotel).title).toBe(
+      'Suite para 2 personas en Mocoa – Hotel Bambú Plaza',
+    );
+  });
+
+  it('drops the city, then the capacity, to keep the title within 60 characters', () => {
     expect(roomTypeSeo(type, hotel).title).toBe(
-      'Habitación de pareja para 2 personas en Mocoa – Hotel Bambú Plaza',
+      'Habitación de pareja para 2 personas – Hotel Bambú Plaza',
     );
     expect(roomTypeSeo({ ...type, capacity: 1 }, hotel).title).toBe(
-      'Habitación de pareja para 1 persona en Mocoa – Hotel Bambú Plaza',
+      'Habitación de pareja para 1 persona – Hotel Bambú Plaza',
+    );
+    const long = roomTypeSeo({ ...type, name: 'Habitación familiar con balcón' }, hotel).title;
+    expect(long).toBe('Habitación familiar con balcón – Hotel Bambú Plaza');
+    expect(long.length).toBeLessThanOrEqual(60);
+  });
+
+  it('ends with the contact call to action when it fits', () => {
+    expect(roomTypeSeo({ ...type, amenities: [] }, hotel, 'whatsapp').description).toBe(
+      'Habitación de pareja para 2 personas en Hotel Bambú Plaza, Mocoa, Putumayo. 1 cama doble. Reserva directa por WhatsApp.',
     );
   });
 
@@ -47,7 +62,7 @@ describe('roomTypeSeo (generated from the type and the city, ADR 0016)', () => {
     );
   });
 
-  it('pluralises beds and keeps the description within 160 characters', () => {
+  it('pluralises beds and keeps the description within 155 characters', () => {
     const long = roomTypeSeo(
       {
         ...type,
@@ -62,7 +77,7 @@ describe('roomTypeSeo (generated from the type and the city, ADR 0016)', () => {
       hotel,
     ).description;
     expect(long).toContain('2 camas dobles, 1 cama sencilla');
-    expect(long.length).toBeLessThanOrEqual(160);
-    expect(long).toMatch(/Desde \$ 250\.000 por noche\.$/);
+    expect(long.length).toBeLessThanOrEqual(155);
+    expect(long).toContain('Desde $ 250.000 por noche.');
   });
 });

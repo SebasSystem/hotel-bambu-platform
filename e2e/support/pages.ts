@@ -19,9 +19,14 @@ export async function firstRoomPath(page: Page): Promise<string> {
 }
 
 /** Every JSON-LD block of the current page, parsed (throws on invalid JSON). */
+/** Every JSON-LD node of the page; `@graph` blocks are flattened into their nodes. */
 export async function jsonLd(page: Page): Promise<Record<string, unknown>[]> {
   const blocks = await page.locator('script[type="application/ld+json"]').allTextContents();
-  return blocks.map((text) => JSON.parse(text) as Record<string, unknown>);
+  return blocks.flatMap((text) => {
+    const block = JSON.parse(text) as Record<string, unknown>;
+    const graph = block['@graph'];
+    return Array.isArray(graph) ? (graph as Record<string, unknown>[]) : [block];
+  });
 }
 
 /** Signs in through the login form and waits for the dashboard (counts against the login limit). */

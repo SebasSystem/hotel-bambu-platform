@@ -2,18 +2,21 @@ import Link from 'next/link';
 import { container } from '@/components/site/styles';
 import { buttonClass } from '@/components/ui/button';
 import { Eyebrow } from '@/components/ui/eyebrow';
-import { WhatsAppLink } from '@/components/site/whatsapp-link';
+import { ContactCtaLink } from '@/components/site/contact-cta';
 import { ui } from '@/lib/i18n/es';
 import { getRoomTypes, getSite } from '@/lib/public/api';
+import { contactCta } from '@/lib/public/cta';
 import { routes } from '@/lib/public/navigation';
-import { whatsAppLink } from '@/lib/public/whatsapp';
 
 export const metadata = { title: 'Página no encontrada', robots: { index: false, follow: true } };
 
-/** Useful 404 (requirement 19.1): links to the rooms and WhatsApp, inside the site shell. */
+/**
+ * Useful 404 (requirement 19.1), `noindex`, inside the site shell: the rooms, the contact CTA
+ * (WhatsApp, else the phone call), the main pages and every room type, with descriptive links.
+ */
 export default async function NotFound() {
   const [site, rooms] = await Promise.all([getSite(), getRoomTypes()]);
-  const whatsappUrl = whatsAppLink(site, { kind: 'general' });
+  const cta = contactCta(site, { kind: 'general' });
   const suggestions = rooms.slice(0, 4);
 
   return (
@@ -30,13 +33,30 @@ export default async function NotFound() {
         <Link href={routes.rooms} className={buttonClass('primary')}>
           {ui.rooms.seeAll}
         </Link>
-        {whatsappUrl ? (
-          <WhatsAppLink href={whatsappUrl} source="other" className={buttonClass('primary')} />
-        ) : null}
-        <Link href={routes.home} className={buttonClass('ghost')}>
-          {ui.nav.home}
-        </Link>
+        {cta ? <ContactCtaLink cta={cta} source="other" className={buttonClass('ghost')} /> : null}
       </div>
+      <nav aria-labelledby="secciones" className="mt-14">
+        <h2 id="secciones" className="text-h3 text-charcoal">
+          Secciones del sitio
+        </h2>
+        <ul className="mt-4 grid gap-2 sm:grid-cols-2">
+          {[
+            { href: routes.home, label: `${ui.nav.home}: ${site.hotel.name}` },
+            { href: routes.location, label: ui.pages.location },
+            { href: routes.gallery, label: ui.pages.gallery },
+            { href: routes.policies, label: ui.pages.policies },
+          ].map((item) => (
+            <li key={item.href}>
+              <Link
+                href={item.href}
+                className="font-bold text-green underline decoration-sage decoration-2 underline-offset-4 hover:decoration-green"
+              >
+                {item.label}
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </nav>
       {suggestions.length > 0 ? (
         <nav aria-labelledby="sugeridas" className="mt-14">
           <h2 id="sugeridas" className="text-h3 text-charcoal">

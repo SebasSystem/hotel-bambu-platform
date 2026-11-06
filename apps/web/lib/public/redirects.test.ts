@@ -39,4 +39,20 @@ describe('PUBLIC_REDIRECTS (merged pages, C3)', () => {
     ];
     expect(PUBLIC_REDIRECTS.filter((rule) => live.includes(rule.source))).toEqual([]);
   });
+
+  it('covers every public page removed since v1 (D6 audit of the git history)', () => {
+    // Pages deleted from apps/web/app/(site): contacto and preguntas-frecuentes (C3),
+    // servicios (D3). Old room URLs answer a permanent redirect from the API slug map.
+    const removed = ['/contacto', '/preguntas-frecuentes', '/servicios'];
+    expect(PUBLIC_REDIRECTS.map((rule) => rule.source).sort()).toEqual(removed.sort());
+  });
+
+  it('lands on a live page in one hop (no chains, no loops)', () => {
+    const sources = new Set<string>(PUBLIC_REDIRECTS.map((rule) => rule.source));
+    const live = new Set<string>([routes.home, routes.rooms, routes.location, routes.policies]);
+    for (const rule of PUBLIC_REDIRECTS) {
+      expect(sources.has(rule.destination)).toBe(false);
+      expect(live.has(rule.destination)).toBe(true);
+    }
+  });
 });

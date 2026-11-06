@@ -183,16 +183,6 @@
     }
   }
 
-  /* ─── Home fact stack (mockup .fact, defect 1: wide number column + gap) ─── */
-  .fact {
-    display: grid;
-    grid-template-columns: minmax(96px, auto) 1fr;
-    column-gap: 1.25rem;
-    align-items: baseline;
-    padding: 1.25rem 0;
-    border-bottom: 1px solid var(--color-line);
-  }
-
   /* ─── Room detail split (mockup .room-detail) ───────────────────────────── */
   .room-detail {
     display: grid;
@@ -509,8 +499,27 @@
     transform: rotate(180deg);
   }
 
+  /* Hero title: block mask for the rise-in below (the text is always in the HTML). */
+  .hero-title {
+    overflow: clip;
+    overflow-clip-margin: 0.2em;
+  }
+  .hero-title-inner {
+    display: block;
+  }
+
   /* ─── Motion (no-preference only) ───────────────────────────────────────── */
   @media (prefers-reduced-motion: no-preference) {
+    /* Pure CSS (no JavaScript): runs on first paint, transform only, so it never delays LCP. */
+    .hero-title-inner {
+      animation: hero-title-rise 800ms var(--ease-out-soft) both;
+    }
+    @media (min-width: 64rem) {
+      .hero-title-inner {
+        animation-duration: 1100ms;
+      }
+    }
+
     .hero-slide {
       transition: opacity var(--duration-slower) var(--ease-mockup);
     }
@@ -567,6 +576,12 @@
     .lightbox {
       animation: lightbox-in var(--duration-base) var(--ease-out-soft);
     }
+  }
+}
+
+@keyframes hero-title-rise {
+  from {
+    transform: translateY(105%);
   }
 }
 

@@ -8,20 +8,21 @@ import type { ContactCta } from '@/lib/public/cta';
 import { formatRoomPrice } from '@/lib/public/format';
 import { routes } from '@/lib/public/navigation';
 import { bedsText, roomExcerpt, roomTypeLabel } from '@/lib/public/rooms';
-import type { PublicRoomTypeDetail, PublicRoomTypeSummary } from '@/lib/public/types';
+import type { PublicRoomTypeSummary } from '@/lib/public/types';
 import { ContactCtaLink } from './contact-cta';
 import { SiteIcon } from './icon';
 import { Picture } from './picture';
 
 interface RoomCardProps {
+  /** The list payload carries the bed setup (D6: no detail request per card). */
   room: PublicRoomTypeSummary;
-  /** Detail of the type when loaded (beds); the summary has no bed setup. */
-  detail?: Pick<PublicRoomTypeDetail, 'beds'> | null;
   cta: ContactCta | null;
   index?: number;
   headingLevel?: 'h2' | 'h3';
   /** Photo frame: square in the catalogue grid, 4:3 when only two cards share a row. */
   frame?: 'square' | 'wide';
+  /** First card of a page whose LCP is this photo (rooms catalogue): eager + preloaded. */
+  priority?: boolean;
 }
 
 /**
@@ -32,15 +33,15 @@ interface RoomCardProps {
  */
 export function RoomCard({
   room,
-  detail,
   cta,
   index = 0,
   headingLevel: Heading = 'h3',
   frame = 'square',
+  priority = false,
 }: RoomCardProps) {
   const price = formatRoomPrice(room);
   const excerpt = roomExcerpt(room.description);
-  const facts = [ui.rooms.upTo(room.capacity), bedsText(detail?.beds)].filter(Boolean).join(' · ');
+  const facts = [ui.rooms.upTo(room.capacity), bedsText(room.beds)].filter(Boolean).join(' · ');
   return (
     <article
       data-reveal
@@ -53,6 +54,7 @@ export function RoomCard({
         {room.cover ? (
           <Picture
             media={room.cover}
+            priority={priority}
             sizes="(min-width: 62.5rem) 40vw, (min-width: 47.5rem) 45vw, 92vw"
             className="block size-full"
             imgClassName="room-card-img size-full object-cover"

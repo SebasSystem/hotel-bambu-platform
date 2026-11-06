@@ -18,7 +18,7 @@ import { ui } from '@/lib/i18n/es';
 import { breadcrumbJsonLd, roomJsonLd } from '@/lib/seo/json-ld';
 import { pageMetadata } from '@/lib/seo/metadata';
 import { roomTypeSeo } from '@/lib/seo/room-type-seo';
-import { getRoomType, getRoomTypeDetails, getRoomTypes, getSite } from '@/lib/public/api';
+import { getRoomType, getRoomTypes, getSite } from '@/lib/public/api';
 import { contactCta } from '@/lib/public/cta';
 import { routes } from '@/lib/public/navigation';
 import { otherRooms, roomTypeLabel, roomTypeLead } from '@/lib/public/rooms';
@@ -30,9 +30,14 @@ export async function generateMetadata({
   const result = await getRoomType(slug);
   if (result.kind !== 'room') return {};
   const { room } = result;
-  const { hotel } = await getSite();
+  const site = await getSite();
+  const { hotel } = site;
   // Generated from the type and the city (ADR 0016: no per-room SEO fields).
-  const seo = roomTypeSeo(room, hotel);
+  const seo = roomTypeSeo(
+    room,
+    hotel,
+    contactCta(site, { kind: 'roomType', name: room.name })?.kind ?? null,
+  );
   const meta = pageMetadata({
     path: routes.room(room.slug),
     siteName: hotel.name,
@@ -67,11 +72,7 @@ export default async function RoomPage({ params }: PageProps<'/habitaciones/[slu
   if (result.kind === 'not-found') notFound();
   const { room } = result;
 
-  const [site, rooms, details] = await Promise.all([
-    getSite(),
-    getRoomTypes(),
-    getRoomTypeDetails(),
-  ]);
+  const [site, rooms] = await Promise.all([getSite(), getRoomTypes()]);
   const { hotel } = site;
   const cta = contactCta(site, { kind: 'roomType', name: room.name });
   const lead = roomTypeLead(room, hotel.municipality);
@@ -279,7 +280,6 @@ export default async function RoomPage({ params }: PageProps<'/habitaciones/[slu
                 <li key={other.slug} className="flex">
                   <RoomCard
                     room={other}
-                    detail={details.get(other.slug)}
                     index={index}
                     cta={contactCta(site, { kind: 'roomType', name: other.name })}
                     frame={suggestions.length < 3 ? 'wide' : 'square'}

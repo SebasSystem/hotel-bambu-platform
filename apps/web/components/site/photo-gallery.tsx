@@ -7,6 +7,7 @@ import { useEffect, useRef, useState } from 'react';
 import { ui } from '@/lib/i18n/es';
 import { Lightbox } from './lightbox';
 import { Picture } from './picture';
+import { usePageLoaded } from './use-page-loaded';
 
 export type PhotoGalleryVariant = 'masonry' | 'strip' | 'room';
 
@@ -63,7 +64,16 @@ export function PhotoGallery({ images, variant, captions = [] }: PhotoGalleryPro
     triggers.current[opener.current]?.focus();
   }, [open]);
 
-  const tile = (media: PublicMedia, index: number, className: string, sizes: string) => (
+  // Room thumbnails (fixed-size overlay buttons, so no layout shift) get their photo after `load`.
+  const loaded = usePageLoaded();
+
+  const tile = (
+    media: PublicMedia,
+    index: number,
+    className: string,
+    sizes: string,
+    deferred = false,
+  ) => (
     <button
       key={media.id}
       ref={(node) => {
@@ -73,14 +83,20 @@ export function PhotoGallery({ images, variant, captions = [] }: PhotoGalleryPro
       onClick={() => show(index)}
       className={`photo-tile group ${className}`}
     >
-      <Picture
-        media={media}
-        priority={variant === 'room' && index === 0}
-        sizes={sizes}
-        decorative
-        className="block size-full"
-        imgClassName="photo-tile-img size-full object-cover"
-      />
+      {deferred && !loaded ? (
+        <span aria-hidden="true" className="block size-full bg-white/20" />
+      ) : (
+        <Picture
+          media={media}
+          // The first photo is the LCP of the room page and of the gallery page; the home strip sits
+          // far below the fold (D6).
+          priority={index === 0 && variant !== 'strip'}
+          sizes={sizes}
+          decorative
+          className="block size-full"
+          imgClassName="photo-tile-img size-full object-cover"
+        />
+      )}
       {captions[index] ? <span className="photo-tile-label">{captions[index]}</span> : null}
       <span className="sr-only">{ui.gallery.open(media.altText)}</span>
     </button>
@@ -102,6 +118,7 @@ export function PhotoGallery({ images, variant, captions = [] }: PhotoGalleryPro
                   i + 1,
                   'size-16 rounded-sm border-2 border-white/80 tab:size-20',
                   '80px',
+                  true,
                 ),
               )}
             {images.length > ROOM_THUMBS + 1 ? (

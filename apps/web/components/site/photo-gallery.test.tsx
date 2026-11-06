@@ -2,6 +2,7 @@
 import type { PublicMedia } from '@hotel-bambu/shared';
 import { cleanup, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { renderToString } from 'react-dom/server';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PhotoGallery } from './photo-gallery';
 
@@ -98,5 +99,23 @@ describe('PhotoGallery lightbox', () => {
     view.rerender(page());
     expect(dialog()).toBeNull();
     expect(main().hasAttribute('inert')).toBe(false);
+  });
+});
+
+describe('PhotoGallery room variant loading (D6)', () => {
+  afterEach(cleanup);
+
+  it('server-renders only the main photo; thumbnails keep their buttons but load after `load`', () => {
+    const html = renderToString(<PhotoGallery images={images} variant="room" />);
+    expect(html).toContain('/media/a.webp');
+    expect(html).not.toContain('/media/b.webp');
+    expect(html).not.toContain('/media/c.webp');
+    expect(html.match(/<button/g)).toHaveLength(3);
+  });
+
+  it('shows the thumbnail photos once the page has loaded', async () => {
+    const { container } = render(<PhotoGallery images={images} variant="room" />);
+    await screen.findAllByRole('button');
+    await vi.waitFor(() => expect(container.querySelectorAll('img')).toHaveLength(3));
   });
 });

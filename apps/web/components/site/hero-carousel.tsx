@@ -5,6 +5,7 @@ import { useEffect, useReducer, useRef, useState, type ReactNode } from 'react';
 import { iconButtonClass } from '@/components/ui/button';
 import { ui } from '@/lib/i18n/es';
 import { CAROUSEL_INTERVAL_MS, carouselReducer, initialCarousel } from '@/lib/public/carousel';
+import { usePageLoaded } from './use-page-loaded';
 
 const SWIPE_THRESHOLD = 45;
 const pad = (n: number) => String(n).padStart(2, '0');
@@ -14,6 +15,8 @@ const pad = (n: number) => String(n).padStart(2, '0');
  * a CSS cross-fade, autoplay every 5.5 s, a real pause toggle (`aria-pressed`, WCAG 2.2.2), prev /
  * next, swipe, and an "01 / 03" index. Reduced motion starts paused; focus inside holds the
  * rotation. One slide renders no controls. Inactive slides are `aria-hidden` and `inert`.
+ * Slides after the first stay `hidden` (not laid out, so their lazy images do not load) until the
+ * page has loaded: they no longer compete with the LCP photo for bandwidth (D6).
  * The controls sit left of the floating WhatsApp safe zone (spec defect 5).
  */
 export function HeroCarousel({ slides, label }: { slides: ReactNode[]; label: string }) {
@@ -21,6 +24,7 @@ export function HeroCarousel({ slides, label }: { slides: ReactNode[]; label: st
     initialCarousel(count, false),
   );
   const [held, setHeld] = useState(false);
+  const loaded = usePageLoaded();
   const touchX = useRef<number | null>(null);
   const multiple = slides.length > 1;
 
@@ -66,6 +70,7 @@ export function HeroCarousel({ slides, label }: { slides: ReactNode[]; label: st
             aria-label={ui.hero.slide(index + 1, slides.length)}
             aria-hidden={active ? undefined : true}
             inert={!active}
+            hidden={!loaded && !active && index > 0}
             data-active={active ? 'true' : 'false'}
             className="hero-slide absolute inset-0"
           >

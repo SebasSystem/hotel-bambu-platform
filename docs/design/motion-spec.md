@@ -27,7 +27,7 @@ From [`tokens.json`](./tokens.json) → CSS variables:
 
 | Component | Trigger | Duration / easing | Mobile | `prefers-reduced-motion: reduce` | Library |
 |---|---|---|---|---|---|
-| Hero title reveal by lines | first paint (after fonts ready, max 300ms wait) | reveal 1100ms, out-soft, stagger 0.08 | same, shorter (800ms) | text shown static | GSAP SplitText (lines) |
+| Hero title reveal (whole title, one mask) | first paint | rise 1100ms, out-soft | same, shorter (800ms) | text shown static | CSS keyframes (D6: GSAP SplitText removed, it cost ~32 KB of JS on the home) |
 | Hero image cross-fade (desktop split, 2–3 photos) | auto every 6s | slower 900ms, in-out-soft | single image, no rotation | single static image | CSS (opacity) + pause button (WCAG 2.2.2) |
 | Header transparent → solid + blur | scroll > 24px | base 320ms, standard | same | instant state change | CSS + IntersectionObserver |
 | Section fade-up | element enters viewport (15%) | slow 600ms, out-soft, `--reveal-y` | same | none, content visible | CSS (`animation-timeline: view()` where supported) with IO fallback |

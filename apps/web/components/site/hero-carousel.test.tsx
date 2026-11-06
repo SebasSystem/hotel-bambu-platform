@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { renderToString } from 'react-dom/server';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { HeroCarousel } from './hero-carousel';
 
@@ -51,6 +52,23 @@ describe('HeroCarousel', () => {
     expect(groups[0]!.getAttribute('aria-hidden')).toBeNull();
     expect(groups[1]!.getAttribute('aria-hidden')).toBe('true');
     expect(groups[1]!.hasAttribute('inert')).toBe(true);
+  });
+
+  it('keeps the later slides out of the server HTML layout so only slide 1 loads before LCP', () => {
+    const html = renderToString(<HeroCarousel slides={slides} label="Fotos del hotel" />);
+    const groups = html.match(/<div[^>]*role="group"[^>]*>/g) ?? [];
+    expect(groups).toHaveLength(3);
+    expect(groups[0]).not.toContain('hidden');
+    expect(groups[1]).toContain('hidden=""');
+    expect(groups[2]).toContain('hidden=""');
+  });
+
+  it('shows every slide once the page has loaded', () => {
+    render(<HeroCarousel slides={slides} label="Fotos del hotel" />);
+    act(() => {
+      vi.runOnlyPendingTimers();
+    });
+    expect(slideGroups().filter((group) => group.hidden)).toEqual([]);
   });
 
   it('autoplays every 5.5 s and stops when paused', () => {

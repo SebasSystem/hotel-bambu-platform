@@ -16,7 +16,6 @@ import type {
   PublicMedia,
   PublicNearbyPlace,
   PublicPolicy,
-  PublicRoomTypeDetail,
   PublicRoomTypeSummary,
 } from '@/lib/public/types';
 import { LocationBlock, TextBlock } from './blocks';
@@ -74,12 +73,10 @@ export function TrustStrip({ items }: { items: TrustItem[] }) {
 /** Deep-green band with one card per published room type (replaces the old amenity grid). */
 export function RoomTypesSection({
   rooms,
-  details,
   roomCount,
   ctaFor,
 }: {
   rooms: PublicRoomTypeSummary[];
-  details: Map<string, PublicRoomTypeDetail>;
   roomCount: number;
   ctaFor: (room: PublicRoomTypeSummary) => ContactCta | null;
 }) {
@@ -111,7 +108,6 @@ export function RoomTypesSection({
             <li key={room.slug} className="flex">
               <RoomCard
                 room={room}
-                detail={details.get(room.slug)}
                 index={index}
                 cta={ctaFor(room)}
                 frame={rooms.length <= 2 ? 'wide' : 'square'}

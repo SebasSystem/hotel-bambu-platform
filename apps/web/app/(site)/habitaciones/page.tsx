@@ -5,7 +5,7 @@ import { container } from '@/components/site/styles';
 import { ui } from '@/lib/i18n/es';
 import { pageMetadata } from '@/lib/seo/metadata';
 import { roomsSeo } from '@/lib/seo/page-seo';
-import { getRoomTypeDetails, getRoomTypes, getSite } from '@/lib/public/api';
+import { getRoomTypes, getSite } from '@/lib/public/api';
 import { contactCta } from '@/lib/public/cta';
 import { routes } from '@/lib/public/navigation';
 import {
@@ -34,12 +34,7 @@ export async function generateMetadata(): Promise<Metadata> {
  * (ADR 0016: one card per type; the kicker counts the published rooms).
  */
 export default async function RoomsPage({ searchParams }: PageProps<'/habitaciones'>) {
-  const [site, rooms, details, query] = await Promise.all([
-    getSite(),
-    getRoomTypes(),
-    getRoomTypeDetails(),
-    searchParams,
-  ]);
+  const [site, rooms, query] = await Promise.all([getSite(), getRoomTypes(), searchParams]);
   const roomCount = publishedRoomTotal(rooms);
   const filters = roomTypeFilters(rooms);
   const requested = roomTypeFromParam(query.tipo);
@@ -85,8 +80,8 @@ export default async function RoomsPage({ searchParams }: PageProps<'/habitacion
               <li key={room.slug} className="flex">
                 <RoomCard
                   room={room}
-                  detail={details.get(room.slug)}
                   index={index}
+                  priority={index === 0}
                   headingLevel="h2"
                   frame={visible.length < 3 ? 'wide' : 'square'}
                   cta={contactCta(site, { kind: 'roomType', name: room.name })}

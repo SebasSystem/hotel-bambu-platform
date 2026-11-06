@@ -16,6 +16,11 @@ import { absoluteUrl } from './config';
  * schema.org JSON-LD builders (requirement 19.2, research §5). Only real, configured hotel data:
  * every optional property is omitted when the hotel has not filled it in. No `aggregateRating`
  * or `review` (self-serving reviews are ineligible) and no `FAQPage` (retired in May 2026).
+ *
+ * Rooms are plain `HotelRoom` nodes, not `["HotelRoom","Product"]`: a Product with an Offer makes
+ * Google evaluate the page for merchant listings and product snippets (shipping, returns,
+ * availability warnings) that do not apply to a hotel. The rate is an `Offer` linked the way the
+ * schema.org hotels guide allows: Hotel `makesOffer` Offer, Offer `itemOffered` HotelRoom (D6).
  */
 
 type Json = Record<string, unknown>;
@@ -76,12 +81,16 @@ function features(names: string[]): Json[] {
   return names.map((name) => ({ '@type': 'LocationFeatureSpecification', name, value: true }));
 }
 
+const roomUrl = (room: Pick<RoomInput, 'slug'>) => absoluteUrl(routes.room(room.slug));
+const roomId = (room: Pick<RoomInput, 'slug'>) => `${roomUrl(room)}#habitacion`;
+
 /** `Offer` for a priced room type: nightly lease in COP, as visible on the page. */
-function offer(room: RoomInput, url: string): Json | null {
+function offer(room: RoomInput): Json | null {
   if (room.basePrice === null) return null;
   return {
     '@type': 'Offer',
-    url,
+    itemOffered: { '@id': roomId(room) },
+    url: roomUrl(room),
     price: room.basePrice,
     priceCurrency: room.currency,
     businessFunction: 'http://purl.org/goodrelations/v1#LeaseOut',
@@ -101,18 +110,19 @@ function offer(room: RoomInput, url: string): Json | null {
   };
 }
 
-/** `["HotelRoom","Product"]` node (schema.org hotels guide), with its Offer when priced. */
+/** `HotelRoom` node (schema.org hotels guide); its rate is a separate `Offer`. */
 function roomNode(room: RoomInput): Json {
-  const url = absoluteUrl(routes.room(room.slug));
+  const url = roomUrl(room);
   const beds = (room.beds ?? []).filter((bed) => bed.count > 0);
   return compact({
-    '@type': ['HotelRoom', 'Product'],
-    '@id': `${url}#habitacion`,
+    '@type': 'HotelRoom',
+    '@id': roomId(room),
     name: room.name,
     description: room.description,
     url,
     image: imageUrls([room.cover, ...(room.images ?? [])]),
-    occupancy: { '@type': 'QuantitativeValue', maxValue: room.capacity, unitCode: 'C62' },
+    // UN/CEFACT "IE" = persons (schema.org hotels guide).
+    occupancy: { '@type': 'QuantitativeValue', maxValue: room.capacity, unitCode: 'IE' },
     bed: beds.map((bed) => ({
       '@type': 'BedDetails',
       numberOfBeds: bed.count,
@@ -122,14 +132,13 @@ function roomNode(room: RoomInput): Json {
       ? { '@type': 'QuantitativeValue', value: room.areaM2, unitCode: 'MTK' }
       : null,
     amenityFeature: features(room.amenities.map((amenity) => amenity.name)),
-    offers: offer(room, url),
   });
 }
 
 /**
  * The single `Hotel` node (`@id` `/#hotel`): name, PostalAddress, geo, telephone, url, photos,
- * amenities, schedule, the room types it contains (`containsPlace`, each with its COP Offer when
- * priced) and a `priceRange` only when rates exist. `images` are real hotel photos (hero, gallery,
+ * amenities, schedule, the room types it contains (`containsPlace`), one COP Offer per priced type
+ * (`makesOffer`) and a `priceRange` only when rates exist. `images` are real hotel photos (hero, gallery,
  * room covers); the room covers are always added.
  */
 export function hotelJsonLd(
@@ -169,16 +178,26 @@ export function hotelJsonLd(
     numberOfRooms: roomCount > 0 ? roomCount : null,
     priceRange: priceRange(rooms),
     containsPlace: rooms.map(roomNode),
+    makesOffer: rooms.map(offer).filter((item): item is Json => item !== null),
     sameAs: site.socialLinks.map((social) => social.url),
   });
 }
 
-/** Room type page: the room node, linked to the hotel node of the home page. */
+/**
+ * Room type page: one `@graph` with the room node (linked to the hotel node of the home page) and,
+ * when priced, its Offer offered by the hotel.
+ */
 export function roomJsonLd(room: PublicRoomTypeDetail, hotel: PublicHotel): Json {
+  const roomOffer = offer(room);
   return {
     '@context': 'https://schema.org',
-    ...roomNode(room),
-    containedInPlace: { '@type': 'Hotel', '@id': HOTEL_ID(), name: hotel.name },
+    '@graph': [
+      {
+        ...roomNode(room),
+        containedInPlace: { '@type': 'Hotel', '@id': HOTEL_ID(), name: hotel.name },
+      },
+      ...(roomOffer ? [{ ...roomOffer, offeredBy: { '@id': HOTEL_ID() } }] : []),
+    ],
   };
 }
 

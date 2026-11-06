@@ -98,7 +98,44 @@ describe('gallerySeo', () => {
     const seo = gallerySeo(hotel, ['Espacios comunes', 'Detalles']);
     expect(seo.title).toBe('Galería de fotos – Hotel Bambú Plaza, Mocoa');
     expect(seo.description).toBe(
-      'Fotos reales de Hotel Bambú Plaza en Mocoa: espacios comunes y detalles.',
+      'Fotos reales de Hotel Bambú Plaza en Mocoa: espacios comunes y detalles. Conoce el hotel y sus habitaciones antes de reservar.',
     );
+  });
+});
+
+describe('length limits (titles ≤ 60, descriptions ≤ 155)', () => {
+  const long = {
+    ...hotel,
+    name: 'Hotel Bambú Plaza Mocoa Centro Histórico y Turístico',
+    address: 'Calle 8 # 7-10, barrio Centro, frente al parque principal, edificio esquinero',
+    municipality: 'San Miguel de Mocoa',
+    department: 'Putumayo',
+    checkInTime: '15:00',
+    checkOutTime: '12:00',
+  };
+  const many = [
+    type({ name: 'a', type: 'INDIVIDUAL', capacity: 1, basePrice: 90000 }),
+    type({ name: 'b', type: 'COUPLE', capacity: 2 }),
+    type({ name: 'c', type: 'TWIN', capacity: 3 }),
+    type({ name: 'd', type: 'FAMILY', capacity: 6 }),
+  ];
+  const cases = {
+    home: homeSeo(long, many, 'phone'),
+    rooms: roomsSeo(long, many, 'phone'),
+    location: locationSeo(long, 4, 'phone'),
+    policies: policiesSeo(long),
+    gallery: gallerySeo(long, ['Habitaciones', 'Espacios comunes', 'Fachada', 'Detalles']),
+  };
+
+  it.each(Object.entries(cases))('%s stays within the limits', (_page, seo) => {
+    expect(seo.title.length).toBeLessThanOrEqual(60);
+    expect(seo.description.length).toBeLessThanOrEqual(155);
+    expect(seo.description.length).toBeGreaterThan(50);
+  });
+
+  it('gives every page a different title and description', () => {
+    const seos = Object.values(cases);
+    expect(new Set(seos.map((seo) => seo.title)).size).toBe(seos.length);
+    expect(new Set(seos.map((seo) => seo.description)).size).toBe(seos.length);
   });
 });

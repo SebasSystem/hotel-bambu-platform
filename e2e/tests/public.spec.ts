@@ -34,8 +34,9 @@ test.describe('public site', () => {
     );
     const types = (await jsonLd(page)).map((block) => block['@type']);
     expect(types).toContain('BreadcrumbList');
-    // The room node is multi-typed ["HotelRoom", "Product"] (schema.org hotels guide).
-    expect(types.some((type) => Array.isArray(type) && type.includes('HotelRoom'))).toBe(true);
+    // HotelRoom only: a Product node would be evaluated for merchant listings (D6).
+    expect(types).toContain('HotelRoom');
+    expect(JSON.stringify(types)).not.toContain('Product');
   });
 
   test('room detail lists its equipment and the hotel-wide amenities; /servicios goes home', async ({
@@ -162,6 +163,50 @@ test.describe('home structure and contact fallback (C3)', () => {
     }
   });
 
+  test('the location page prints the same NAP as the Hotel JSON-LD', async ({ page }) => {
+    await page.goto('/ubicacion');
+    const hotel = (await jsonLd(page)).find((block) => block['@type'] === 'Hotel') as {
+      name: string;
+      telephone?: string;
+      address?: Record<string, string>;
+    };
+    const main = page.getByRole('main');
+    if (hotel.telephone) await expect(main).toContainText(hotel.telephone);
+    if (hotel.address) {
+      const { streetAddress, addressLocality, addressRegion } = hotel.address;
+      await expect(main).toContainText(
+        [streetAddress, addressLocality, addressRegion].filter(Boolean).join(', '),
+      );
+    }
+  });
+
+  test('every public page has one H1, a unique title and description within the limits', async ({
+    page,
+  }) => {
+    const seen = { titles: new Set<string>(), descriptions: new Set<string>() };
+    const pages = ['/', '/habitaciones', await firstRoomPath(page), '/galeria', '/ubicacion'];
+    for (const path of [...pages, '/politicas-del-hotel']) {
+      await page.goto(path);
+      await expect(page.getByRole('heading', { level: 1 })).toHaveCount(1);
+      const title = await page.title();
+      const description =
+        (await page.locator('meta[name="description"]').getAttribute('content')) ?? '';
+      expect(title.length, `${path} title`).toBeLessThanOrEqual(60);
+      expect(description.length, `${path} description`).toBeLessThanOrEqual(155);
+      expect(description.length, `${path} description`).toBeGreaterThan(50);
+      seen.titles.add(title);
+      seen.descriptions.add(description);
+      const canonical = await page.locator('link[rel="canonical"]').getAttribute('href');
+      expect(new URL(canonical ?? '').pathname.replace(/\/$/, '')).toBe(path.replace(/\/$/, ''));
+      await expect(page.locator('meta[property="og:image"]').first()).toHaveAttribute(
+        'content',
+        /^https?:\/\//,
+      );
+    }
+    expect(seen.titles.size).toBe(6);
+    expect(seen.descriptions.size).toBe(6);
+  });
+
   test('no page declares FAQPage or self-serving reviews', async ({ page }) => {
     for (const path of ['/', '/politicas-del-hotel', '/ubicacion']) {
       await page.goto(path);
@@ -260,6 +305,11 @@ test.describe('seo and headers', () => {
     expect(xml).toContain('<urlset');
     expect(xml).toMatch(/\/habitaciones\/[a-z0-9-]+<\/loc>/);
     expect(xml).not.toContain('/admin');
+    // Redirected URLs never appear (C3 merges, D3 removal, old per-room slugs).
+    for (const path of ['/contacto', '/preguntas-frecuentes', '/servicios']) {
+      expect(xml).not.toContain(`${path}<`);
+    }
+    expect(xml).not.toContain('/habitaciones/demo-');
   });
 
   test('legal pages stay noindex until approved and list pending items', async ({ page }) => {

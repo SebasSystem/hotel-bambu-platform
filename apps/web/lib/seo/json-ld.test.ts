@@ -172,11 +172,19 @@ describe('hotelJsonLd', () => {
     const places = data.containsPlace as Node[];
     expect(places).toHaveLength(2);
     expect(places[0]).toMatchObject({
-      '@type': ['HotelRoom', 'Product'],
+      '@type': 'HotelRoom',
       '@id': 'https://hotel.test/habitaciones/habitacion-pareja#habitacion',
       name: 'Habitación de pareja',
     });
     expect(places[0]).not.toHaveProperty('offers');
+    expect(data).not.toHaveProperty('makesOffer');
+  });
+
+  it('types rooms as HotelRoom only, never Product (no merchant-listing evaluation)', () => {
+    const data = hotelJsonLd({ ...site, hotel: realHotel }, [{ ...room, basePrice: 90000 }], []);
+    const json = JSON.stringify(data);
+    expect(json).not.toContain('"Product"');
+    expect((data.containsPlace as Node[])[0]?.['@type']).toBe('HotelRoom');
   });
 
   it('adds the price range and one COP Offer per priced room type', () => {
@@ -191,8 +199,13 @@ describe('hotelJsonLd', () => {
     );
     expect(data.priceRange).toBe('COP 90.000 – 150.000');
     const places = data.containsPlace as Node[];
-    expect(places[0]?.offers).toEqual({
+    expect(places.every((place) => !('offers' in place))).toBe(true);
+    // schema.org hotels guide: Hotel --makesOffer--> Offer --itemOffered--> HotelRoom.
+    const offers = data.makesOffer as Node[];
+    expect(offers).toHaveLength(2);
+    expect(offers[0]).toEqual({
       '@type': 'Offer',
+      itemOffered: { '@id': 'https://hotel.test/habitaciones/habitacion-pareja#habitacion' },
       url: 'https://hotel.test/habitaciones/habitacion-pareja',
       price: 90000,
       priceCurrency: 'COP',
@@ -206,7 +219,9 @@ describe('hotelJsonLd', () => {
         valueAddedTaxIncluded: true,
       },
     });
-    expect(places[2]).not.toHaveProperty('offers');
+    expect(offers.map((offer) => (offer.itemOffered as Node)['@id'])).not.toContain(
+      'https://hotel.test/habitaciones/habitacion-doble#habitacion',
+    );
   });
 
   it('keeps the NAP identical to the one the footer shows', () => {
@@ -222,23 +237,34 @@ describe('hotelJsonLd', () => {
 });
 
 describe('roomJsonLd', () => {
+  const graph = (data: Node) => data['@graph'] as Node[];
+
   it('is a HotelRoom contained in the hotel, without an Offer when there is no price', () => {
     const data = roomJsonLd(room, hotel);
-    expect(data).toMatchObject({
-      '@context': 'https://schema.org',
-      '@type': ['HotelRoom', 'Product'],
-      occupancy: { '@type': 'QuantitativeValue', maxValue: 2, unitCode: 'C62' },
+    expect(data['@context']).toBe('https://schema.org');
+    expect(graph(data)).toHaveLength(1);
+    expect(graph(data)[0]).toMatchObject({
+      '@type': 'HotelRoom',
+      '@id': 'https://hotel.test/habitaciones/habitacion-pareja#habitacion',
+      occupancy: { '@type': 'QuantitativeValue', maxValue: 2, unitCode: 'IE' },
       url: 'https://hotel.test/habitaciones/habitacion-pareja',
       description: 'Cama doble y luz natural.',
       bed: [{ '@type': 'BedDetails', numberOfBeds: 1, typeOfBed: 'Doble' }],
       containedInPlace: { '@type': 'Hotel', '@id': 'https://hotel.test/#hotel', name: hotel.name },
     });
-    expect(data).not.toHaveProperty('offers');
+    expect(JSON.stringify(data)).not.toContain('Offer');
   });
 
-  it('adds a COP Offer when a price exists', () => {
+  it('adds a COP Offer for the room, offered by the hotel, when a price exists', () => {
     const data = roomJsonLd({ ...room, basePrice: 120000 }, hotel);
-    expect(data.offers).toMatchObject({ '@type': 'Offer', price: 120000, priceCurrency: 'COP' });
+    expect(graph(data)[1]).toMatchObject({
+      '@type': 'Offer',
+      price: 120000,
+      priceCurrency: 'COP',
+      itemOffered: { '@id': 'https://hotel.test/habitaciones/habitacion-pareja#habitacion' },
+      offeredBy: { '@id': 'https://hotel.test/#hotel' },
+    });
+    expect(JSON.stringify(data)).not.toContain('"Product"');
   });
 });
 

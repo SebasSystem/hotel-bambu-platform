@@ -46,8 +46,13 @@ export async function generateMetadata({ params }: PageProps<'/legal/[doc]'>): P
   const doc = docOf((await params).doc);
   if (!doc) return {};
   const { hotel } = await getSite();
-  const meta = pageMetadata({ path: `/legal/${doc}`, ...DOCS[doc], siteName: hotel.name });
-  return isLegalApproved() ? meta : { ...meta, robots: { index: false, follow: true } };
+  // Draft texts stay out of the index until the hotel approves them (17.3).
+  return pageMetadata({
+    path: `/legal/${doc}`,
+    ...DOCS[doc],
+    siteName: hotel.name,
+    noindex: !isLegalApproved(),
+  });
 }
 
 export default async function LegalPage({ params }: PageProps<'/legal/[doc]'>) {

@@ -1,12 +1,16 @@
 import type { PublicMedia } from '@hotel-bambu/shared';
 import type { CSSProperties } from 'react';
+import { preload } from 'react-dom';
 import { mediaFallback, mediaSize, mediaSrcSet } from '@/lib/public/media';
 
 interface PictureProps {
   media: PublicMedia;
   /** Rendered width hints for the browser, e.g. "(min-width: 64rem) 33vw, 100vw". */
   sizes: string;
-  /** LCP image only (requirement 20.3): eager + high fetch priority. */
+  /**
+   * LCP image only (requirement 20.3): eager, high fetch priority, and a `<link rel=preload>` of
+   * the responsive set in the document head (discovered before the body is parsed).
+   */
   priority?: boolean;
   className?: string;
   imgClassName?: string;
@@ -35,6 +39,16 @@ export function Picture({
   const { width, height } = mediaSize(media);
   const avif = mediaSrcSet(media, 'avif');
   const webp = mediaSrcSet(media, 'webp');
+  if (priority) {
+    // Same srcset/sizes as the <source> the browser will pick, so the preload is reused.
+    preload(fallback.url, {
+      as: 'image',
+      fetchPriority: 'high',
+      imageSrcSet: avif || webp || undefined,
+      imageSizes: sizes,
+      type: avif ? 'image/avif' : webp ? 'image/webp' : undefined,
+    });
+  }
   const style: CSSProperties = {
     objectPosition,
     backgroundColor: media.dominantColor ?? undefined,

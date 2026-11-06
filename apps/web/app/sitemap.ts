@@ -1,40 +1,17 @@
 import type { MetadataRoute } from 'next';
-import { getRoomTypes } from '@/lib/public/api';
-import { routes } from '@/lib/public/navigation';
-import { absoluteUrl, isLegalApproved } from '@/lib/seo/config';
+import { getRoomTypes, getSite } from '@/lib/public/api';
+import { isLegalApproved } from '@/lib/seo/config';
+import { buildSitemap } from '@/lib/seo/sitemap';
 
+// Per request: SITE_URL / LEGAL_APPROVED are deployment flags, and room types change from the admin.
 export const dynamic = 'force-dynamic';
 
-/**
- * sitemap.xml (requirement 19.1): public pages plus every published room type with its last edit. The merged
- * `/contacto` and `/preguntas-frecuentes` are 301s (C3) and stay out.
- * Legal pages are listed only once the hotel approved them (`LEGAL_APPROVED=true`).
- */
+/** sitemap.xml (requirement 19.1); the rules live in `lib/seo/sitemap.ts` (unit tested). */
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const rooms = await getRoomTypes();
-  const pages = [
-    { path: routes.home, priority: 1 },
-    { path: routes.rooms, priority: 0.9 },
-    { path: routes.gallery, priority: 0.6 },
-    { path: routes.location, priority: 0.8 },
-    { path: routes.policies, priority: 0.5 },
-  ];
-  const legal = isLegalApproved()
-    ? [routes.legalData, routes.legalPrivacy, routes.legalCookies].map((path) => ({
-        path,
-        priority: 0.2,
-      }))
-    : [];
-
-  return [
-    ...[...pages, ...legal].map(({ path, priority }) => ({
-      url: absoluteUrl(path),
-      priority,
-    })),
-    ...rooms.map((room) => ({
-      url: absoluteUrl(routes.room(room.slug)),
-      lastModified: new Date(room.updatedAt),
-      priority: 0.8,
-    })),
-  ];
+  const [site, rooms] = await Promise.all([getSite(), getRoomTypes()]);
+  return buildSitemap({
+    rooms,
+    hotelUpdatedAt: site.hotel.updatedAt ?? null,
+    legalApproved: isLegalApproved(),
+  });
 }

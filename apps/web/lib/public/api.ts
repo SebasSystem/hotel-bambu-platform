@@ -74,10 +74,17 @@ export const getSite = cache(async (): Promise<PublicSite> => {
   };
 });
 
-/** Published room types with their published room counts (ADR 0016). */
-export const getRoomTypes = cache(() =>
-  optional(publicGet<PublicRoomTypeSummary[]>('/room-types', [CACHE_TAGS.rooms]), []),
-);
+/**
+ * Published room types with their published room counts (ADR 0016) and bed setup (D6). A list
+ * cached before D6 has no `beds`/`areaM2` until the `rooms` tag is revalidated: default them.
+ */
+export const getRoomTypes = cache(async (): Promise<PublicRoomTypeSummary[]> => {
+  const types = await optional(
+    publicGet<PublicRoomTypeSummary[]>('/room-types', [CACHE_TAGS.rooms]),
+    [],
+  );
+  return types.map((type) => ({ ...type, beds: type.beds ?? null, areaM2: type.areaM2 ?? null }));
+});
 
 export type RoomResult =
   | { kind: 'room'; room: PublicRoomTypeDetail }
@@ -111,20 +118,6 @@ export const getFaqs = cache(() => optional(publicGet<PublicFaq[]>('/faq', [CACH
 export const getPolicies = cache(() =>
   optional(publicGet<PublicPolicy[]>('/policies', [CACHE_TAGS.policies]), []),
 );
-
-/**
- * Detail of every listed type (beds, area), for cards that show the bed setup. Each call shares the
- * tagged Data Cache with the type page; a type that fails or moved is simply left out.
- */
-export const getRoomTypeDetails = cache(async (): Promise<Map<string, PublicRoomTypeDetail>> => {
-  const types = await getRoomTypes();
-  const results = await Promise.all(
-    types.map((type) => optional(getRoomType(type.slug), { kind: 'not-found' } as RoomResult)),
-  );
-  return new Map(
-    results.flatMap((result) => (result.kind === 'room' ? [[result.room.slug, result.room]] : [])),
-  );
-});
 
 /**
  * Real hotel photos for share images and the Hotel JSON-LD: the hero slides, else the hero

@@ -5,7 +5,6 @@ import { ui } from '@/lib/i18n/es';
 import { routes } from '@/lib/public/navigation';
 import type { PublicMedia } from '@/lib/public/types';
 import { HeroCarousel } from './hero-carousel';
-import { HeroTitle } from './hero-client';
 import { Picture } from './picture';
 import type { ContactCta } from '@/lib/public/cta';
 import { ContactCtaLink } from './contact-cta';
@@ -56,12 +55,13 @@ export function Hero({ title, kicker, subtitle, rate, images, cta }: HeroProps) 
             {kicker}
           </Eyebrow>
         ) : null}
-        <HeroTitle
+        {/* CSS mask reveal (D6: replaces GSAP SplitText, ~32 KB of JavaScript on the home). */}
+        <h1
           id="hero-title"
-          className="max-w-[780px] text-[clamp(3.5rem,16vw,5.6rem)] text-balance text-white tab:text-display"
+          className="hero-title max-w-[780px] text-[clamp(3.5rem,16vw,5.6rem)] text-balance text-white tab:text-display"
         >
-          {title}
-        </HeroTitle>
+          <span className="hero-title-inner">{title}</span>
+        </h1>
         {subtitle ? (
           <p className="mt-[22px] max-w-[560px] text-[clamp(1rem,1.5vw,1.22rem)] text-pretty text-white/86">
             {subtitle}

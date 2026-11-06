@@ -153,12 +153,16 @@ export interface PublicRoomTypeSummary {
   /** ISO 8601; last edit of the type (sitemap `lastModified`). */
   updatedAt: string;
   amenities: { name: string; iconKey: string }[];
+  /**
+   * Bed setup and area, in the list too (D6): room cards show the beds without one detail
+   * request per type.
+   */
+  beds: { type: string; count: number }[] | null;
+  areaM2: number | null;
 }
 
 /** `GET /public/room-types/:slug` detail. */
 export interface PublicRoomTypeDetail extends PublicRoomTypeSummary {
-  beds: { type: string; count: number }[] | null;
-  areaM2: number | null;
   priceNotes: string | null;
   images: PublicMedia[];
 }
