@@ -74,6 +74,43 @@ test.describe('public site', () => {
   });
 });
 
+test.describe('catalogue and gallery (mockup port)', () => {
+  test('room type chips are shareable links with a live count', async ({ page }) => {
+    await page.goto('/habitaciones');
+    const chips = page.getByRole('navigation', { name: 'Filtrar por tipo de habitación' });
+    const links = chips.getByRole('link');
+    test.skip((await links.count()) < 3, 'Needs at least two published room types');
+    await expect(links.first()).toHaveAttribute('aria-current', 'page');
+    const target = links.nth(1);
+    const label = (await target.textContent())?.trim() ?? '';
+    await target.click();
+    await expect(page).toHaveURL(/\?tipo=[a-z]+$/);
+    await expect(chips.getByRole('link', { name: label })).toHaveAttribute('aria-current', 'page');
+    await expect(page.locator('main [aria-live="polite"]')).toHaveText(/\d+ habitaci/);
+    const kickers = await page.locator('main article p:first-of-type').allTextContents();
+    expect(kickers.every((text) => text.trim().toLowerCase() === label.toLowerCase())).toBe(true);
+  });
+
+  test('gallery lightbox traps focus, closes on Escape and frees the page @mobile', async ({
+    page,
+  }) => {
+    await page.goto('/galeria');
+    await rejectCookies(page);
+    const tiles = page.getByRole('button', { name: /^Ampliar imagen/ });
+    test.skip((await tiles.count()) === 0, 'Needs published gallery photos');
+    await tiles.first().click();
+    const dialog = page.getByRole('dialog');
+    await expect(dialog).toBeVisible();
+    await expect(dialog.getByRole('button', { name: 'Cerrar' })).toBeFocused();
+    await page.keyboard.press('Escape');
+    await expect(dialog).toHaveCount(0);
+    await expect(tiles.first()).toBeFocused();
+    // Nothing is left over the page: a normal link still navigates.
+    await page.getByRole('contentinfo').getByRole('link', { name: 'Habitaciones' }).click();
+    await expect(page).toHaveURL(/\/habitaciones$/);
+  });
+});
+
 test.describe('seo and headers', () => {
   test('security headers on a public page', async ({ request }) => {
     const response = await request.get('/');

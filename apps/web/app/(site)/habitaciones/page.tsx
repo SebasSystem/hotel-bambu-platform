@@ -1,13 +1,12 @@
 import type { Metadata } from 'next';
-import Link from 'next/link';
-import { PageHeader } from '@/components/site/page-header';
+import { FilterLink, PageHeader, Toolbar } from '@/components/site/page-header';
 import { RoomCard } from '@/components/site/room-card';
 import { container } from '@/components/site/styles';
 import { ui } from '@/lib/i18n/es';
 import { pageMetadata } from '@/lib/seo/metadata';
 import { getRooms, getSite } from '@/lib/public/api';
 import { routes } from '@/lib/public/navigation';
-import { ROOM_TYPES_PUBLIC, roomTypeFromParam, type RoomTypeKey } from '@/lib/public/rooms';
+import { filterRoomsByType, roomTypeFilters, roomTypeFromParam } from '@/lib/public/rooms';
 import { sectionOf } from '@/lib/public/site';
 import { whatsAppLink } from '@/lib/public/whatsapp';
 
@@ -24,16 +23,17 @@ export async function generateMetadata(): Promise<Metadata> {
   });
 }
 
+/**
+ * Rooms catalogue (mockup `#habitaciones`): sand page hero, toolbar with one chip per published
+ * room type (`?tipo=`, shareable) and a live count, then a 3/2/1-column card grid.
+ */
 export default async function RoomsPage({ searchParams }: PageProps<'/habitaciones'>) {
   const [site, rooms, query] = await Promise.all([getSite(), getRooms(), searchParams]);
   const section = sectionOf(site, 'ROOMS');
-  const active = roomTypeFromParam(query.tipo);
-  const types = (Object.keys(ROOM_TYPES_PUBLIC) as RoomTypeKey[]).filter((type) =>
-    rooms.some((room) => room.type === type),
-  );
-  const visible = active ? rooms.filter((room) => room.type === active) : rooms;
-  const filterClass =
-    'inline-flex min-h-11 items-center rounded-pill border px-5 text-sm font-semibold transition-colors';
+  const filters = roomTypeFilters(rooms);
+  const requested = roomTypeFromParam(query.tipo);
+  const active = filters.some((filter) => filter.type === requested) ? requested : null;
+  const visible = filterRoomsByType(rooms, active);
 
   return (
     <>
@@ -42,38 +42,29 @@ export default async function RoomsPage({ searchParams }: PageProps<'/habitacion
         title={section?.title ?? ui.nav.rooms}
         kicker={ui.rooms.countLabel(rooms.length)}
         intro={section?.subtitle ?? section?.body}
-      >
-        {types.length > 1 ? (
-          <nav aria-label="Filtrar por tipo de habitación" className="mt-8">
-            <ul className="flex flex-wrap gap-2">
-              <li>
-                <Link
-                  href={routes.rooms}
-                  aria-current={active ? undefined : 'page'}
-                  className={`${filterClass} ${active ? 'border-sand-200 bg-sand-50 text-bamboo-900 hover:border-bamboo-700' : 'border-bamboo-700 bg-bamboo-700 text-white'}`}
-                >
-                  {ui.rooms.all}
-                </Link>
-              </li>
-              {types.map((type) => (
-                <li key={type}>
-                  <Link
-                    href={`${routes.rooms}?tipo=${ROOM_TYPES_PUBLIC[type].param}`}
-                    aria-current={active === type ? 'page' : undefined}
-                    className={`${filterClass} ${active === type ? 'border-bamboo-700 bg-bamboo-700 text-white' : 'border-sand-200 bg-sand-50 text-bamboo-900 hover:border-bamboo-700'}`}
-                  >
-                    {ROOM_TYPES_PUBLIC[type].plural}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </nav>
+      />
+      <Toolbar label={ui.rooms.filter} count={ui.rooms.countLabel(visible.length)}>
+        {filters.length > 1 ? (
+          <>
+            <FilterLink href={routes.rooms} active={!active}>
+              {ui.rooms.all}
+            </FilterLink>
+            {filters.map((filter) => (
+              <FilterLink
+                key={filter.type}
+                href={`${routes.rooms}?tipo=${filter.param}`}
+                active={active === filter.type}
+              >
+                {filter.label}
+              </FilterLink>
+            ))}
+          </>
         ) : null}
-      </PageHeader>
+      </Toolbar>
 
-      <section aria-label={ui.nav.rooms} className={`${container} py-16`}>
+      <section aria-label={ui.nav.rooms} className={`${container} pt-12 pb-[110px]`}>
         {visible.length > 0 ? (
-          <ul className="grid gap-x-8 gap-y-14 sm:grid-cols-2 lg:grid-cols-3">
+          <ul className="grid gap-6 tab:grid-cols-2 desk:grid-cols-3">
             {visible.map((room, index) => (
               <li key={room.slug} className="flex">
                 <RoomCard

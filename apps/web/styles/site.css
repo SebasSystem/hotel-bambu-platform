@@ -119,11 +119,29 @@
     color: var(--color-green-900);
   }
 
-  /* ─── Hero ──────────────────────────────────────────────────────────────── */
-  .hero-scrim {
-    background:
-      linear-gradient(to bottom, rgb(18 57 43 / 0.55), transparent 22%),
-      linear-gradient(to top, rgb(18 57 43 / 0.9) 0%, rgb(18 57 43 / 0.45) 35%, transparent 60%);
+  /* ─── Home hero carousel (mockup .hero-carousel, spec §3) ───────────────── */
+  .home-hero {
+    position: relative;
+    isolation: isolate;
+    display: flex;
+    align-items: flex-end;
+    min-height: max(calc(100svh - var(--header-h)), 40rem);
+    overflow: hidden;
+    background: var(--color-green-900);
+    color: var(--color-white);
+  }
+  .home-hero-content {
+    position: relative;
+    z-index: 2;
+    width: min(900px, 100%);
+    padding: 3.75rem 1.375rem 8.5rem;
+  }
+  .hero-slide::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: linear-gradient(0deg, rgb(10 28 19 / 0.92) 10%, rgb(10 28 19 / 0.18) 80%);
   }
   .hero-slide {
     opacity: 0;
@@ -131,11 +149,104 @@
   .hero-slide[data-active='true'] {
     opacity: 1;
   }
-  .story-image {
-    opacity: 0;
+  /* Bottom-right, but never under the floating WhatsApp button (spec defect 5). */
+  .hero-controls {
+    position: absolute;
+    z-index: 4;
+    left: 1.375rem;
+    bottom: 2.25rem;
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
   }
-  .story-image[data-active='true'] {
-    opacity: 1;
+  .hero-index {
+    display: none;
+  }
+  @media (min-width: 47.5rem) {
+    .home-hero {
+      align-items: center;
+      min-height: calc(100svh - var(--header-h));
+    }
+    .home-hero-content {
+      width: min(900px, 92%);
+      padding: clamp(70px, 12vh, 140px) clamp(24px, 7vw, 108px) 7.5rem;
+    }
+    .hero-slide::after {
+      background:
+        linear-gradient(
+          90deg,
+          rgb(13 31 22 / 0.8) 0%,
+          rgb(13 31 22 / 0.36) 50%,
+          rgb(13 31 22 / 0.08) 80%
+        ),
+        linear-gradient(0deg, rgb(8 20 14 / 0.5), transparent 40%);
+    }
+    .hero-controls {
+      left: auto;
+      right: max(6rem, calc(clamp(24px, 6vw, 90px) + 4.5rem));
+      bottom: 3.5rem;
+    }
+    .hero-index {
+      display: block;
+    }
+  }
+
+  /* ─── Home fact stack (mockup .fact, defect 1: wide number column + gap) ─── */
+  .fact {
+    display: grid;
+    grid-template-columns: minmax(96px, auto) 1fr;
+    column-gap: 1.25rem;
+    align-items: baseline;
+    padding: 1.25rem 0;
+    border-bottom: 1px solid var(--color-line);
+  }
+
+  /* ─── Room detail split (mockup .room-detail) ───────────────────────────── */
+  .room-detail {
+    display: grid;
+  }
+  .room-detail-media {
+    position: relative;
+    height: 60vh;
+    min-height: 420px;
+    background: var(--color-green-900);
+  }
+  @media (min-width: 62.5rem) {
+    .room-detail {
+      grid-template-columns: 1.25fr 0.75fr;
+      min-height: calc(100svh - var(--header-h));
+    }
+    .room-detail-media {
+      position: sticky;
+      top: var(--header-h);
+      height: calc(100svh - var(--header-h));
+      min-height: 0;
+    }
+  }
+  .detail-block {
+    padding: 1.625rem 0;
+    border-top: 1px solid var(--color-line);
+  }
+  .detail-label {
+    margin-bottom: 0.875rem;
+    font-family: var(--font-sans);
+    font-size: 0.78rem;
+    font-weight: 700;
+    line-height: var(--leading-heading);
+    letter-spacing: var(--tracking-label);
+    text-transform: uppercase;
+    color: var(--color-charcoal);
+  }
+
+  /* ─── CTA panel and map placeholder (mockup .cta-panel, .map-placeholder) ─ */
+  .cta-panel-shade {
+    background: linear-gradient(90deg, rgb(16 44 31 / 0.94), rgb(16 44 31 / 0.25));
+  }
+  .map-placeholder {
+    background:
+      radial-gradient(circle at 68% 35%, rgb(200 166 106 / 0.52), transparent 12%),
+      repeating-linear-gradient(135deg, transparent 0 38px, rgb(255 255 255 / 0.08) 38px 40px),
+      linear-gradient(135deg, #cbd8c5, #8fac8e 42%, var(--color-green));
   }
 
   /* ─── Floating WhatsApp (mockup .whatsapp-fab) ───────────────────────── */
@@ -177,7 +288,7 @@
     padding: 0;
     border: 0;
     border-radius: var(--radius-xl);
-    background: var(--color-sand-50);
+    background: var(--color-ivory);
     color: var(--color-foreground);
     box-shadow: var(--shadow-lg);
   }
@@ -192,8 +303,8 @@
     height: 1.75rem;
     margin-top: 0.125rem;
     border-radius: var(--radius-pill);
-    background: var(--color-sand-200);
-    border: 1px solid var(--color-ink-600);
+    background: var(--color-line-strong);
+    border: 1px solid var(--color-ink-muted);
     cursor: pointer;
     transition: background-color var(--duration-fast) var(--ease-standard);
   }
@@ -205,21 +316,21 @@
     width: 1.25rem;
     height: 1.25rem;
     border-radius: 50%;
-    background: var(--color-ink-600);
+    background: var(--color-ink-muted);
     transition:
       transform var(--duration-fast) var(--ease-standard),
       background-color var(--duration-fast) var(--ease-standard);
   }
   .consent-switch:checked {
-    background: var(--color-bamboo-700);
-    border-color: var(--color-bamboo-700);
+    background: var(--color-green);
+    border-color: var(--color-green);
   }
   .consent-switch:checked::after {
     background: white;
     transform: translateX(1.25rem);
   }
   .consent-switch:focus-visible {
-    outline: 2px solid var(--color-bamboo-700);
+    outline: 2px solid var(--color-green);
     outline-offset: 3px;
   }
 
@@ -231,12 +342,12 @@
     font-family: var(--font-display);
     font-size: 1.5rem;
     line-height: 1.25;
-    color: var(--color-bamboo-900);
+    color: var(--color-green-900);
   }
   .legal-section h3 {
     margin-top: 1.5rem;
     font-weight: 600;
-    color: var(--color-bamboo-900);
+    color: var(--color-green-900);
   }
   .legal-section p,
   .legal-section ul,
@@ -269,76 +380,130 @@
   }
   .legal-table th,
   .legal-table td {
-    border: 1px solid var(--color-sand-200);
+    border: 1px solid var(--color-line-strong);
     padding: 0.625rem 0.75rem;
     text-align: left;
     vertical-align: top;
   }
   .legal-table th {
-    background: var(--color-sand-100);
+    background: var(--color-sand);
     font-weight: 600;
   }
 
-  /* ─── Gallery ───────────────────────────────────────────────────────────── */
-  .gallery-grid {
-    display: grid;
-    gap: 1rem;
-    grid-template-columns: repeat(auto-fill, minmax(min(100%, 16rem), 1fr));
+  /* ─── Photo tiles, home strip, gallery masonry (mockup .gallery-*) ─────── */
+  .photo-tile {
+    position: relative;
+    display: block;
+    overflow: hidden;
+    background: var(--color-sand);
+    cursor: zoom-in;
   }
-  .gallery-item {
-    aspect-ratio: 3 / 4;
-  }
-
-  .snap-row {
-    display: grid;
-    grid-auto-flow: column;
-    grid-auto-columns: min(78%, 20rem);
-    gap: 1rem;
-    overflow-x: auto;
-    scroll-snap-type: x mandatory;
-    overscroll-behavior-x: contain;
-    padding-bottom: 0.5rem;
-    scrollbar-width: thin;
-  }
-  .snap-row > * {
-    scroll-snap-align: start;
-  }
-
-  .lightbox {
-    width: 100%;
-    max-width: 100%;
-    height: 100dvh;
-    max-height: 100dvh;
-    margin: 0;
-    padding: 0;
-    border: 0;
-    background: rgb(18 57 43 / 0.96);
-    color: var(--color-sand-50);
-  }
-  .lightbox::backdrop {
-    background: rgb(0 0 0 / 0.6);
-  }
-  .lightbox-btn {
+  .photo-tile-label {
     position: absolute;
-    display: inline-flex;
-    width: 2.75rem;
-    height: 2.75rem;
-    align-items: center;
-    justify-content: center;
+    left: 0.75rem;
+    bottom: 0.75rem;
     border-radius: var(--radius-pill);
-    background: rgb(247 243 234 / 0.12);
-    color: var(--color-sand-50);
+    padding: 0.375rem 0.75rem;
+    background: rgb(17 31 24 / 0.68);
+    backdrop-filter: blur(8px);
+    color: var(--color-white);
+    font-size: 0.75rem;
+    font-weight: 600;
   }
-  .lightbox-btn:hover {
-    background: rgb(247 243 234 / 0.24);
+  .gallery-strip {
+    display: grid;
+    gap: 0.75rem;
+    grid-template-columns: 1fr 1fr;
+    grid-auto-rows: 180px;
+  }
+  .gallery-strip > :first-child {
+    grid-column: 1 / -1;
+    height: 280px;
+  }
+  .gallery-strip > :nth-child(4),
+  .gallery-strip > :nth-child(2):last-child {
+    grid-column: 1 / -1;
+  }
+  @media (min-width: 47.5rem) {
+    .gallery-strip {
+      grid-template-columns: 1.3fr 0.7fr 0.7fr;
+      grid-template-rows: 260px 260px;
+    }
+    .gallery-strip > :first-child {
+      grid-column: 1;
+      grid-row: 1 / span 2;
+      height: auto;
+    }
+    .gallery-strip > :nth-child(4) {
+      grid-column: 2 / span 2;
+    }
+    /* Fewer than 4 photos: the big tile still spans, the rest fill the right side. */
+    .gallery-strip > :nth-child(2):last-child {
+      grid-column: 2 / span 2;
+      grid-row: 1 / span 2;
+    }
+    .gallery-strip > :nth-child(3):last-child {
+      grid-column: 2 / span 2;
+    }
+  }
+  .gallery-masonry {
+    columns: 1;
+    column-gap: 0.875rem;
+  }
+  @media (min-width: 30rem) {
+    .gallery-masonry {
+      columns: 2;
+    }
+  }
+  @media (min-width: 62.5rem) {
+    .gallery-masonry {
+      columns: 3;
+    }
   }
 
-  .map-placeholder {
-    background-color: var(--color-sand-100);
-    background-image:
-      linear-gradient(var(--color-sand-200) 1px, transparent 1px),
-      linear-gradient(90deg, var(--color-sand-200) 1px, transparent 1px);
-    background-size: 2.5rem 2.5rem;
+  /* ─── Lightbox (mockup .lightbox; defect 6 fixed in components/site/lightbox) */
+  .lightbox {
+    position: fixed;
+    inset: 0;
+    z-index: var(--z-overlay);
+    display: grid;
+    place-items: center;
+    padding: 4.5rem 0.75rem 1.5rem;
+    color: var(--color-white);
+  }
+  .lightbox-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgb(15 26 20 / 0.86);
+    backdrop-filter: blur(5px);
+  }
+  .lightbox-figure {
+    position: relative;
+    display: grid;
+    justify-items: center;
+    gap: 0.875rem;
+    width: min(1040px, 94vw);
+    max-height: 100%;
+    text-align: center;
+  }
+  .lightbox-img {
+    width: auto;
+    max-width: 100%;
+    max-height: 78vh;
+    border-radius: var(--radius-md);
+    object-fit: contain;
+  }
+  .lightbox-close {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    z-index: 1;
+  }
+  .lightbox-nav {
+    position: absolute;
+    top: 50%;
+    z-index: 1;
+    translate: 0 -50%;
   }
 
   /* FAQ accordion marker */
@@ -349,14 +514,13 @@
     display: none;
   }
   .faq-item[open] .faq-icon {
-    transform: rotate(45deg);
+    transform: rotate(180deg);
   }
 
   /* ─── Motion (no-preference only) ───────────────────────────────────────── */
   @media (prefers-reduced-motion: no-preference) {
-    .hero-slide,
-    .story-image {
-      transition: opacity var(--duration-slower) var(--ease-in-out-soft);
+    .hero-slide {
+      transition: opacity var(--duration-slower) var(--ease-mockup);
     }
 
     .nav-link::after {
@@ -369,13 +533,21 @@
         transform var(--duration-base) var(--ease-out-soft);
     }
 
+    /* Mockup hover zooms: room card image 1.035 / .45 s, gallery tile 1.04 / .5 s. */
     .room-card-img {
-      transition: transform var(--duration-base) var(--ease-standard);
+      transition: transform var(--duration-slow) var(--ease-mockup);
+    }
+    .photo-tile-img {
+      transition: transform 500ms var(--ease-mockup);
     }
     @media (hover: hover) {
       .group:hover .room-card-img,
       .group:focus-within .room-card-img {
-        transform: scale(1.03);
+        transform: scale(1.035);
+      }
+      .photo-tile:hover .photo-tile-img,
+      .photo-tile:focus-visible .photo-tile-img {
+        transform: scale(1.04);
       }
     }
 
@@ -400,7 +572,7 @@
       }
     }
 
-    .lightbox[open] {
+    .lightbox {
       animation: lightbox-in var(--duration-base) var(--ease-out-soft);
     }
   }

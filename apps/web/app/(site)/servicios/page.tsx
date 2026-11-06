@@ -1,7 +1,8 @@
 import type { Metadata } from 'next';
-import { AmenityChips, ServiceList } from '@/components/site/blocks';
+import { FeatureGrid } from '@/components/site/blocks';
 import { PageHeader } from '@/components/site/page-header';
 import { container } from '@/components/site/styles';
+import { SectionHeading } from '@/components/ui/section-heading';
 import { ui } from '@/lib/i18n/es';
 import { pageMetadata } from '@/lib/seo/metadata';
 import { routes } from '@/lib/public/navigation';
@@ -21,6 +22,7 @@ export async function generateMetadata(): Promise<Metadata> {
   });
 }
 
+/** Services (no mockup page): page hero, then service and amenity cards in the mockup style. */
 export default async function ServicesPage() {
   const [site, services, amenities] = await Promise.all([getSite(), getServices(), getAmenities()]);
   const section = sectionOf(site, 'SERVICES');
@@ -33,20 +35,23 @@ export default async function ServicesPage() {
         kicker={section?.subtitle}
         intro={section?.body}
       />
-      <div className={`${container} grid gap-20 py-16`}>
+      <div className={`${container} grid gap-[clamp(64px,8vw,110px)] pt-12 pb-[110px]`}>
         {services.length > 0 ? (
           <section aria-label={ui.nav.services}>
-            <ServiceList services={services} />
+            <FeatureGrid items={services} columns={3} />
           </section>
         ) : (
           <p className="text-lg text-muted-foreground">{ui.empty.generic}</p>
         )}
         {amenities.length > 0 ? (
-          <section aria-labelledby="comodidades" className="border-t border-sand-200 pt-14">
-            <h2 id="comodidades" className="mb-6 text-3xl font-medium text-bamboo-900">
-              {ui.home.amenitiesTitle}
-            </h2>
-            <AmenityChips amenities={amenities} />
+          <section aria-labelledby="comodidades">
+            <SectionHeading
+              id="comodidades"
+              eyebrow={ui.home.amenitiesKicker}
+              title={ui.home.amenitiesTitle}
+              className="mb-10"
+            />
+            <FeatureGrid items={amenities} />
           </section>
         ) : null}
       </div>

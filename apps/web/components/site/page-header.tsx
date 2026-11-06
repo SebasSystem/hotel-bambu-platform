@@ -2,9 +2,10 @@ import Link from 'next/link';
 import type { ReactNode } from 'react';
 import { ui } from '@/lib/i18n/es';
 import { routes } from '@/lib/public/navigation';
+import { chipClass } from '@/components/ui/chip';
 import { breadcrumbJsonLd } from '@/lib/seo/json-ld';
 import { JsonLd } from '../seo/json-ld';
-import { SectionHeading } from './section';
+import { SectionHeading } from '@/components/ui/section-heading';
 import { container } from './styles';
 
 interface PageHeaderProps {
@@ -64,9 +65,65 @@ export function PageHeader({ title, path, kicker, intro, crumbs = [], children }
             </li>
           </ol>
         </nav>
-        <SectionHeading as="h1" surface="sand" kicker={kicker} title={title} intro={intro} />
+        <SectionHeading as="h1" surface="sand" eyebrow={kicker} title={title} intro={intro} />
         {children}
       </div>
     </div>
+  );
+}
+
+/**
+ * Filter toolbar under the page hero (mockup `.toolbar`): single-select chips on the left as links
+ * (`?tipo=` / `?categoria=`, shareable and indexable) and a live result count on the right.
+ */
+export function Toolbar({
+  label,
+  count,
+  children,
+}: {
+  label: string;
+  count: string;
+  children?: ReactNode;
+}) {
+  return (
+    <div className="border-b border-line bg-paper">
+      <div
+        className={`${container} flex flex-col gap-3 py-5 tab:flex-row tab:items-center tab:justify-between`}
+      >
+        {children ? (
+          <nav aria-label={label}>
+            <ul className="flex flex-wrap gap-2">{children}</ul>
+          </nav>
+        ) : (
+          <span />
+        )}
+        <p aria-live="polite" className="text-sm font-bold text-muted-foreground">
+          {count}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+export function FilterLink({
+  href,
+  active,
+  children,
+}: {
+  href: string;
+  active: boolean;
+  children: ReactNode;
+}) {
+  return (
+    <li>
+      <Link
+        href={href}
+        scroll={false}
+        aria-current={active ? 'page' : undefined}
+        className={`${chipClass(active)} min-h-11`}
+      >
+        {children}
+      </Link>
+    </li>
   );
 }

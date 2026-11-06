@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { otherRooms, roomTypeFromParam, summarizeRoomTypes } from './rooms';
+import {
+  filterRoomsByType,
+  otherRooms,
+  roomTypeFilters,
+  roomTypeFromParam,
+  roomTypeLabel,
+  summarizeRoomTypes,
+} from './rooms';
 import type { PublicRoomSummary } from './types';
 
 function room(
@@ -59,5 +66,34 @@ describe('roomTypeFromParam / otherRooms', () => {
       room('c', 'COUPLE', null),
     ];
     expect(otherRooms(rooms, rooms[0]!).map((r) => r.slug)).toEqual(['c', 'b']);
+  });
+});
+
+describe('room type filters (owner decision Q5)', () => {
+  it('labels the four types in Spanish', () => {
+    expect(['INDIVIDUAL', 'COUPLE', 'TWIN', 'FAMILY'].map(roomTypeLabel)).toEqual([
+      'Individual',
+      'Pareja',
+      'Doble',
+      'Familiar',
+    ]);
+  });
+
+  it('offers one chip per type that has rooms, in a stable order, with counts', () => {
+    const filters = roomTypeFilters([
+      room('a', 'FAMILY', null),
+      room('b', 'COUPLE', null),
+      room('c', 'COUPLE', null),
+    ]);
+    expect(filters).toEqual([
+      { type: 'COUPLE', param: 'pareja', label: 'Pareja', count: 2 },
+      { type: 'FAMILY', param: 'familiar', label: 'Familiar', count: 1 },
+    ]);
+  });
+
+  it('filters by the active type and keeps every room without one', () => {
+    const rooms = [room('a', 'COUPLE', null), room('b', 'INDIVIDUAL', null)];
+    expect(filterRoomsByType(rooms, 'INDIVIDUAL').map((r) => r.slug)).toEqual(['b']);
+    expect(filterRoomsByType(rooms, null)).toHaveLength(2);
   });
 });

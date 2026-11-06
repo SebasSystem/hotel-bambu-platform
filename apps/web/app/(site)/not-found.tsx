@@ -1,5 +1,7 @@
 import Link from 'next/link';
-import { button, container } from '@/components/site/styles';
+import { container } from '@/components/site/styles';
+import { buttonClass } from '@/components/ui/button';
+import { Eyebrow } from '@/components/ui/eyebrow';
 import { WhatsAppLink } from '@/components/site/whatsapp-link';
 import { ui } from '@/lib/i18n/es';
 import { getRooms, getSite } from '@/lib/public/api';
@@ -16,26 +18,28 @@ export default async function NotFound() {
 
   return (
     <section className={`${container} py-(--section-y)`}>
-      <p className="text-xs font-semibold tracking-kicker text-cane-700 uppercase">Error 404</p>
-      <h1 className="mt-4 text-4xl font-medium text-bamboo-900">No encontramos esta página</h1>
+      <Eyebrow>Error 404</Eyebrow>
+      <h1 className="mt-4 text-display-page text-balance text-charcoal">
+        No encontramos esta página
+      </h1>
       <p className="mt-5 max-w-xl text-lg leading-normal text-muted-foreground">
         Es posible que el enlace haya cambiado o que la página ya no esté disponible. Estas opciones
         pueden ayudarte.
       </p>
       <div className="mt-8 flex flex-wrap gap-3">
-        <Link href={routes.rooms} className={button.primary}>
+        <Link href={routes.rooms} className={buttonClass('primary')}>
           {ui.rooms.seeAll}
         </Link>
         {whatsappUrl ? (
-          <WhatsAppLink href={whatsappUrl} source="other" className={button.whatsapp} />
+          <WhatsAppLink href={whatsappUrl} source="other" className={buttonClass('primary')} />
         ) : null}
-        <Link href={routes.home} className={button.outline}>
+        <Link href={routes.home} className={buttonClass('ghost')}>
           {ui.nav.home}
         </Link>
       </div>
       {suggestions.length > 0 ? (
         <nav aria-labelledby="sugeridas" className="mt-14">
-          <h2 id="sugeridas" className="text-2xl font-medium text-bamboo-900">
+          <h2 id="sugeridas" className="text-h3 text-charcoal">
             {ui.nav.rooms}
           </h2>
           <ul className="mt-4 grid gap-2 sm:grid-cols-2">
@@ -43,7 +47,7 @@ export default async function NotFound() {
               <li key={room.slug}>
                 <Link
                   href={routes.room(room.slug)}
-                  className="font-semibold text-primary underline underline-offset-4"
+                  className="font-bold text-green underline decoration-sage decoration-2 underline-offset-4 hover:decoration-green"
                 >
                   {room.name}
                 </Link>

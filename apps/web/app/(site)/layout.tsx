@@ -39,7 +39,11 @@ export default async function SiteLayout({ children }: { children: ReactNode }) 
       <main id="contenido" tabIndex={-1} data-menu-inert="" className="outline-none">
         {children}
       </main>
-      <div data-menu-inert="">
+      {/* On phones the floating WhatsApp button must not cover the last footer row (spec defect 5). */}
+      <div
+        data-menu-inert=""
+        className={whatsappUrl ? 'bg-charcoal pb-[79px] tab:pb-0' : undefined}
+      >
         <Footer site={site} whatsappUrl={whatsappUrl} />
       </div>
       {whatsappUrl ? <WhatsAppFab href={whatsappUrl} /> : null}

@@ -1,13 +1,13 @@
 import Link from 'next/link';
 import type { CSSProperties } from 'react';
+import { buttonClass } from '@/components/ui/button';
+import { cardClass } from '@/components/ui/card';
 import { ui } from '@/lib/i18n/es';
+import { formatRoomPrice } from '@/lib/public/format';
 import { routes } from '@/lib/public/navigation';
 import { roomTypeLabel } from '@/lib/public/rooms';
 import type { PublicRoomSummary } from '@/lib/public/types';
-import { SiteIcon } from './icon';
 import { Picture } from './picture';
-import { RoomPrice } from './room-price';
-import { button } from './styles';
 import { WhatsAppLink } from './whatsapp-link';
 
 interface RoomCardProps {
@@ -17,67 +17,79 @@ interface RoomCardProps {
   headingLevel?: 'h2' | 'h3';
 }
 
-/** Portrait 4:5 card (art direction A): photo, name, capacity, amenities, rate, CTAs. */
+/**
+ * Room card (mockup `.room-card`): paper, 24 px radius, photo with hover zoom, kicker (type and
+ * capacity), serif name, short copy, meta row and two compact actions ("Ver detalle" + WhatsApp
+ * with the ROOM template). No status pill: there is no availability (owner decision, defect 4).
+ * The square photo keeps most of the hotel's 3:4 portrait frames.
+ */
 export function RoomCard({
   room,
   whatsappUrl,
   index = 0,
   headingLevel: Heading = 'h3',
 }: RoomCardProps) {
+  const price = formatRoomPrice(room);
+  const meta = [ui.rooms.upTo(room.capacity), ...room.amenities.slice(0, 2).map((a) => a.name)];
   return (
     <article
       data-reveal
-      className="room-card group relative flex w-full flex-col"
       style={{ '--i': index % 6 } as CSSProperties}
+      className={`${cardClass('room')} group relative flex w-full flex-col`}
     >
-      <div className="relative aspect-[4/5] overflow-hidden rounded-lg bg-sand-100">
+      <div className="aspect-square overflow-hidden bg-sand">
         {room.cover ? (
           <Picture
             media={room.cover}
-            sizes="(min-width: 80rem) 400px, (min-width: 48rem) 45vw, 92vw"
+            sizes="(min-width: 62.5rem) 30vw, (min-width: 47.5rem) 45vw, 92vw"
             className="block size-full"
             imgClassName="room-card-img size-full object-cover"
+            objectPosition="50% 55%"
           />
         ) : null}
-        <span className="absolute top-3 left-3 rounded-pill bg-sand-50/90 px-3 py-1 text-xs font-semibold text-bamboo-900 backdrop-blur">
-          {roomTypeLabel(room.type)}
-        </span>
       </div>
-      <div className="flex flex-1 flex-col pt-5">
-        <Heading className="text-2xl font-medium text-bamboo-900">
+      <div className="flex flex-1 flex-col p-[22px]">
+        <p className="text-[0.78rem] font-bold tracking-[0.15em] text-green uppercase">
+          {roomTypeLabel(room.type)}
+        </p>
+        <Heading className="mt-2 text-h3 text-charcoal">
           <Link
             href={routes.room(room.slug)}
-            className="rounded-xs after:absolute after:inset-0 after:content-[''] focus-visible:outline-none focus-visible:after:rounded-lg focus-visible:after:outline-2 focus-visible:after:outline-offset-4 focus-visible:after:outline-ring"
+            className="after:absolute after:inset-0 after:z-0 after:rounded-lg after:content-[''] focus-visible:outline-none focus-visible:after:outline-2 focus-visible:after:outline-offset-2 focus-visible:after:outline-(--focus-ring)"
           >
             {room.name}
           </Link>
         </Heading>
-        <p className="mt-1 text-sm text-muted-foreground">{ui.rooms.capacity(room.capacity)}</p>
         {room.shortDescription ? (
-          <p className="mt-3 line-clamp-2 text-sm leading-normal text-foreground/85">
+          <p className="mt-2.5 line-clamp-2 text-card text-muted-foreground">
             {room.shortDescription}
           </p>
         ) : null}
-        {room.amenities.length > 0 ? (
-          <ul className="mt-4 flex flex-wrap gap-x-4 gap-y-2 text-xs text-ink-600">
-            {room.amenities.slice(0, 4).map((amenity) => (
-              <li key={amenity.name} className="inline-flex items-center gap-1.5">
-                <SiteIcon iconKey={amenity.iconKey} className="size-4 text-bamboo-700" />
-                {amenity.name}
-              </li>
-            ))}
-          </ul>
+        <p className="mt-3.5 text-meta font-bold text-charcoal">{meta.join(' · ')}</p>
+        {price ? (
+          <p className="mt-3 text-sm text-muted-foreground">
+            <span className="sr-only">{price.summary}</span>
+            <span aria-hidden="true">
+              {ui.rooms.from}{' '}
+              <span className="font-display text-xl text-charcoal">{price.amount}</span>{' '}
+              {price.unit}
+            </span>
+          </p>
         ) : null}
-        <div className="mt-auto flex flex-wrap items-end justify-between gap-4 pt-5">
-          <RoomPrice room={room} hasWhatsApp={Boolean(whatsappUrl)} />
+        <div className="mt-auto flex gap-2 pt-5">
+          {/* The whole card is the detail link; this is its visible affordance only. */}
+          <span aria-hidden="true" className={`${buttonClass('ghost', 'compact')} flex-1`}>
+            {ui.rooms.seeDetail}
+          </span>
           {whatsappUrl ? (
             <WhatsAppLink
               href={whatsappUrl}
               source="room_card"
               entityId={room.slug}
-              className={`${button.whatsapp} relative z-10`}
+              className={`${buttonClass('primary', 'compact')} relative z-10 flex-1`}
             >
-              {ui.whatsapp.short}
+              {ui.whatsapp.ask}
+              <span className="sr-only"> {room.name}</span>
             </WhatsAppLink>
           ) : null}
         </div>

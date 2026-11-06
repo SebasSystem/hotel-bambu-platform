@@ -34,26 +34,17 @@
   --color-white: #ffffff;
 
   /*
-   * Legacy palette names (pre-mockup pages and admin), re-pointed at the mockup palette so the
-   * existing screens inherit the new look. Remove once D2 (public pages) and D4 (admin) stop
-   * using them.
+   * Legacy palette names, re-pointed at the mockup palette. D2 rebuilt the public pages and
+   * removed the aliases nothing used any more; these remain for the admin (D4), the consent
+   * manager and the legal draft banner.
    */
-  --color-bamboo-100: var(--color-green-50);
-  --color-bamboo-300: var(--color-sage);
-  --color-bamboo-500: var(--color-green);
-  --color-bamboo-600: var(--color-green);
   --color-bamboo-700: var(--color-green);
   --color-bamboo-800: var(--color-green-900);
   --color-bamboo-900: var(--color-green-900);
-  --color-cane-500: var(--color-gold);
-  --color-cane-700: var(--color-warn-fg);
-  --color-sand-50: var(--color-ivory);
   --color-sand-100: var(--color-sand);
   --color-sand-200: var(--color-line-strong);
   --color-earth-600: var(--color-promo);
-  --color-ink-600: var(--color-ink-muted);
   --color-ink-900: var(--color-charcoal);
-  --color-error-600: var(--color-danger);
 
   --text-xs: 0.8125rem;
   --text-sm: 0.875rem;

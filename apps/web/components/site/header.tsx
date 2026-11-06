@@ -1,6 +1,6 @@
 import { MessageCircle } from 'lucide-react';
 import Link from 'next/link';
-import { BrandLogo } from '@/components/brand/brand-logo';
+import { BRAND_NAME, BRAND_SUBLINE, BrandLogo } from '@/components/brand/brand-logo';
 import { buttonClass, iconButtonClass } from '@/components/ui/button';
 import { ui } from '@/lib/i18n/es';
 import { mainNav, mobileNav, routes } from '@/lib/public/navigation';
@@ -18,14 +18,15 @@ interface HeaderProps {
  * underlined navigation in the middle, WhatsApp CTA on the right. Below 1000 px the navigation
  * moves into the mobile menu and the CTA becomes a compact WhatsApp icon button.
  */
-export function Header({ hotelName, whatsappUrl }: HeaderProps) {
+export function Header({ whatsappUrl }: HeaderProps) {
   return (
     <header className="site-header">
       <div className="mx-auto flex h-full w-full max-w-(--container-site) items-center justify-between gap-4 px-(--header-gutter)">
         <Link
           href={routes.home}
           className="shrink-0 rounded-xs desk:min-w-[190px]"
-          aria-label={`${hotelName}, ${ui.nav.home.toLowerCase()}`}
+          // The name starts with the visible wordmark (WCAG 2.5.3 label in name).
+          aria-label={`${BRAND_NAME} ${BRAND_SUBLINE}, ${ui.nav.home.toLowerCase()}`}
         >
           <BrandLogo decorative />
         </Link>

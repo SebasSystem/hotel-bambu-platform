@@ -19,7 +19,7 @@ export function RoomPrice({
   const price = formatRoomPrice(room);
   if (!price) {
     return (
-      <p className="text-sm font-semibold text-bamboo-700">
+      <p className="text-sm font-bold text-green">
         {hasWhatsApp ? ui.rooms.noPrice : ui.rooms.noPriceNoWhatsApp}
       </p>
     );
@@ -30,9 +30,7 @@ export function RoomPrice({
         <span className="sr-only">{price.summary}</span>
         <span aria-hidden="true">
           {ui.rooms.from}{' '}
-          <span
-            className={`font-display font-semibold text-bamboo-900 ${size === 'lg' ? 'text-3xl' : 'text-xl'}`}
-          >
+          <span className={`font-display text-charcoal ${size === 'lg' ? 'text-3xl' : 'text-xl'}`}>
             {price.amount}
           </span>{' '}
           {price.unit}

@@ -1,12 +1,14 @@
 import type { Metadata } from 'next';
 import { hasLocation, LocationBlock } from '@/components/site/blocks';
 import { PageHeader } from '@/components/site/page-header';
-import { button, container } from '@/components/site/styles';
+import { container } from '@/components/site/styles';
 import { WhatsAppLink } from '@/components/site/whatsapp-link';
+import { JsonLd } from '@/components/seo/json-ld';
+import { buttonClass } from '@/components/ui/button';
+import { cardClass } from '@/components/ui/card';
 import { ui } from '@/lib/i18n/es';
 import { pageMetadata } from '@/lib/seo/metadata';
 import { hotelJsonLd } from '@/lib/seo/json-ld';
-import { JsonLd } from '@/components/seo/json-ld';
 import { routes } from '@/lib/public/navigation';
 import { getRooms, getSite } from '@/lib/public/api';
 import { fullAddress, sectionOf } from '@/lib/public/site';
@@ -25,12 +27,12 @@ export async function generateMetadata(): Promise<Metadata> {
   });
 }
 
-/** Location page (requirements 4.1, 19.3): address, on-demand map, directions, surroundings. */
+/** Location (requirements 4.1, 19.3): address and directions card plus the on-demand map card. */
 export default async function LocationPage() {
   const [site, rooms] = await Promise.all([getSite(), getRooms()]);
   const section = sectionOf(site, 'LOCATION');
   const whatsappUrl = whatsAppLink(site, { kind: 'general' });
-  const region = [site.hotel.municipality, site.hotel.department].filter(Boolean).join(', ');
+  const region = [site.hotel.municipality, site.hotel.department].filter(Boolean).join(' · ');
 
   return (
     <>
@@ -41,17 +43,17 @@ export default async function LocationPage() {
         kicker={section?.subtitle ?? (region || null)}
         intro={section?.body}
       />
-      <div className={`${container} py-16`}>
+      <div className={`${container} pt-12 pb-[110px]`}>
         {hasLocation(site.hotel) ? (
           <LocationBlock hotel={site.hotel} />
         ) : (
-          <div className="max-w-xl">
-            <p className="text-lg leading-normal text-muted-foreground">{ui.empty.location}</p>
+          <div className={`${cardClass('panel')} max-w-2xl`}>
+            <p className="text-lg text-muted-foreground">{ui.empty.location}</p>
             {whatsappUrl ? (
               <WhatsAppLink
                 href={whatsappUrl}
                 source="location"
-                className={`${button.whatsapp} mt-6`}
+                className={`${buttonClass('primary')} mt-6`}
               />
             ) : null}
           </div>

@@ -72,3 +72,28 @@ export function otherRooms(rooms: PublicRoomSummary[], current: PublicRoomSummar
     ...others.filter((room) => room.type !== current.type),
   ].slice(0, limit);
 }
+
+export interface RoomTypeFilter {
+  type: RoomTypeKey;
+  /** `?tipo=` value (shareable, indexable filter link). */
+  param: string;
+  label: string;
+  count: number;
+}
+
+/** Catalogue chips: one per type that has published rooms, in the stable type order. */
+export function roomTypeFilters(rooms: Pick<PublicRoomSummary, 'type'>[]): RoomTypeFilter[] {
+  return ORDER.flatMap((type) => {
+    const count = rooms.filter((room) => room.type === type).length;
+    if (count === 0) return [];
+    const { param, singular } = ROOM_TYPES_PUBLIC[type];
+    return [{ type, param, label: singular, count }];
+  });
+}
+
+export function filterRoomsByType<T extends Pick<PublicRoomSummary, 'type'>>(
+  rooms: T[],
+  active: RoomTypeKey | null,
+): T[] {
+  return active ? rooms.filter((room) => room.type === active) : rooms;
+}

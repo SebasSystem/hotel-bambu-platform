@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { TextBlock } from '@/components/site/blocks';
 import { PageHeader } from '@/components/site/page-header';
 import { container } from '@/components/site/styles';
+import { cardClass } from '@/components/ui/card';
 import { ui } from '@/lib/i18n/es';
 import { pageMetadata } from '@/lib/seo/metadata';
 import { routes } from '@/lib/public/navigation';
@@ -17,7 +18,10 @@ export async function generateMetadata(): Promise<Metadata> {
   });
 }
 
-/** Hotel policies (requirement 4.1): check-in/out times, published policies, ESCNNA notice. */
+/**
+ * Hotel policies (requirement 4.1, spec §4): check-in/out figures, then each published policy as
+ * a mockup detail block inside a paper card, and the ESCNNA notice.
+ */
 export default async function PoliciesPage() {
   const [site, policies] = await Promise.all([getSite(), getPolicies()]);
   const { hotel } = site;
@@ -26,22 +30,22 @@ export default async function PoliciesPage() {
   return (
     <>
       <PageHeader path={routes.policies} title={ui.nav.policies} />
-      <div className={`${container} py-16`}>
-        <div className="grid max-w-4xl gap-12">
+      <div className={`${container} pt-12 pb-[110px]`}>
+        <div className="grid max-w-4xl gap-7">
           {hasTimes ? (
-            <dl className="grid gap-6 rounded-xl bg-sand-100 p-8 sm:grid-cols-2">
+            <dl className="grid gap-6 rounded-lg bg-sand p-[clamp(28px,4vw,48px)] xs:grid-cols-2">
               {hotel.checkInTime ? (
                 <div>
-                  <dt className="text-sm text-muted-foreground">{ui.contact.checkIn}</dt>
-                  <dd className="mt-1 font-display text-3xl text-bamboo-900">
+                  <dt className="detail-label">{ui.contact.checkIn}</dt>
+                  <dd className="font-display text-fact leading-none text-green">
                     {hotel.checkInTime}
                   </dd>
                 </div>
               ) : null}
               {hotel.checkOutTime ? (
                 <div>
-                  <dt className="text-sm text-muted-foreground">{ui.contact.checkOut}</dt>
-                  <dd className="mt-1 font-display text-3xl text-bamboo-900">
+                  <dt className="detail-label">{ui.contact.checkOut}</dt>
+                  <dd className="font-display text-fact leading-none text-green">
                     {hotel.checkOutTime}
                   </dd>
                 </div>
@@ -49,17 +53,27 @@ export default async function PoliciesPage() {
             </dl>
           ) : null}
 
-          {policies.map((policy) => (
-            <section key={policy.id} aria-labelledby={`politica-${policy.id}`}>
-              <h2 id={`politica-${policy.id}`} className="text-2xl font-medium text-bamboo-900">
-                {policy.title}
-              </h2>
-              <TextBlock text={policy.content} className="mt-4 text-foreground/90" />
-            </section>
-          ))}
+          {policies.length > 0 ? (
+            <div
+              className={`${cardClass('panel')} [&>section:first-child]:border-t-0 [&>section:first-child]:pt-0`}
+            >
+              {policies.map((policy) => (
+                <section
+                  key={policy.id}
+                  aria-labelledby={`politica-${policy.id}`}
+                  className="detail-block last:pb-0"
+                >
+                  <h2 id={`politica-${policy.id}`} className="text-h3 text-charcoal">
+                    {policy.title}
+                  </h2>
+                  <TextBlock text={policy.content} className="mt-3 text-charcoal/90" />
+                </section>
+              ))}
+            </div>
+          ) : null}
 
           {hotel.escnnaNotice ? (
-            <aside className="rounded-xl border border-sand-200 bg-card p-8 text-sm leading-normal">
+            <aside className="rounded-lg border border-line bg-notice-bg p-7 text-sm text-notice-fg">
               <TextBlock text={hotel.escnnaNotice} />
             </aside>
           ) : null}
