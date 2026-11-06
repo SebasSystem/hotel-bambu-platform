@@ -1,6 +1,6 @@
 # 0006 — Data model, seeds and operational scripts
 
-- Status: Accepted
+- Status: Accepted (amended by [0015](0015-amenities-and-hero-slides.md): `Service` removed, `Amenity.scope` HOTEL/ROOM, `HeroSlide`)
 - Date: 2026-11-04
 
 ## Context
@@ -16,7 +16,7 @@ Requirement 14 lists the initial entities; 12.6–12.7 ask for integrity in the 
 | Admin & security | `AdminUser` (lowercase unique email, Argon2id `passwordHash`, `role`, `active`, `failedAttempts`, `lockedUntil`, `lastLoginAt`, `passwordChangedAt`), `Session` (SHA-256 `tokenHash` only, absolute `expiresAt`, `lastSeenAt` for idle expiry, optional keyed `ipHash`/`userAgentHash`), `AuditLog` |
 | Hotel | `HotelProfile` singleton (contact, location, check-in/out, optional `rntNumber` and `escnnaNotice`, logo/hero media), `WhatsAppTemplate` (enum key, `{{variable}}` whitelist), `SocialLink` |
 | Rooms | `Room` (`slug`, `RoomType`, `PublicationStatus`, capacity, `beds` JSON, `basePrice`, `priceUnit`, `taxesIncluded`, SEO), `RoomSlugRedirect`, `RoomImage` (one cover), `Amenity` + `RoomAmenity`, `Promotion` |
-| Hotel services | `Service` (hotel-level features, `highlighted` = shown on home). Kept apart from `Amenity` (per-room comforts) because they are edited and displayed differently. |
+| Hotel services | ~~`Service`~~ removed by ADR 0015: hotel-wide features are `Amenity` rows with scope `HOTEL`. |
 | Media | `MediaAsset` (random `storageKey`, magic-byte `mimeType`, SHA-256 `checksum` unique, dimensions, `variants` JSON, `blurDataUrl`, `dominantColor`, `altText`, `status`), `GalleryItem`, `PendingStorageDeletion` |
 | Content | `LandingSection` (enum key), `Faq`, `HotelPolicy` |
 | Privacy & metrics | `ConsentRecord` (random `consentId`, categories, policy version, timestamp; no IP, no user agent), `AnalyticsDailyCount` (aggregates only) |

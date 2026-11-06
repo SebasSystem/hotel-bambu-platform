@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { displayPhone, fullAddress, mapLinks } from './site';
+import type { PublicGalleryItem, PublicMedia, PublicRoomSummary, PublicSite } from './types';
+import {
+  displayPhone,
+  fullAddress,
+  heroImages,
+  homeHotelAmenities,
+  introText,
+  mapLinks,
+} from './site';
 
 const base = {
   name: 'Hotel Bambú Plaza',
@@ -47,5 +55,84 @@ describe('fullAddress / displayPhone', () => {
   it('formats Colombian mobile numbers', () => {
     expect(displayPhone('573001234567')).toBe('+57 300 123 4567');
     expect(displayPhone('15551234567')).toBe('+15551234567');
+  });
+});
+
+const photo = (id: string, altText = id): PublicMedia => ({
+  id,
+  altText,
+  caption: null,
+  width: 1600,
+  height: 900,
+  blurDataUrl: null,
+  dominantColor: null,
+  variants: [],
+});
+
+const siteWith = (overrides: Partial<PublicSite>): PublicSite =>
+  ({
+    hotel: { hero: null },
+    sections: [],
+    heroSlides: [],
+    hotelAmenities: [],
+    homeAmenities: [],
+    socialLinks: [],
+    whatsappTemplates: [],
+    ...overrides,
+  }) as unknown as PublicSite;
+
+describe('heroImages', () => {
+  const gallery = [
+    { id: 'g', category: 'ROOMS', featured: true, media: photo('g1') },
+  ] as PublicGalleryItem[];
+  const rooms = [{ cover: photo('r1') }] as PublicRoomSummary[];
+
+  it('uses the admin hero slides, in order and all of them, when there are any', () => {
+    const slides = ['s1', 's2', 's3', 's4'].map((id) => ({ id, caption: null, media: photo(id) }));
+    const site = siteWith({ heroSlides: slides });
+    expect(heroImages(site, gallery, rooms).map((media) => media.id)).toEqual([
+      's1',
+      's2',
+      's3',
+      's4',
+    ]);
+  });
+
+  it('puts the slide caption on its media', () => {
+    const site = siteWith({ heroSlides: [{ id: 's1', caption: 'Llegada', media: photo('m1') }] });
+    expect(heroImages(site, [], [])[0]?.caption).toBe('Llegada');
+  });
+
+  it('falls back to the hero, then featured gallery photos and room covers, without slides', () => {
+    const site = siteWith({ hotel: { hero: photo('h1') } as PublicSite['hotel'] });
+    expect(heroImages(site, gallery, rooms).map((media) => media.id)).toEqual(['h1', 'g1', 'r1']);
+  });
+});
+
+describe('homeHotelAmenities', () => {
+  it('keeps the hotel-wide amenities flagged for the home', () => {
+    const amenity = (name: string, showOnHome: boolean) => ({
+      id: name,
+      name,
+      description: null,
+      iconKey: 'wifi',
+      showOnHome,
+    });
+    const site = siteWith({
+      hotelAmenities: [amenity('Wi-Fi', true), amenity('Recepción', false)],
+    });
+    expect(homeHotelAmenities(site).map((a) => a.name)).toEqual(['Wi-Fi']);
+  });
+});
+
+describe('introText (home "Sobre nosotros")', () => {
+  it('prefers the ABOUT body, then the hotel description', () => {
+    expect(introText('Hospitalidad serena.', 'Otra')).toBe('Hospitalidad serena.');
+    expect(introText(null, 'Hotel en Mocoa.')).toBe('Hotel en Mocoa.');
+  });
+
+  it('is null when there is no real about text, so the intro is hidden', () => {
+    expect(introText(null, null)).toBeNull();
+    expect(introText('   ', ' \n ')).toBeNull();
   });
 });

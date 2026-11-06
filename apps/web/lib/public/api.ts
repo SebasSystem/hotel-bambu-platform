@@ -3,14 +3,12 @@ import { unstable_rethrow } from 'next/navigation';
 import { connection } from 'next/server';
 import { cache } from 'react';
 import type {
-  PublicAmenity,
   PublicFaq,
   PublicGalleryItem,
   PublicPolicy,
   PublicPromotion,
   PublicRoomDetail,
   PublicRoomSummary,
-  PublicService,
   PublicSite,
 } from './types';
 
@@ -59,7 +57,14 @@ async function optional<T>(load: Promise<T | null>, fallback: T): Promise<T> {
 export const getSite = cache(async (): Promise<PublicSite> => {
   const site = await publicGet<PublicSite>('/site', [CACHE_TAGS.site]);
   if (!site) throw new Error('Public site profile not found');
-  return site;
+  // A payload cached before ADR 0015 (hero slides, hotel amenities) may still be served until
+  // the `site` tag is revalidated: default the newer lists instead of failing the page.
+  return {
+    ...site,
+    heroSlides: site.heroSlides ?? [],
+    hotelAmenities: site.hotelAmenities ?? [],
+    homeAmenities: site.homeAmenities ?? [],
+  };
 });
 
 export const getRooms = cache(() =>
@@ -81,14 +86,6 @@ export const getRoom = cache(async (slug: string): Promise<RoomResult> => {
   if ('redirectTo' in data) return { kind: 'redirect', slug: data.redirectTo };
   return { kind: 'room', room: data };
 });
-
-export const getServices = cache(() =>
-  optional(publicGet<PublicService[]>('/services', [CACHE_TAGS.services]), []),
-);
-
-export const getAmenities = cache(() =>
-  optional(publicGet<PublicAmenity[]>('/amenities', [CACHE_TAGS.amenities]), []),
-);
 
 export const getGallery = cache(() =>
   optional(publicGet<PublicGalleryItem[]>('/gallery', [CACHE_TAGS.gallery]), []),

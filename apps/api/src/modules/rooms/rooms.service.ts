@@ -100,8 +100,22 @@ export class RoomsService {
     return uniqueSlug(name, taken, 'habitacion');
   }
 
+  /** Only ROOM amenities are assigned per room; HOTEL ones apply to the whole hotel (ADR 0015). */
+  private async assertRoomAmenities(ids: readonly string[]): Promise<void> {
+    const unique = [...new Set(ids)];
+    if (unique.length === 0) return;
+    const found = await this.prisma.amenity.count({ where: { id: { in: unique }, scope: 'ROOM' } });
+    if (found !== unique.length) {
+      throw new UnprocessableEntityException({
+        message: 'Only room amenities can be assigned to a room.',
+        details: [{ path: 'amenityIds', message: 'Unknown or hotel-wide amenity.', code: 'scope' }],
+      });
+    }
+  }
+
   async create(actorId: string, input: RoomCreateInput) {
     const { amenityIds, slug: requestedSlug, beds, ...fields } = input;
+    await this.assertRoomAmenities(amenityIds);
     let slug = requestedSlug;
     if (slug) {
       if (!(await this.slugIsFree(slug))) throw new ConflictException('Slug is already in use.');
@@ -137,6 +151,7 @@ export class RoomsService {
     if (!current) throw new NotFoundException('Room not found.');
     const isPublished = current.status === 'PUBLISHED';
     const { amenityIds, beds, ...fields } = input;
+    if (amenityIds) await this.assertRoomAmenities(amenityIds);
 
     let redirectOps: Prisma.PrismaPromise<unknown>[] = [];
     if (input.slug !== undefined) {
@@ -366,7 +381,7 @@ export class RoomsService {
         include: { mediaAsset: { select: PUBLIC_MEDIA_SELECT } },
       },
       amenities: {
-        where: { amenity: { active: true } },
+        where: { amenity: { active: true, scope: 'ROOM' } },
         include: { amenity: { select: { name: true, iconKey: true, sortOrder: true } } },
       },
     } satisfies Prisma.RoomInclude;

@@ -165,19 +165,30 @@ export default async function RoomPage({ params }: PageProps<'/habitaciones/[slu
               </dl>
             </Block>
 
-            {room.amenities.length > 0 ? (
+            {room.amenities.length > 0 || site.hotelAmenities.length > 0 ? (
               <Block label={ui.rooms.includes}>
-                <ul className="grid gap-x-6 gap-y-3 text-sm xs:grid-cols-2">
-                  {room.amenities.map((amenity) => (
-                    <li key={amenity.name} className="flex items-center gap-2.5">
-                      <SiteIcon
-                        iconKey={amenity.iconKey}
-                        className="size-[18px] shrink-0 text-green"
-                      />
-                      {amenity.name}
-                    </li>
-                  ))}
-                </ul>
+                {room.amenities.length > 0 ? (
+                  <ul className="grid gap-x-6 gap-y-3 text-sm xs:grid-cols-2">
+                    {room.amenities.map((amenity) => (
+                      <li key={amenity.name} className="flex items-center gap-2.5">
+                        <SiteIcon
+                          iconKey={amenity.iconKey}
+                          className="size-[18px] shrink-0 text-green"
+                        />
+                        {amenity.name}
+                      </li>
+                    ))}
+                  </ul>
+                ) : null}
+                {site.hotelAmenities.length > 0 ? (
+                  <p
+                    data-testid="hotel-wide-amenities"
+                    className={`text-sm text-ink-muted-strong ${room.amenities.length > 0 ? 'mt-4' : ''}`}
+                  >
+                    <strong className="font-bold text-charcoal">{ui.home.hotelWide}:</strong>{' '}
+                    {site.hotelAmenities.map((amenity) => amenity.name).join(' · ')}
+                  </p>
+                ) : null}
               </Block>
             ) : null}
 

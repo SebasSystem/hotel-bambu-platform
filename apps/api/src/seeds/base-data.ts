@@ -1,4 +1,4 @@
-import type { IconKey } from '@hotel-bambu/shared';
+import type { AmenityScope, IconKey } from '@hotel-bambu/shared';
 import type { LandingSectionKey, WhatsAppTemplateKey } from '../generated/prisma/enums.js';
 
 /**
@@ -21,7 +21,7 @@ export const LANDING_SECTIONS: ReadonlyArray<{
   { key: 'HERO', title: HOTEL_NAME, ctaLabel: 'Escríbenos por WhatsApp' },
   { key: 'ABOUT', title: 'Sobre nosotros' },
   { key: 'ROOMS', title: 'Habitaciones', ctaLabel: 'Ver habitaciones' },
-  { key: 'SERVICES', title: 'Servicios' },
+  { key: 'SERVICES', title: 'Comodidades del hotel' },
   { key: 'GALLERY', title: 'Galería', ctaLabel: 'Ver galería completa' },
   { key: 'LOCATION', title: 'Ubicación', ctaLabel: 'Cómo llegar' },
   { key: 'FAQ', title: 'Preguntas frecuentes' },
@@ -55,29 +55,39 @@ export const WHATSAPP_TEMPLATES: ReadonlyArray<{
   },
 ];
 
-/** Room amenities confirmed by the owner (2026-11-04): every room has all four. */
-export const AMENITIES: ReadonlyArray<{ name: string; iconKey: IconKey; showOnHome: boolean }> = [
-  { name: 'Baño privado', iconKey: 'bath', showOnHome: true },
-  { name: 'Televisor', iconKey: 'tv', showOnHome: true },
-  { name: 'Ventilador', iconKey: 'fan', showOnHome: true },
-  { name: 'Wi-Fi', iconKey: 'wifi', showOnHome: true },
-];
-
-/** Hotel-level services confirmed by the owner (2026-11-04). The hotel has no laundry service. */
-export const SERVICES: ReadonlyArray<{ name: string; description: string; iconKey: IconKey }> = [
+/**
+ * "Comodidades" confirmed by the owner (2026-11-04): every room has a private bathroom, TV and fan;
+ * the hotel has Wi-Fi on every floor, solar panels and a water reserve (no laundry). Scopes follow
+ * the owner decision of 2026-11-05 (ADR 0015): Wi-Fi is one hotel-wide amenity, not a room one.
+ * No description that only restates the name (owner feedback): the site shows none then.
+ */
+export const AMENITIES: ReadonlyArray<{
+  name: string;
+  description?: string;
+  iconKey: IconKey;
+  scope: AmenityScope;
+  showOnHome: boolean;
+}> = [
+  { name: 'Baño privado', iconKey: 'bath', scope: 'ROOM', showOnHome: true },
+  { name: 'Televisor', iconKey: 'tv', scope: 'ROOM', showOnHome: true },
+  { name: 'Ventilador', iconKey: 'fan', scope: 'ROOM', showOnHome: true },
+  {
+    name: 'Wi-Fi en todo el hotel',
+    description: 'Conexión Wi-Fi en las habitaciones y en todos los pisos del hotel.',
+    iconKey: 'wifi',
+    scope: 'HOTEL',
+    showOnHome: true,
+  },
   {
     name: 'Paneles solares',
-    description: 'El hotel cuenta con paneles solares.',
     iconKey: 'sun',
+    scope: 'HOTEL',
+    showOnHome: true,
   },
   {
     name: 'Reserva de agua',
-    description: 'El hotel cuenta con reserva de agua.',
     iconKey: 'droplets',
-  },
-  {
-    name: 'Internet en todos los pisos',
-    description: 'Conexión a internet disponible en todos los pisos del hotel.',
-    iconKey: 'router',
+    scope: 'HOTEL',
+    showOnHome: true,
   },
 ];

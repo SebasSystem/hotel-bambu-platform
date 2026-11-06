@@ -1,5 +1,6 @@
 import {
   Body,
+  ConflictException,
   Controller,
   Delete,
   Get,
@@ -28,7 +29,10 @@ import { PrismaService } from '../../prisma/prisma.service.js';
 import { AdminChangesService } from '../audit/admin-changes.service.js';
 import { changedFields } from '../audit/audit.service.js';
 
-/** Room comforts (private bathroom, TV, fan, Wi-Fi...). Shown on room cards and, if flagged, home. */
+/**
+ * "Comodidades" (ADR 0015): HOTEL amenities apply to the whole hotel (Wi-Fi, solar panels) and show
+ * in the home hotel panel; ROOM amenities are assigned per room and show on room cards and details.
+ */
 const TAGS = [CACHE_TAGS.amenities, CACHE_TAGS.rooms, CACHE_TAGS.site];
 
 @Injectable()
@@ -49,7 +53,14 @@ export class AmenitiesService {
     return this.prisma.amenity.findMany({
       where: { active: true },
       orderBy: [{ sortOrder: 'asc' }, { name: 'asc' }],
-      select: { id: true, name: true, description: true, iconKey: true, showOnHome: true },
+      select: {
+        id: true,
+        name: true,
+        description: true,
+        iconKey: true,
+        scope: true,
+        showOnHome: true,
+      },
     });
   }
 
@@ -67,6 +78,14 @@ export class AmenitiesService {
   }
 
   async update(actorId: string, id: string, input: AmenityUpdateInput) {
+    if (
+      input.scope === 'HOTEL' &&
+      (await this.prisma.roomAmenity.count({ where: { amenityId: id } }))
+    ) {
+      throw new ConflictException(
+        'Remove the amenity from every room before making it hotel-wide.',
+      );
+    }
     const amenity = await this.prisma.amenity.update({ where: { id }, data: input });
     await this.changes.record(
       actorId,

@@ -14,13 +14,13 @@ import { DashboardModule } from './modules/dashboard/dashboard.js';
 import { FaqsModule } from './modules/faq/faq.js';
 import { GalleryModule } from './modules/gallery/gallery.js';
 import { HealthModule } from './modules/health/health.module.js';
+import { HeroSlidesModule } from './modules/hero-slides/hero-slides.js';
 import { HotelModule } from './modules/hotel/hotel.js';
 import { MediaModule } from './modules/media/media.module.js';
 import { PoliciesModule } from './modules/policies/policies.js';
 import { PromotionsModule } from './modules/promotions/promotions.js';
 import { PublicModule } from './modules/public/public.js';
 import { RoomsModule } from './modules/rooms/rooms.module.js';
-import { ServicesModule } from './modules/services/services.js';
 import { SocialLinksModule } from './modules/social-links/social-links.js';
 import { PrismaModule } from './prisma/prisma.module.js';
 
@@ -74,10 +74,10 @@ import { PrismaModule } from './prisma/prisma.module.js';
     HotelModule,
     RoomsModule,
     AmenitiesModule,
-    ServicesModule,
     PromotionsModule,
     MediaModule,
     GalleryModule,
+    HeroSlidesModule,
     ContentModule,
     FaqsModule,
     PoliciesModule,

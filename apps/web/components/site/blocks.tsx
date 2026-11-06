@@ -4,7 +4,7 @@ import { cardClass } from '@/components/ui/card';
 import { ui } from '@/lib/i18n/es';
 import { paragraphs } from '@/lib/public/format';
 import { displayPhone, fullAddress, mapLinks, telHref } from '@/lib/public/site';
-import type { PublicFaq, PublicHotel, PublicService } from '@/lib/public/types';
+import type { PublicFaq, PublicHotel, PublicMedia } from '@/lib/public/types';
 import { SiteIcon } from './icon';
 import { MapEmbed } from './map-embed';
 import { Picture } from './picture';
@@ -48,12 +48,12 @@ interface Feature {
   name: string;
   description: string | null;
   iconKey: string | null;
-  media?: PublicService['media'];
+  media?: PublicMedia | null;
 }
 
 /**
  * Mockup amenity cards (`.amenities-grid`): 4 columns, paper tile, icon circle, serif title and a
- * muted note; hover lifts 5 px. Used for home amenities and the services page.
+ * muted note; hover lifts 5 px. Used for the home room amenities.
  */
 export function FeatureGrid({ items, columns = 4 }: { items: Feature[]; columns?: 3 | 4 }) {
   return (

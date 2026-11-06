@@ -27,13 +27,13 @@ import { AnalyticsModule, AnalyticsService } from '../analytics/analytics.js';
 import { ContentModule, ContentService } from '../content/content.js';
 import { FaqsModule, FaqsService } from '../faq/faq.js';
 import { GalleryModule, GalleryService } from '../gallery/gallery.js';
+import { HeroSlidesModule, HeroSlidesService } from '../hero-slides/hero-slides.js';
 import { HotelModule, HotelService } from '../hotel/hotel.js';
 import { toPublicMedia, type MediaRow } from '../media/media-url.js';
 import { PoliciesModule, PoliciesService } from '../policies/policies.js';
 import { PromotionsModule, PromotionsService } from '../promotions/promotions.js';
 import { RoomsModule } from '../rooms/rooms.module.js';
 import { RoomsService } from '../rooms/rooms.service.js';
-import { ServicesModule, ServicesService } from '../services/services.js';
 import { SocialLinksModule, SocialLinksService } from '../social-links/social-links.js';
 
 /**
@@ -54,7 +54,7 @@ export class PublicController {
     private readonly hotel: HotelService,
     private readonly rooms: RoomsService,
     private readonly amenities: AmenitiesService,
-    private readonly services: ServicesService,
+    private readonly heroSlides: HeroSlidesService,
     private readonly gallery: GalleryService,
     private readonly content: ContentService,
     private readonly faqs: FaqsService,
@@ -74,11 +74,11 @@ export class PublicController {
   @Get('site')
   @Header('Cache-Control', PUBLIC_CACHE)
   async site() {
-    const [profile, templates, socialLinks, services, amenities, sections] = await Promise.all([
+    const [profile, templates, socialLinks, slides, amenities, sections] = await Promise.all([
       this.hotel.getProfile(),
       this.hotel.listTemplates(),
       this.socialLinks.listPublic(),
-      this.services.listPublic(),
+      this.heroSlides.listPublic(),
       this.amenities.listPublic(),
       this.content.listEnabled(),
     ]);
@@ -100,15 +100,18 @@ export class PublicController {
         body,
         allowedVariables,
       })),
-      highlightedServices: services
-        .filter((service) => service.highlighted)
-        .map(({ mediaAsset, highlighted: _hl, ...service }) => ({
-          ...service,
-          media: this.media(mediaAsset),
-        })),
+      heroSlides: slides.flatMap(({ media, ...slide }) => {
+        const publicMedia = this.media(media);
+        return publicMedia ? [{ ...slide, media: publicMedia }] : [];
+      }),
+      /** Every active hotel-wide amenity; `showOnHome` picks the home panel (ADR 0015). */
+      hotelAmenities: amenities
+        .filter((amenity) => amenity.scope === 'HOTEL')
+        .map(({ scope: _sc, ...amenity }) => amenity),
+      /** Room equipment flagged for the home "in every room" grid. */
       homeAmenities: amenities
-        .filter((amenity) => amenity.showOnHome)
-        .map(({ showOnHome: _s, ...amenity }) => amenity),
+        .filter((amenity) => amenity.scope === 'ROOM' && amenity.showOnHome)
+        .map(({ showOnHome: _s, scope: _sc, ...amenity }) => amenity),
       sections: sections.map(({ mediaAsset, ...section }) => ({
         ...section,
         media: this.media(mediaAsset),
@@ -132,15 +135,6 @@ export class PublicController {
   @Header('Cache-Control', PUBLIC_CACHE)
   async listAmenities() {
     return (await this.amenities.listPublic()).map(({ showOnHome: _s, ...amenity }) => amenity);
-  }
-
-  @Get('services')
-  @Header('Cache-Control', PUBLIC_CACHE)
-  async listServices() {
-    return (await this.services.listPublic()).map(({ mediaAsset, ...service }) => ({
-      ...service,
-      media: this.media(mediaAsset),
-    }));
   }
 
   @Get('gallery')
@@ -197,7 +191,7 @@ export class PublicController {
     HotelModule,
     RoomsModule,
     AmenitiesModule,
-    ServicesModule,
+    HeroSlidesModule,
     GalleryModule,
     ContentModule,
     FaqsModule,

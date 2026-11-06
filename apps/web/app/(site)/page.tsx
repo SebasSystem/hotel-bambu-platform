@@ -8,8 +8,8 @@ import {
   CtaPanel,
   GalleryStripSection,
   HomeIntro,
+  HotelAmenitiesPanel,
   RoomsShowcase,
-  ServicesPanel,
 } from '@/components/site/home-sections';
 import { container } from '@/components/site/styles';
 import { WhatsAppLink } from '@/components/site/whatsapp-link';
@@ -22,7 +22,7 @@ import { pageMetadata } from '@/lib/seo/metadata';
 import { getFaqs, getGallery, getRooms, getSite } from '@/lib/public/api';
 import { homeFacts } from '@/lib/public/facts';
 import { routes } from '@/lib/public/navigation';
-import { heroImages, sectionOf } from '@/lib/public/site';
+import { heroImages, homeHotelAmenities, introText, sectionOf } from '@/lib/public/site';
 import type { PublicSection, SectionKey } from '@/lib/public/types';
 import { whatsAppLink } from '@/lib/public/whatsapp';
 
@@ -64,9 +64,10 @@ export default async function HomePage() {
 
   const renderers: Partial<Record<SectionKey, (section: PublicSection) => ReactNode>> = {
     ABOUT: (section) => {
-      const text = section.body ?? hotel.description;
-      const facts = homeFacts(rooms.length, site.highlightedServices);
-      if (!text && facts.length === 0) return null;
+      // Owner feedback: no about text, no intro (the facts alone read as filler).
+      const text = introText(section.body, hotel.description);
+      if (!text) return null;
+      const facts = homeFacts(rooms.length, homeHotelAmenities(site));
       return (
         <HomeIntro
           key="ABOUT"
@@ -91,11 +92,11 @@ export default async function HomePage() {
     SERVICES: (section) => (
       <div key="SERVICES">
         <AmenitiesSection amenities={site.homeAmenities} />
-        <ServicesPanel
+        <HotelAmenitiesPanel
           eyebrow={section.subtitle}
-          title={section.title ?? ui.nav.services}
+          title={section.title ?? ui.home.hotelAmenitiesTitle}
           body={section.body}
-          services={site.highlightedServices}
+          amenities={homeHotelAmenities(site)}
         />
       </div>
     ),

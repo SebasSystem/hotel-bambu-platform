@@ -112,7 +112,7 @@ test.describe('cookie consent', () => {
     });
     await page.goto('/habitaciones');
     await page.locator(BANNER).getByRole('button', { name: 'Rechazar no esenciales' }).click();
-    await page.goto('/servicios');
+    await page.goto('/galeria');
     await page.waitForLoadState('networkidle');
     expect(events).toEqual([]);
 

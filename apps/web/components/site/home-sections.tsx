@@ -15,7 +15,6 @@ import type {
   PublicGalleryItem,
   PublicMedia,
   PublicRoomSummary,
-  PublicService,
 } from '@/lib/public/types';
 import { FeatureGrid, IconBadge, TextBlock } from './blocks';
 import { PhotoGallery } from './photo-gallery';
@@ -215,22 +214,25 @@ export function AmenitiesSection({ amenities }: { amenities: PublicAmenity[] }) 
   );
 }
 
-/** Mockup sustainability panel: sand, 32 px radius, heading on the left, service points right. */
-export function ServicesPanel({
+/**
+ * Mockup sustainability panel: sand, 32 px radius, heading on the left and the hotel-wide amenities
+ * (admin › Comodidades, scope "Todo el hotel", shown on the home) on the right.
+ */
+export function HotelAmenitiesPanel({
   eyebrow,
   title,
   body,
-  services,
+  amenities,
 }: {
   eyebrow: string | null;
   title: string;
   body: string | null;
-  services: PublicService[];
+  amenities: PublicAmenity[];
 }) {
-  if (services.length === 0) return null;
+  if (amenities.length === 0) return null;
   return (
     <section
-      aria-labelledby="servicios-title"
+      aria-labelledby="hotel-amenities-title"
       className="px-(--gutter) pb-[clamp(78px,10vw,150px)]"
     >
       <div
@@ -238,27 +240,29 @@ export function ServicesPanel({
         className="mx-auto grid max-w-[calc(var(--container-site)-2*var(--gutter))] items-center gap-10 rounded-[22px] bg-sand p-[clamp(32px,7vw,92px)] tab:rounded-xl desk:grid-cols-[1.1fr_0.9fr] desk:gap-[70px]"
       >
         <div>
-          <SectionHeading id="servicios-title" surface="sand" eyebrow={eyebrow} title={title} />
+          <SectionHeading
+            id="hotel-amenities-title"
+            surface="sand"
+            eyebrow={eyebrow}
+            title={title}
+          />
           <TextBlock text={body} className="mt-[18px] max-w-[560px] text-ink-muted-strong" />
-          <Link href={routes.services} className={`${buttonClass('ghost')} mt-7`}>
-            {ui.home.servicesLink}
-          </Link>
         </div>
         <ul className="grid gap-3">
-          {services.map((service) => (
+          {amenities.map((amenity) => (
             <li
-              key={service.id}
+              key={amenity.id}
               className="flex items-start gap-3.5 rounded-sm bg-white/52 p-[19px]"
             >
               <SiteIcon
-                iconKey={service.iconKey}
+                iconKey={amenity.iconKey}
                 className="mt-0.5 size-[1.3rem] shrink-0 text-green"
               />
               <span>
-                <strong className="block font-bold text-charcoal">{service.name}</strong>
-                {service.description ? (
+                <strong className="block font-bold text-charcoal">{amenity.name}</strong>
+                {amenity.description ? (
                   <span className="mt-0.5 block text-sm text-ink-muted-strong">
-                    {service.description}
+                    {amenity.description}
                   </span>
                 ) : null}
               </span>

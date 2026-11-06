@@ -66,7 +66,6 @@ function recordEvidence(state: ConsentState): void {
 const SOURCE_BY_PATH: Record<string, AnalyticsSource> = {
   [routes.home]: 'home',
   [routes.rooms]: 'rooms',
-  [routes.services]: 'services',
   [routes.gallery]: 'gallery',
   [routes.location]: 'location',
   [routes.faq]: 'faq',

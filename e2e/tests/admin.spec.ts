@@ -9,6 +9,26 @@ test.describe('admin', () => {
     await expect(page.getByRole('button', { name: 'Ingresar' })).toBeVisible();
   });
 
+  test('one Comodidades catalog filters by scope and has no Servicios section', async ({
+    page,
+  }) => {
+    await page.goto('/admin/login');
+    await page.getByLabel('Correo electrónico').fill(ADMIN_EMAIL);
+    await page.getByLabel('Contraseña').fill(ADMIN_PASSWORD);
+    await page.getByRole('button', { name: 'Ingresar' }).click();
+    await expect(page).toHaveURL(/\/admin\/?$/);
+
+    await expect(page.getByRole('link', { name: 'Servicios', exact: true })).toHaveCount(0);
+    await page.goto('/admin/amenities');
+    const filters = page.getByRole('group', { name: 'Filtrar por alcance' });
+    await filters.getByRole('button', { name: /^Todo el hotel/ }).click();
+    await expect(page.getByText('Wi-Fi en todo el hotel', { exact: true })).toBeVisible();
+    await expect(page.getByText('Baño privado', { exact: true })).toHaveCount(0);
+    await filters.getByRole('button', { name: /^Habitaciones/ }).click();
+    await expect(page.getByText('Baño privado', { exact: true })).toBeVisible();
+    await expect(page.getByText('Wi-Fi en todo el hotel', { exact: true })).toHaveCount(0);
+  });
+
   test('editing a FAQ in the panel shows up on the public site', async ({ page }) => {
     const api = await adminApi();
     const stamp = Date.now().toString(36);

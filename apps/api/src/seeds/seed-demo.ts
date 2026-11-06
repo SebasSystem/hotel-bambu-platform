@@ -1,5 +1,8 @@
 import type { PrismaClient } from '../generated/prisma/client.js';
 import { AMENITIES } from './base-data.js';
+
+/** Room equipment only: HOTEL amenities are never assigned per room (ADR 0015). */
+const ROOM_AMENITIES = AMENITIES.filter((amenity) => amenity.scope === 'ROOM');
 import { DEMO_FAQS, DEMO_MARKER, DEMO_POLICIES, buildDemoRooms } from './demo-data.js';
 import { assertDemoSeedAllowed } from './seed-guards.js';
 
@@ -23,10 +26,10 @@ export async function seedDemo(
 
   return prisma.$transaction(async (tx) => {
     const amenities = await tx.amenity.findMany({
-      where: { name: { in: AMENITIES.map((a) => a.name) } },
+      where: { scope: 'ROOM', name: { in: ROOM_AMENITIES.map((a) => a.name) } },
       select: { id: true },
     });
-    if (amenities.length !== AMENITIES.length) {
+    if (amenities.length !== ROOM_AMENITIES.length) {
       throw new Error('Amenity catalog missing: run db:seed:base before db:seed:demo.');
     }
 

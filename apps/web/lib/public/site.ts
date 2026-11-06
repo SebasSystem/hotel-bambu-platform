@@ -1,5 +1,6 @@
 import type {
   PublicGalleryItem,
+  PublicHotelAmenity,
   PublicHotel,
   PublicMedia,
   PublicRoomSummary,
@@ -50,14 +51,34 @@ export function mapLinks(
 }
 
 /**
- * Hero photos: the configured hero first, then featured gallery photos, then room covers.
- * Only real hotel photos with alt text (the API exposes nothing else). Max 3 (motion spec).
+ * Home "Sobre nosotros" text: the ABOUT body, else the hotel description. Null without real text:
+ * the intro is then hidden (a heading and facts with no story read as filler).
+ */
+export function introText(body: string | null, description: string | null): string | null {
+  return body?.trim() || description?.trim() || null;
+}
+
+/** Hotel-wide amenities for the home panel (admin › Comodidades, scope "Todo el hotel"). */
+export function homeHotelAmenities(site: PublicSite): PublicHotelAmenity[] {
+  return site.hotelAmenities.filter((amenity) => amenity.showOnHome);
+}
+
+/**
+ * Hero photos: the admin hero slides in their order (caption on the media). Without slides, the
+ * D2 fallback: the configured hero, then featured gallery photos, then room covers, max 3. Only real
+ * hotel photos with alt text (the API exposes nothing else).
  */
 export function heroImages(
   site: PublicSite,
   gallery: PublicGalleryItem[],
   rooms: PublicRoomSummary[],
 ): PublicMedia[] {
+  if (site.heroSlides.length > 0) {
+    return site.heroSlides.map((slide) => ({
+      ...slide.media,
+      caption: slide.caption ?? slide.media.caption,
+    }));
+  }
   const heroSection = sectionOf(site, 'HERO');
   const candidates = [
     site.hotel.hero,

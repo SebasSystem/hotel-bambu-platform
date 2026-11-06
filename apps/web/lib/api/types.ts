@@ -1,4 +1,9 @@
-import type { AuthSessionResponse, PublicMedia, PublicationStatus } from '@hotel-bambu/shared';
+import type {
+  AmenityScope,
+  AuthSessionResponse,
+  PublicMedia,
+  PublicationStatus,
+} from '@hotel-bambu/shared';
 
 /** Admin response shapes (Prisma rows serialised by the API; see apps/api/src/modules). */
 
@@ -46,7 +51,7 @@ export interface MediaAsset extends Timestamps {
   caption: string | null;
   status: MediaStatus;
   galleryItems?: { id: string; category: string; published: boolean }[];
-  _count?: { roomImages: number; services: number; sections: number };
+  _count?: { roomImages: number; heroSlides: number; sections: number };
 }
 
 export interface Paginated<T> {
@@ -58,7 +63,8 @@ export interface Paginated<T> {
 
 export interface DashboardSummary {
   rooms: Partial<Record<PublicationStatus, number>>;
-  activeServices: number;
+  /** Active hotel-wide amenities (scope HOTEL). */
+  activeHotelAmenities: number;
   activePromotions: number;
   lastChange: { createdAt: string; action: string; entity: string } | null;
   incomplete: {
@@ -155,20 +161,22 @@ export interface Amenity extends Timestamps {
   name: string;
   description: string | null;
   iconKey: string;
+  scope: AmenityScope;
   active: boolean;
   showOnHome: boolean;
   sortOrder: number;
+  /** Rooms using it (admin list only). */
+  _count?: { rooms: number };
 }
 
-export interface Service extends Timestamps {
+export interface HeroSlide extends Timestamps {
   id: string;
-  name: string;
-  description: string | null;
-  iconKey: string | null;
-  mediaAssetId: string | null;
+  mediaAssetId: string;
+  altText: string | null;
+  caption: string | null;
   active: boolean;
-  highlighted: boolean;
   sortOrder: number;
+  mediaAsset: EmbeddedMedia;
 }
 
 export interface Promotion extends Timestamps {

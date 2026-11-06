@@ -6,7 +6,6 @@ const PAGES = [
   '/',
   '/habitaciones',
   'ROOM',
-  '/servicios',
   '/galeria',
   '/ubicacion',
   '/preguntas-frecuentes',

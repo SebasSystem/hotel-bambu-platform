@@ -85,7 +85,8 @@ export function hotelJsonLd(site: PublicSite, rooms: PublicRoomSummary[]): Json 
     email: hotel.email,
     checkinTime: hotel.checkInTime,
     checkoutTime: hotel.checkOutTime,
-    amenityFeature: site.homeAmenities.map((amenity) => ({
+    // Hotel-wide amenities, then the room equipment shown on the home (ADR 0015).
+    amenityFeature: [...site.hotelAmenities, ...site.homeAmenities].map((amenity) => ({
       '@type': 'LocationFeatureSpecification',
       name: amenity.name,
       value: true,

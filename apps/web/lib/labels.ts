@@ -1,4 +1,5 @@
 import type {
+  AMENITY_SCOPES,
   BED_TYPES,
   GALLERY_CATEGORIES,
   ICON_KEYS,
@@ -32,11 +33,17 @@ export const BED_TYPE_LABELS: Record<(typeof BED_TYPES)[number], string> = {
 
 export const GALLERY_CATEGORY_LABELS: Record<(typeof GALLERY_CATEGORIES)[number], string> = {
   ROOMS: 'Habitaciones',
-  COMMON_AREAS: 'Zonas comunes',
-  EXTERIOR: 'Exteriores',
+  COMMON_AREAS: 'Espacios comunes',
+  EXTERIOR: 'Fachada',
   FOOD: 'Gastronomía',
   SURROUNDINGS: 'Entorno',
   DETAILS: 'Detalles',
+};
+
+/** Amenity scope (ADR 0015): hotel-wide, or assigned per room. */
+export const AMENITY_SCOPE_LABELS: Record<(typeof AMENITY_SCOPES)[number], string> = {
+  HOTEL: 'Todo el hotel',
+  ROOM: 'Habitaciones',
 };
 
 export const SOCIAL_PLATFORM_LABELS: Record<(typeof SOCIAL_PLATFORMS)[number], string> = {

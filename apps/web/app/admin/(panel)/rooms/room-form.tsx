@@ -62,7 +62,15 @@ function toFormValues(room: Room | null): FieldValues {
 
 type ErrorMap = Record<string, { message?: string } | undefined>;
 
-export function RoomForm({ room, amenities }: { room: Room | null; amenities: Amenity[] }) {
+export function RoomForm({
+  room,
+  amenities: catalog,
+}: {
+  room: Room | null;
+  amenities: Amenity[];
+}) {
+  // Only room equipment is assigned per room; hotel-wide amenities apply everywhere (ADR 0015).
+  const amenities = catalog.filter((amenity) => amenity.scope === 'ROOM');
   const router = useRouter();
   const toast = useToast();
   const [formError, setFormError] = useState<string | null>(null);
@@ -244,7 +252,8 @@ export function RoomForm({ room, amenities }: { room: Room | null; amenities: Am
                 <legend className="sr-only">Comodidades incluidas</legend>
                 {amenities.length === 0 ? (
                   <p className="text-sm text-muted-foreground">
-                    No hay comodidades. Créelas en «Comodidades».
+                    No hay comodidades de habitación. Créelas en «Comodidades» con el alcance
+                    «Habitaciones».
                   </p>
                 ) : null}
                 <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">

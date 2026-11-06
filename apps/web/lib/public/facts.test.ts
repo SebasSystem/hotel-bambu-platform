@@ -10,13 +10,13 @@ const service = (name: string, description: string | null = null, iconKey = 'sun
 });
 
 describe('homeFacts (owner decision Q3: derived from data, never invented)', () => {
-  it('leads with the published room count, then the highlighted services', () => {
+  it('leads with the published room count, then the hotel-wide amenities', () => {
     const facts = homeFacts(16, [
       service('Paneles solares', 'El hotel cuenta con paneles solares.'),
       service('Reserva de agua', null, 'droplets'),
     ]);
     expect(facts).toEqual([
-      { id: 'rooms', value: '16', iconKey: null, label: 'habitaciones publicadas', note: null },
+      { id: 'rooms', value: '16', iconKey: null, label: 'habitaciones', note: null },
       {
         id: 'Paneles solares',
         value: null,
@@ -37,7 +37,7 @@ describe('homeFacts (owner decision Q3: derived from data, never invented)', () 
   it('uses the singular for one room and caps the stack at three facts', () => {
     const facts = homeFacts(1, [service('A'), service('B'), service('C')]);
     expect(facts).toHaveLength(3);
-    expect(facts[0]).toMatchObject({ value: '1', label: 'habitación publicada' });
+    expect(facts[0]).toMatchObject({ value: '1', label: 'habitación' });
   });
 
   it('skips the room fact when nothing is published and returns nothing without data', () => {

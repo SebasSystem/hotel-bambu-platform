@@ -37,7 +37,7 @@ export class UnconfiguredStorage implements ObjectStorage {
 }
 
 /** Tags of every public page that can show a media asset. */
-const MEDIA_TAGS = [CACHE_TAGS.site, CACHE_TAGS.rooms, CACHE_TAGS.gallery, CACHE_TAGS.services];
+const MEDIA_TAGS = [CACHE_TAGS.site, CACHE_TAGS.rooms, CACHE_TAGS.gallery];
 
 @Injectable()
 export class MediaService {
@@ -75,7 +75,7 @@ export class MediaService {
         take: params.pageSize,
         include: {
           galleryItems: { select: { id: true, category: true, published: true } },
-          _count: { select: { roomImages: true, services: true, sections: true } },
+          _count: { select: { roomImages: true, heroSlides: true, sections: true } },
         },
       }),
       this.prisma.mediaAsset.count({ where }),
@@ -188,7 +188,7 @@ export class MediaService {
 
   /**
    * Deletes the row (gallery entries cascade) and then the stored objects. Assets still used by a
-   * room, service, landing section or the hotel profile are refused with 409. Failed object
+   * room, hero slide, landing section or the hotel profile are refused with 409. Failed object
    * deletions are queued in PendingStorageDeletion (requirement 10).
    */
   async remove(actorId: string, id: string): Promise<void> {
@@ -200,7 +200,7 @@ export class MediaService {
         _count: {
           select: {
             roomImages: true,
-            services: true,
+            heroSlides: true,
             sections: true,
             hotelLogos: true,
             hotelHeroes: true,
@@ -214,7 +214,7 @@ export class MediaService {
     if (usage.length > 0) {
       throw new ConflictException({
         message:
-          'Media is in use. Remove it from rooms, services, sections or the hotel profile first.',
+          'Media is in use. Remove it from rooms, hero slides, sections or the hotel profile first.',
         usage: Object.fromEntries(usage),
       });
     }

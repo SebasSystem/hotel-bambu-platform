@@ -8,7 +8,6 @@ export const ui = {
   nav: {
     home: 'Inicio',
     rooms: 'Habitaciones',
-    services: 'Servicios',
     gallery: 'Galería',
     location: 'Ubicación',
     faq: 'Preguntas frecuentes',
@@ -120,7 +119,8 @@ export const ui = {
   home: {
     roomsAll: (n: number) => `Ver las ${n} habitaciones`,
     amenitiesKicker: 'Lo esencial, bien cuidado',
-    servicesLink: 'Ver servicios del hotel',
+    hotelAmenitiesTitle: 'Comodidades del hotel',
+    hotelWide: 'En todo el hotel',
     galleryKicker: 'Una mirada al hotel',
     amenitiesTitle: 'En todas las habitaciones',
     faqAll: 'Ver todas las preguntas',

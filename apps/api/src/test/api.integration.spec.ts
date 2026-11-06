@@ -308,6 +308,120 @@ describe.skipIf(!databaseUrl)('API integration (hotel_test database)', () => {
     expect((await call('DELETE', `/admin/rooms/${roomId}`)).statusCode).toBe(409);
   });
 
+  it('has no hotel services module any more (ADR 0015)', async () => {
+    expect((await call('GET', '/admin/services')).statusCode).toBe(404);
+    expect((await call('GET', '/public/services')).statusCode).toBe(404);
+  });
+
+  it('serves HOTEL amenities and ROOM amenities apart, without a room-level Wi-Fi', async () => {
+    const site = (await call('GET', '/public/site')).json();
+    expect(site.highlightedServices).toBeUndefined();
+    expect(site.hotelAmenities.map((a: { name: string }) => a.name)).toEqual([
+      'Wi-Fi en todo el hotel',
+      'Paneles solares',
+      'Reserva de agua',
+    ]);
+    expect(site.homeAmenities.map((a: { name: string }) => a.name)).toEqual([
+      'Baño privado',
+      'Televisor',
+      'Ventilador',
+    ]);
+    const all = (await call('GET', '/public/amenities')).json();
+    expect(all.find((a: { name: string }) => a.name === 'Wi-Fi')).toBeUndefined();
+    expect(all.find((a: { name: string }) => a.name === 'Paneles solares').scope).toBe('HOTEL');
+  });
+
+  it('assigns only ROOM amenities to rooms (422 for a HOTEL amenity)', async () => {
+    const amenities = (await call('GET', '/admin/amenities')).json() as {
+      id: string;
+      name: string;
+      scope: string;
+    }[];
+    const wifi = amenities.find((a) => a.scope === 'HOTEL')!;
+    const tv = amenities.find((a) => a.name === 'Televisor')!;
+    const bad = await call('PATCH', `/admin/rooms/${roomId}`, { body: { amenityIds: [wifi.id] } });
+    expect(bad.statusCode).toBe(422);
+    expect(bad.json().details[0].path).toBe('amenityIds');
+    const ok = await call('PATCH', `/admin/rooms/${roomId}`, { body: { amenityIds: [tv.id] } });
+    expect(ok.statusCode).toBe(200);
+    const room = (await call('GET', '/public/rooms/suite-prueba')).json();
+    expect(room.amenities).toEqual([{ name: 'Televisor', iconKey: 'tv' }]);
+    // An amenity still assigned to rooms cannot move to the HOTEL scope.
+    const scope = await call('PATCH', `/admin/amenities/${tv.id}`, { body: { scope: 'HOTEL' } });
+    expect(scope.statusCode).toBe(409);
+  });
+
+  it('manages ordered hero slides and exposes the active ones publicly', async () => {
+    const png = await sharp({
+      create: { width: 1600, height: 900, channels: 3, background: '#183b2c' },
+    })
+      .jpeg()
+      .toBuffer();
+    const form = multipart({ altText: 'Fachada del hotel' }, png);
+    const upload = await call('POST', '/admin/media', {
+      body: form.payload,
+      headers: { 'content-type': form.contentType },
+    });
+    expect(upload.statusCode).toBe(201);
+    const heroMediaId = upload.json().id as string;
+
+    revalidate.mockClear();
+    const first = await call('POST', '/admin/hero-slides', {
+      body: { mediaAssetId: heroMediaId, caption: 'Llegada al hotel' },
+    });
+    expect(first.statusCode).toBe(201);
+    expect(revalidate).toHaveBeenCalledWith(expect.arrayContaining(['site']));
+    const second = await call('POST', '/admin/hero-slides', {
+      body: { mediaAssetId: mediaId, altText: 'Habitación doble con luz natural' },
+    });
+    expect(second.statusCode).toBe(201);
+    expect(second.json().sortOrder).toBeGreaterThan(first.json().sortOrder);
+    // One slide per photo.
+    expect(
+      (await call('POST', '/admin/hero-slides', { body: { mediaAssetId: heroMediaId } }))
+        .statusCode,
+    ).toBe(409);
+
+    let site = (await call('GET', '/public/site')).json();
+    expect(site.heroSlides).toEqual([
+      {
+        id: first.json().id,
+        caption: 'Llegada al hotel',
+        media: expect.objectContaining({ id: heroMediaId, altText: 'Fachada del hotel' }),
+      },
+      {
+        id: second.json().id,
+        caption: null,
+        media: expect.objectContaining({
+          id: mediaId,
+          altText: 'Habitación doble con luz natural',
+        }),
+      },
+    ]);
+
+    const order = await call('PUT', '/admin/hero-slides/order', {
+      body: { ids: [second.json().id, first.json().id] },
+    });
+    expect(order.statusCode).toBe(200);
+    expect(order.json().map((s: { id: string }) => s.id)).toEqual([
+      second.json().id,
+      first.json().id,
+    ]);
+
+    const hide = await call('PATCH', `/admin/hero-slides/${second.json().id}`, {
+      body: { active: false },
+    });
+    expect(hide.statusCode).toBe(200);
+    site = (await call('GET', '/public/site')).json();
+    expect(site.heroSlides.map((s: { id: string }) => s.id)).toEqual([first.json().id]);
+
+    // Media used by a slide cannot be deleted; deleting the slide frees it.
+    expect((await call('DELETE', `/admin/media/${heroMediaId}`)).statusCode).toBe(409);
+    expect((await call('DELETE', `/admin/hero-slides/${first.json().id}`)).statusCode).toBe(204);
+    expect((await call('DELETE', `/admin/media/${heroMediaId}`)).statusCode).toBe(204);
+    expect((await call('GET', '/admin/hero-slides')).json()).toHaveLength(1);
+  });
+
   it('records an audit trail without secrets', async () => {
     const logs = await prisma.auditLog.findMany({ where: { entity: 'Room', entityId: roomId } });
     expect(logs.map((l) => l.action)).toEqual(

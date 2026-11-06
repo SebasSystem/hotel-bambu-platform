@@ -1,18 +1,11 @@
 import type { PrismaClient } from '../generated/prisma/client.js';
-import {
-  AMENITIES,
-  HOTEL_NAME,
-  LANDING_SECTIONS,
-  SERVICES,
-  WHATSAPP_TEMPLATES,
-} from './base-data.js';
+import { AMENITIES, HOTEL_NAME, LANDING_SECTIONS, WHATSAPP_TEMPLATES } from './base-data.js';
 
 export interface SeedBaseResult {
   hotelProfile: 'created' | 'kept';
   landingSections: number;
   whatsappTemplates: number;
   amenities: number;
-  services: number;
 }
 
 /**
@@ -58,20 +51,11 @@ export async function seedBase(prisma: PrismaClient): Promise<SeedBaseResult> {
       });
     }
 
-    for (const [index, service] of SERVICES.entries()) {
-      await tx.service.upsert({
-        where: { name: service.name },
-        create: { ...service, active: true, highlighted: true, sortOrder: index },
-        update: {},
-      });
-    }
-
     return {
       hotelProfile: existingHotel ? 'kept' : 'created',
       landingSections: await tx.landingSection.count(),
       whatsappTemplates: await tx.whatsAppTemplate.count(),
       amenities: await tx.amenity.count(),
-      services: await tx.service.count(),
     };
   });
 }

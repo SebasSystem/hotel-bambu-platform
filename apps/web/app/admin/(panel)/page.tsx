@@ -78,7 +78,11 @@ export default async function DashboardPage() {
             value={summary.rooms.DRAFT ?? 0}
             href="/admin/rooms"
           />
-          <Stat label="Servicios activos" value={summary.activeServices} href="/admin/services" />
+          <Stat
+            label="Comodidades del hotel"
+            value={summary.activeHotelAmenities}
+            href="/admin/amenities"
+          />
           <Stat
             label="Promociones vigentes"
             value={summary.activePromotions}

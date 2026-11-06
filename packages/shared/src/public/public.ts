@@ -6,13 +6,12 @@ import { z } from 'zod';
  * Next.js cache tags. The API sends them to `POST /api/revalidate` after admin mutations;
  * the web tags its `fetch` calls with the same values.
  *
- * - `site`: GET /public/site (hotel profile, social links, WhatsApp templates, highlighted
- *   services, landing sections).
+ * - `site`: GET /public/site (hotel profile, social links, WhatsApp templates, home amenities,
+ *   hero slides, landing sections).
  */
 export const CACHE_TAGS = {
   site: 'site',
   rooms: 'rooms',
-  services: 'services',
   amenities: 'amenities',
   gallery: 'gallery',
   faq: 'faq',

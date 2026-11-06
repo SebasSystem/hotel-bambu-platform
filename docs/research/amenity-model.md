@@ -1,6 +1,8 @@
 # Amenity model: hotel facilities vs room amenities (R1b)
 
 Status: research + recommendation (task R1b of `odd/tasks/public-site-redesign.md`). Implementation is task R5b.
+
+> **Owner decision 2026-11-05 (overrides §3 and §4).** The owner rejected the two-table model: hotel "services" are not a separate public page, admin section or backend module. Implemented in D3 ([ADR 0015](../adr/0015-amenities-and-hero-slides.md)): one `Amenity` catalog with `scope` `HOTEL` | `ROOM`, no categories, no charge flag. Services moved into HOTEL amenities, the Wi-Fi room amenity and "Internet en todos los pisos" became one HOTEL amenity "Wi-Fi en todo el hotel", and the `Service` table was dropped. No "Televisión por cable" row existed, so "Televisor" stays a ROOM amenity. Industry findings (§2) and the questions for the hotel (§5) remain valid.
 Date: 2026-11-04.
 
 ## 1. Problem (verified in code)

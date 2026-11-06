@@ -5,7 +5,6 @@ export const routes = {
   home: '/',
   rooms: '/habitaciones',
   room: (slug: string) => `/habitaciones/${slug}`,
-  services: '/servicios',
   gallery: '/galeria',
   location: '/ubicacion',
   faq: '/preguntas-frecuentes',
@@ -25,7 +24,6 @@ export interface NavItem {
 export const mainNav: readonly NavItem[] = [
   { href: routes.home, label: ui.nav.home },
   { href: routes.rooms, label: ui.nav.rooms },
-  { href: routes.services, label: ui.nav.services },
   { href: routes.gallery, label: ui.nav.gallery },
   { href: routes.location, label: ui.nav.location },
   { href: routes.contact, label: ui.nav.contact },
@@ -42,7 +40,6 @@ export const mobileNav: readonly NavItem[] = [
 export const footerNav: readonly NavItem[] = [
   { href: routes.home, label: ui.nav.home },
   { href: routes.rooms, label: ui.nav.rooms },
-  { href: routes.services, label: ui.nav.services },
   { href: routes.gallery, label: ui.nav.gallery },
 ];
 

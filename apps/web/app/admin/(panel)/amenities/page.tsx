@@ -12,7 +12,7 @@ export default async function AmenitiesPage() {
     <>
       <PageHeader
         title="Comodidades"
-        description="Lo que incluyen las habitaciones (baño privado, TV, Wi-Fi…). Se asignan en cada habitación."
+        description="Lo que ofrece el hotel. «Todo el hotel» (Wi-Fi, paneles solares…) aplica a todo el hotel; «Habitaciones» (baño privado, TV…) se asigna en cada habitación."
       />
       <AmenitiesManager items={items} />
     </>

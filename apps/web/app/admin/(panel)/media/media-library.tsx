@@ -277,7 +277,7 @@ export function MediaLibrary({
     } catch (error) {
       toast.error(
         isApiError(error) && error.status === 409
-          ? 'La imagen está en uso. Quítela primero de habitaciones, servicios, secciones o del perfil del hotel.'
+          ? 'La imagen está en uso. Quítela primero de habitaciones, del carrusel principal, de secciones o del perfil del hotel.'
           : describeApiError(error),
       );
     } finally {
@@ -301,7 +301,7 @@ export function MediaLibrary({
       <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {data.items.map((item) => {
           const uses = item._count
-            ? item._count.roomImages + item._count.services + item._count.sections
+            ? item._count.roomImages + item._count.heroSlides + item._count.sections
             : 0;
           return (
             <li

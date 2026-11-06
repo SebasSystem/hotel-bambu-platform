@@ -43,7 +43,8 @@ const site: PublicSite = {
   hotel,
   socialLinks: [],
   whatsappTemplates: [],
-  highlightedServices: [],
+  heroSlides: [],
+  hotelAmenities: [],
   homeAmenities: [],
   sections: [],
 };
@@ -102,7 +103,16 @@ describe('hotelJsonLd', () => {
           checkInTime: '15:00',
           checkOutTime: '12:00',
         },
-        homeAmenities: [{ id: 'a', name: 'Wi-Fi', description: null, iconKey: 'wifi' }],
+        hotelAmenities: [
+          {
+            id: 'h',
+            name: 'Wi-Fi en todo el hotel',
+            description: null,
+            iconKey: 'wifi',
+            showOnHome: false,
+          },
+        ],
+        homeAmenities: [{ id: 'a', name: 'Baño privado', description: null, iconKey: 'bath' }],
         socialLinks: [{ id: 's', platform: 'INSTAGRAM', url: 'https://instagram.com/x' }],
       },
       [
@@ -122,7 +132,8 @@ describe('hotelJsonLd', () => {
     expect(data.sameAs).toEqual(['https://instagram.com/x']);
     expect(data.priceRange).toBe('COP 90.000 – 150.000');
     expect(data.amenityFeature).toEqual([
-      { '@type': 'LocationFeatureSpecification', name: 'Wi-Fi', value: true },
+      { '@type': 'LocationFeatureSpecification', name: 'Wi-Fi en todo el hotel', value: true },
+      { '@type': 'LocationFeatureSpecification', name: 'Baño privado', value: true },
     ]);
   });
 });

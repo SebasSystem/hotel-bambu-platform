@@ -170,12 +170,18 @@ export const socialLinkUpdateSchema = z.strictObject(socialLinkFields).partial()
 export type SocialLinkCreateInput = z.infer<typeof socialLinkCreateSchema>;
 export type SocialLinkUpdateInput = z.infer<typeof socialLinkUpdateSchema>;
 
-// ─── Amenities (room comforts) ──────────────────────────────────────────────
+// ─── Amenities ("Comodidades", ADR 0015) ────────────────────────────────────
+
+/** HOTEL: applies to the whole hotel (Wi-Fi, solar panels). ROOM: assigned per room. */
+export const AMENITY_SCOPES = ['HOTEL', 'ROOM'] as const;
+export const amenityScopeSchema = z.enum(AMENITY_SCOPES);
+export type AmenityScope = z.infer<typeof amenityScopeSchema>;
 
 const amenityFields = {
   name: requiredText(80),
   description: nullableText(300),
   iconKey: iconKeySchema,
+  scope: amenityScopeSchema,
   active: z.boolean(),
   showOnHome: z.boolean(),
   sortOrder: sortOrderSchema,
@@ -183,6 +189,7 @@ const amenityFields = {
 export const amenityCreateSchema = z.strictObject({
   ...amenityFields,
   description: amenityFields.description.optional(),
+  scope: amenityFields.scope.default('ROOM'),
   active: amenityFields.active.default(true),
   showOnHome: amenityFields.showOnHome.default(false),
   sortOrder: amenityFields.sortOrder.optional(),
@@ -190,30 +197,6 @@ export const amenityCreateSchema = z.strictObject({
 export const amenityUpdateSchema = z.strictObject(amenityFields).partial();
 export type AmenityCreateInput = z.infer<typeof amenityCreateSchema>;
 export type AmenityUpdateInput = z.infer<typeof amenityUpdateSchema>;
-
-// ─── Services (hotel features, 9.6) ─────────────────────────────────────────
-
-const serviceFields = {
-  name: requiredText(80),
-  description: nullableText(1000),
-  iconKey: iconKeySchema.nullable(),
-  mediaAssetId: nullableId,
-  active: z.boolean(),
-  highlighted: z.boolean(),
-  sortOrder: sortOrderSchema,
-};
-export const serviceCreateSchema = z.strictObject({
-  ...serviceFields,
-  description: serviceFields.description.optional(),
-  iconKey: serviceFields.iconKey.optional(),
-  mediaAssetId: serviceFields.mediaAssetId.optional(),
-  active: serviceFields.active.default(true),
-  highlighted: serviceFields.highlighted.default(false),
-  sortOrder: serviceFields.sortOrder.optional(),
-});
-export const serviceUpdateSchema = z.strictObject(serviceFields).partial();
-export type ServiceCreateInput = z.infer<typeof serviceCreateSchema>;
-export type ServiceUpdateInput = z.infer<typeof serviceUpdateSchema>;
 
 // ─── Rooms (9.4) ────────────────────────────────────────────────────────────
 
@@ -357,6 +340,27 @@ export const galleryItemUpdateSchema = z
   .partial();
 export type GalleryItemCreateInput = z.infer<typeof galleryItemCreateSchema>;
 export type GalleryItemUpdateInput = z.infer<typeof galleryItemUpdateSchema>;
+
+// ─── Home hero slides ───────────────────────────────────────────────────────
+
+const heroSlideFields = {
+  mediaAssetId: idSchema,
+  /** Overrides the media alt text for this slide. */
+  altText: nullableText(250),
+  caption: nullableText(160),
+  active: z.boolean(),
+  sortOrder: sortOrderSchema,
+};
+export const heroSlideCreateSchema = z.strictObject({
+  ...heroSlideFields,
+  altText: heroSlideFields.altText.optional(),
+  caption: heroSlideFields.caption.optional(),
+  active: heroSlideFields.active.default(true),
+  sortOrder: heroSlideFields.sortOrder.optional(),
+});
+export const heroSlideUpdateSchema = z.strictObject(heroSlideFields).partial();
+export type HeroSlideCreateInput = z.infer<typeof heroSlideCreateSchema>;
+export type HeroSlideUpdateInput = z.infer<typeof heroSlideUpdateSchema>;
 
 // ─── Landing sections (9.8) ─────────────────────────────────────────────────
 

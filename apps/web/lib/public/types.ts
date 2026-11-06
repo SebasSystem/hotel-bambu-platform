@@ -42,20 +42,23 @@ export interface PublicWhatsAppTemplate {
   allowedVariables: string[];
 }
 
-export interface PublicService {
-  id: string;
-  name: string;
-  description: string | null;
-  iconKey: string | null;
-  highlighted?: boolean;
-  media: PublicMedia | null;
-}
-
 export interface PublicAmenity {
   id: string;
   name: string;
   description: string | null;
   iconKey: string;
+}
+
+/** Hotel-wide amenity (scope HOTEL, ADR 0015); `showOnHome` picks the home panel. */
+export interface PublicHotelAmenity extends PublicAmenity {
+  showOnHome: boolean;
+}
+
+/** Home hero slide (admin › Contenido › Carrusel principal); alt override already applied. */
+export interface PublicHeroSlide {
+  id: string;
+  caption: string | null;
+  media: PublicMedia;
 }
 
 export type SectionKey =
@@ -75,7 +78,10 @@ export interface PublicSite {
   hotel: PublicHotel;
   socialLinks: PublicSocialLink[];
   whatsappTemplates: PublicWhatsAppTemplate[];
-  highlightedServices: PublicService[];
+  heroSlides: PublicHeroSlide[];
+  /** Every active hotel-wide amenity (home panel, room detail "En todo el hotel", JSON-LD). */
+  hotelAmenities: PublicHotelAmenity[];
+  /** Room equipment flagged for the home grid. */
   homeAmenities: PublicAmenity[];
   sections: PublicSection[];
 }

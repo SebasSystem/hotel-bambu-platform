@@ -37,6 +37,20 @@ test.describe('public site', () => {
     expect(types.some((type) => type === 'HotelRoom' || type === 'Offer')).toBe(true);
   });
 
+  test('room detail lists its equipment and the hotel-wide amenities; no services page', async ({
+    page,
+  }) => {
+    await page.goto(await firstRoomPath(page));
+    const hotelWide = page.getByTestId('hotel-wide-amenities');
+    await expect(hotelWide).toContainText('En todo el hotel:');
+    await expect(hotelWide).toContainText('Wi-Fi en todo el hotel');
+    await expect(
+      page.getByRole('navigation').first().getByRole('link', { name: 'Servicios' }),
+    ).toHaveCount(0);
+    const services = await page.goto('/servicios');
+    expect(services?.status()).toBe(404);
+  });
+
   test('unknown URLs answer a branded 404 with links to the rooms', async ({ page }) => {
     const response = await page.goto('/esta-pagina-no-existe');
     expect(response?.status()).toBe(404);

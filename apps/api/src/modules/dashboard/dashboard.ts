@@ -16,7 +16,7 @@ export class DashboardService {
   async summary(now = new Date()) {
     const [
       roomsByStatus,
-      activeServices,
+      activeHotelAmenities,
       activePromotions,
       mediaMissingAlt,
       publishedRoomsWithoutPrice,
@@ -29,7 +29,7 @@ export class DashboardService {
         _count: { _all: true },
         orderBy: { status: 'asc' },
       }),
-      this.prisma.service.count({ where: { active: true } }),
+      this.prisma.amenity.count({ where: { active: true, scope: 'HOTEL' } }),
       this.prisma.promotion.count({
         where: { status: 'PUBLISHED', startsAt: { lte: now }, endsAt: { gt: now } },
       }),
@@ -45,7 +45,7 @@ export class DashboardService {
     ]);
     return {
       rooms: Object.fromEntries(roomsByStatus.map((row) => [row.status, row._count._all])),
-      activeServices,
+      activeHotelAmenities,
       activePromotions,
       lastChange,
       incomplete: { mediaMissingAlt, publishedRoomsWithoutPrice, roomsWithoutCover },

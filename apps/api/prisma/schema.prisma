@@ -86,6 +86,13 @@ enum SocialPlatform {
   OTHER
 }
 
+/// Where an amenity applies (owner decision 2026-11-05, ADR 0015): the whole hotel, or the rooms
+/// it is assigned to through RoomAmenity.
+enum AmenityScope {
+  HOTEL
+  ROOM
+}
+
 enum WhatsAppTemplateKey {
   GENERAL
   ROOM
@@ -273,13 +280,18 @@ model RoomImage {
 }
 
 /// Room-level comfort catalog (private bathroom, TV, fan, Wi-Fi...).
+/// "Comodidades": one catalog for hotel-wide features (scope HOTEL: Wi-Fi, solar panels...) and
+/// per-room equipment (scope ROOM: private bathroom, TV, fan...). Only ROOM amenities are linked
+/// to rooms through RoomAmenity (enforced by the API).
 model Amenity {
   id          String        @id @default(uuid(7)) @db.Uuid
   name        String        @unique
   description String?
   /// Key from the controlled icon catalog (@hotel-bambu/shared ICON_KEYS).
   iconKey     String
+  scope       AmenityScope  @default(ROOM)
   active      Boolean       @default(true)
+  /// HOTEL: shown in the home hotel panel. ROOM: shown in the home "all rooms" grid.
   showOnHome  Boolean       @default(false)
   sortOrder   Int           @default(0)
   createdAt   DateTime      @default(now()) @db.Timestamptz(3)
@@ -287,6 +299,7 @@ model Amenity {
   rooms       RoomAmenity[]
 
   @@index([active, sortOrder])
+  @@index([scope, active, sortOrder])
 }
 
 model RoomAmenity {
@@ -298,24 +311,6 @@ model RoomAmenity {
 
   @@id([roomId, amenityId])
   @@index([amenityId])
-}
-
-/// Hotel-level features (solar panels, water reserve, internet on all floors...).
-model Service {
-  id           String      @id @default(uuid(7)) @db.Uuid
-  name         String      @unique
-  description  String?
-  iconKey      String?
-  mediaAssetId String?     @db.Uuid
-  mediaAsset   MediaAsset? @relation(fields: [mediaAssetId], references: [id], onDelete: SetNull)
-  active       Boolean     @default(true)
-  /// Shown in the home "Experiencia / servicios" section.
-  highlighted  Boolean     @default(false)
-  sortOrder    Int         @default(0)
-  createdAt    DateTime    @default(now()) @db.Timestamptz(3)
-  updatedAt    DateTime    @updatedAt @db.Timestamptz(3)
-
-  @@index([active, sortOrder])
 }
 
 model Promotion {
@@ -362,7 +357,7 @@ model MediaAsset {
   updatedAt     DateTime         @updatedAt @db.Timestamptz(3)
   roomImages    RoomImage[]
   galleryItems  GalleryItem[]
-  services      Service[]
+  heroSlides    HeroSlide[]
   sections      LandingSection[]
   hotelLogos    HotelProfile[]   @relation("HotelLogo")
   hotelHeroes   HotelProfile[]   @relation("HotelHero")
@@ -415,6 +410,23 @@ model LandingSection {
   sortOrder    Int               @default(0)
   createdAt    DateTime          @default(now()) @db.Timestamptz(3)
   updatedAt    DateTime          @updatedAt @db.Timestamptz(3)
+}
+
+/// Ordered home hero carousel. A slide is public when active and its media is READY with alt text
+/// (its own override or the media alt text). Media in use by a slide cannot be deleted.
+model HeroSlide {
+  id           String     @id @default(uuid(7)) @db.Uuid
+  mediaAssetId String     @unique @db.Uuid
+  mediaAsset   MediaAsset @relation(fields: [mediaAssetId], references: [id], onDelete: Restrict)
+  /// Overrides MediaAsset.altText for this slide.
+  altText      String?
+  caption      String?
+  active       Boolean    @default(true)
+  sortOrder    Int        @default(0)
+  createdAt    DateTime   @default(now()) @db.Timestamptz(3)
+  updatedAt    DateTime   @updatedAt @db.Timestamptz(3)
+
+  @@index([active, sortOrder])
 }
 
 model Faq {

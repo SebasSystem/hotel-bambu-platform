@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
+  amenityCreateSchema,
+  amenityUpdateSchema,
+  heroSlideCreateSchema,
+  heroSlideUpdateSchema,
   hotelProfileUpdateSchema,
   isAllowedSocialUrl,
   promotionCreateSchema,
@@ -96,5 +100,31 @@ describe('admin schemas', () => {
       'habitacion',
       'promocion',
     ]);
+  });
+
+  it('defaults amenities to the ROOM scope and accepts only HOTEL or ROOM', () => {
+    const amenity = amenityCreateSchema.parse({ name: 'Ventilador', iconKey: 'fan' });
+    expect(amenity).toMatchObject({ scope: 'ROOM', active: true, showOnHome: false });
+    expect(
+      amenityCreateSchema.parse({ name: 'Wi-Fi', iconKey: 'wifi', scope: 'HOTEL' }).scope,
+    ).toBe('HOTEL');
+    expect(amenityUpdateSchema.safeParse({ scope: 'BUILDING' }).success).toBe(false);
+  });
+
+  it('validates hero slides: media required, optional alt override and caption', () => {
+    expect(heroSlideCreateSchema.safeParse({}).success).toBe(false);
+    expect(heroSlideCreateSchema.parse({ mediaAssetId: ID_A, altText: '', caption: '  ' })).toEqual(
+      {
+        mediaAssetId: ID_A,
+        altText: null,
+        caption: null,
+        active: true,
+      },
+    );
+    expect(
+      heroSlideCreateSchema.safeParse({ mediaAssetId: ID_A, altText: 'a'.repeat(251) }).success,
+    ).toBe(false);
+    expect(heroSlideUpdateSchema.safeParse({ mediaAssetId: ID_B }).success).toBe(true);
+    expect(heroSlideUpdateSchema.safeParse({ position: 1 }).success).toBe(false);
   });
 });
