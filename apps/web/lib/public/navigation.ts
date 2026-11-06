@@ -1,15 +1,17 @@
 import { ui } from '@/lib/i18n/es';
 
-/** Public routes (requirement 4.1). `/habitaciones/<slug>` matches the admin "Ver en el sitio". */
+/**
+ * Public routes (requirement 4.1). `/habitaciones/<slug>` matches the admin "Ver en el sitio".
+ * C3 merged `/contacto` into `/ubicacion` and `/preguntas-frecuentes` into `/politicas-del-hotel`
+ * (301s in `redirects.ts`).
+ */
 export const routes = {
   home: '/',
   rooms: '/habitaciones',
   room: (slug: string) => `/habitaciones/${slug}`,
   gallery: '/galeria',
   location: '/ubicacion',
-  faq: '/preguntas-frecuentes',
   policies: '/politicas-del-hotel',
-  contact: '/contacto',
   legalData: '/legal/tratamiento-de-datos',
   legalPrivacy: '/legal/aviso-de-privacidad',
   legalCookies: '/legal/cookies',
@@ -20,35 +22,29 @@ export interface NavItem {
   label: string;
 }
 
-/** Desktop header navigation (mockup: Inicio + the main sections, underline on hover/active). */
+/** Header navigation (mockup: Inicio + the main sections, underline on hover/active). */
 export const mainNav: readonly NavItem[] = [
   { href: routes.home, label: ui.nav.home },
   { href: routes.rooms, label: ui.nav.rooms },
   { href: routes.gallery, label: ui.nav.gallery },
   { href: routes.location, label: ui.nav.location },
-  { href: routes.contact, label: ui.nav.contact },
-];
-
-/** Mobile menu: the header sections plus the help pages that do not fit the desktop bar. */
-export const mobileNav: readonly NavItem[] = [
-  ...mainNav,
-  { href: routes.faq, label: ui.nav.faq },
   { href: routes.policies, label: ui.nav.policies },
 ];
 
-/** Footer "Explora" column. */
+/** Mobile menu: the same sections (every page fits the menu since the C3 merge). */
+export const mobileNav: readonly NavItem[] = mainNav;
+
+/** Footer "Explorar" column. */
 export const footerNav: readonly NavItem[] = [
   { href: routes.home, label: ui.nav.home },
   { href: routes.rooms, label: ui.nav.rooms },
-  { href: routes.gallery, label: ui.nav.gallery },
+  { href: routes.gallery, label: ui.pages.gallery },
 ];
 
-/** Footer "Información" column. */
+/** Footer "Información" column (full page names, descriptive anchors). */
 export const infoNav: readonly NavItem[] = [
-  { href: routes.faq, label: ui.nav.faq },
-  { href: routes.policies, label: ui.nav.policies },
-  { href: routes.location, label: ui.nav.location },
-  { href: routes.contact, label: ui.nav.contact },
+  { href: routes.location, label: ui.pages.location },
+  { href: routes.policies, label: ui.pages.policies },
 ];
 
 export const legalNav: readonly NavItem[] = [

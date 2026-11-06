@@ -1,6 +1,7 @@
 import path from 'node:path';
 import { loadEnvConfig } from '@next/env';
 import type { NextConfig } from 'next';
+import { PUBLIC_REDIRECTS } from './lib/public/redirects';
 
 // Load the monorepo root .env (apps/web/.env* still take precedence when present).
 // Next compiles this file to CommonJS, so resolve from the package cwd, not import.meta.
@@ -39,6 +40,10 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   async headers() {
     return [{ source: '/:path*', headers: securityHeaders }];
+  },
+  async redirects() {
+    // Merged public pages answer a 301 before any page renders (C3).
+    return PUBLIC_REDIRECTS.map((rule) => ({ ...rule }));
   },
   async rewrites() {
     // Same-origin proxy (requirement 12.4): the browser only talks to Next.js.

@@ -7,15 +7,17 @@ import {
   publishedRoomTotal,
   roomExcerpt,
   roomTypeLabel,
+  bedsText,
+  roomTypeLead,
 } from './rooms';
-import type { PublicRoomSummary } from './types';
+import type { PublicRoomTypeSummary } from './types';
 
 function room(
   slug: string,
   type: string,
   basePrice: number | null,
   capacity = 1,
-): PublicRoomSummary {
+): PublicRoomTypeSummary {
   return {
     slug,
     name: slug,
@@ -108,5 +110,43 @@ describe('room type filters (owner decision Q5)', () => {
     const rooms = [room('a', 'COUPLE', null), room('b', 'INDIVIDUAL', null)];
     expect(filterRoomsByType(rooms, 'INDIVIDUAL').map((r) => r.slug)).toEqual(['b']);
     expect(filterRoomsByType(rooms, null)).toHaveLength(2);
+  });
+});
+
+describe('bedsText', () => {
+  it('writes the bed setup in running text, or null without beds', () => {
+    expect(
+      bedsText([
+        { type: 'DOUBLE', count: 1 },
+        { type: 'SINGLE', count: 2 },
+        { type: 'KING', count: 0 },
+      ]),
+    ).toBe('1 cama doble, 2 camas sencillas');
+    expect(bedsText([])).toBeNull();
+    expect(bedsText(null)).toBeNull();
+  });
+});
+
+describe('roomTypeLead', () => {
+  const type = {
+    name: 'Habitación de pareja',
+    capacity: 2,
+    description: null,
+    amenities: [{ name: 'Baño privado' }, { name: 'Televisor' }, { name: 'Ventilador' }],
+  };
+
+  it('uses the first paragraph of the hotel description when there is one', () => {
+    expect(roomTypeLead({ ...type, description: 'Luminosa.\n\nSegundo.' }, 'Mocoa')).toBe(
+      'Luminosa.',
+    );
+  });
+
+  it('otherwise states the real facts: capacity, city and room amenities', () => {
+    expect(roomTypeLead(type, 'Mocoa')).toBe(
+      'Habitación de pareja para 2 personas en el corazón de Mocoa, con baño privado, televisor y ventilador.',
+    );
+    expect(roomTypeLead({ ...type, capacity: 1, amenities: [] }, null)).toBe(
+      'Habitación de pareja para 1 persona.',
+    );
   });
 });

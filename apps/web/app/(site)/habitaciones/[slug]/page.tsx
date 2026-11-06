@@ -8,7 +8,7 @@ import { PhotoGallery } from '@/components/site/photo-gallery';
 import { RoomCard } from '@/components/site/room-card';
 import { RoomPrice } from '@/components/site/room-price';
 import { container } from '@/components/site/styles';
-import { WhatsAppLink } from '@/components/site/whatsapp-link';
+import { ContactCtaLink } from '@/components/site/contact-cta';
 import { JsonLd } from '@/components/seo/json-ld';
 import { buttonClass } from '@/components/ui/button';
 import { Eyebrow } from '@/components/ui/eyebrow';
@@ -18,10 +18,10 @@ import { ui } from '@/lib/i18n/es';
 import { breadcrumbJsonLd, roomJsonLd } from '@/lib/seo/json-ld';
 import { pageMetadata } from '@/lib/seo/metadata';
 import { roomTypeSeo } from '@/lib/seo/room-type-seo';
-import { getRoomType, getRoomTypes, getSite } from '@/lib/public/api';
+import { getRoomType, getRoomTypeDetails, getRoomTypes, getSite } from '@/lib/public/api';
+import { contactCta } from '@/lib/public/cta';
 import { routes } from '@/lib/public/navigation';
-import { otherRooms, roomTypeLabel } from '@/lib/public/rooms';
-import { whatsAppLink } from '@/lib/public/whatsapp';
+import { otherRooms, roomTypeLabel, roomTypeLead } from '@/lib/public/rooms';
 
 export async function generateMetadata({
   params,
@@ -67,9 +67,14 @@ export default async function RoomPage({ params }: PageProps<'/habitaciones/[slu
   if (result.kind === 'not-found') notFound();
   const { room } = result;
 
-  const [site, rooms] = await Promise.all([getSite(), getRoomTypes()]);
+  const [site, rooms, details] = await Promise.all([
+    getSite(),
+    getRoomTypes(),
+    getRoomTypeDetails(),
+  ]);
   const { hotel } = site;
-  const whatsappUrl = whatsAppLink(site, { kind: 'roomType', name: room.name });
+  const cta = contactCta(site, { kind: 'roomType', name: room.name });
+  const lead = roomTypeLead(room, hotel.municipality);
   const images = room.images.length > 0 ? room.images : room.cover ? [room.cover] : [];
   const beds = (room.beds ?? []).filter((bed) => bed.count > 0);
   const suggestions = otherRooms(rooms, room);
@@ -107,7 +112,7 @@ export default async function RoomPage({ params }: PageProps<'/habitaciones/[slu
         </div>
 
         <div className="bg-paper px-[clamp(20px,6vw,84px)] py-[clamp(40px,7vw,100px)]">
-          <nav aria-label="Ruta de navegación" className="mb-8 text-sm text-muted-foreground">
+          <nav aria-label="Ruta de navegación" className="mb-8 text-sm text-ink-muted-strong">
             <ol className="flex flex-wrap items-center gap-2">
               <li>
                 <Link
@@ -141,9 +146,15 @@ export default async function RoomPage({ params }: PageProps<'/habitaciones/[slu
           <h1 className="text-[clamp(2.6rem,6vw,5.6rem)] text-balance text-charcoal">
             {room.name}
           </h1>
+          <p
+            data-testid="room-lead"
+            className="mt-5 max-w-[560px] text-lead text-pretty text-muted-foreground"
+          >
+            {lead}
+          </p>
 
           <div className="mt-9">
-            {room.description ? (
+            {room.description && room.description.trim() !== lead ? (
               <Block label={ui.rooms.description}>
                 <TextBlock text={room.description} className="text-charcoal/90" />
               </Block>
@@ -189,12 +200,7 @@ export default async function RoomPage({ params }: PageProps<'/habitaciones/[slu
 
             <Block label={ui.rooms.rate}>
               <div className="rounded-sm bg-ivory p-4">
-                <RoomPrice
-                  room={room}
-                  hasWhatsApp={Boolean(whatsappUrl)}
-                  size="lg"
-                  showConfirmNote
-                />
+                <RoomPrice room={room} size="lg" showConfirmNote />
                 {room.priceNotes ? (
                   <TextBlock
                     text={room.priceNotes}
@@ -220,30 +226,39 @@ export default async function RoomPage({ params }: PageProps<'/habitaciones/[slu
                     </div>
                   ) : null}
                 </dl>
-                <Link
-                  href={routes.policies}
-                  className="mt-4 inline-flex text-sm font-bold text-green underline underline-offset-4"
-                >
-                  {ui.nav.policies}
-                </Link>
               </Block>
             ) : null}
 
-            {whatsappUrl ? (
+            {cta ? (
               <div className="border-t border-line pt-7">
-                <WhatsAppLink
-                  href={whatsappUrl}
+                <ContactCtaLink
+                  cta={cta}
                   source="room_detail"
                   entityId={room.slug}
                   className={`${buttonClass('primary')} w-full`}
-                >
-                  {ui.whatsapp.room}
-                </WhatsAppLink>
+                  whatsappLabel={ui.whatsapp.room}
+                />
                 <p className="mt-3 text-xs leading-normal text-muted-foreground">
-                  {ui.whatsapp.external}
+                  {cta.kind === 'whatsapp' ? ui.whatsapp.external : ui.rooms.confirm}
                 </p>
               </div>
             ) : null}
+
+            <ul className="mt-7 flex flex-wrap gap-x-6 gap-y-2 text-sm">
+              {[
+                { href: routes.location, label: ui.pages.location },
+                { href: routes.policies, label: ui.pages.policies },
+              ].map((link) => (
+                <li key={link.href}>
+                  <Link
+                    href={link.href}
+                    className="font-bold text-green underline underline-offset-4 hover:text-green-900"
+                  >
+                    {link.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
           </div>
         </div>
       </article>
@@ -257,13 +272,17 @@ export default async function RoomPage({ params }: PageProps<'/habitaciones/[slu
                 {ui.rooms.back}
               </Link>
             </div>
-            <ul className="grid gap-6 tab:grid-cols-2 desk:grid-cols-3">
+            <ul
+              className={`grid gap-6 tab:grid-cols-2 ${suggestions.length >= 3 ? 'desk:grid-cols-3' : ''}`}
+            >
               {suggestions.map((other, index) => (
                 <li key={other.slug} className="flex">
                   <RoomCard
                     room={other}
+                    detail={details.get(other.slug)}
                     index={index}
-                    whatsappUrl={whatsAppLink(site, { kind: 'roomType', name: other.name })}
+                    cta={contactCta(site, { kind: 'roomType', name: other.name })}
+                    frame={suggestions.length < 3 ? 'wide' : 'square'}
                   />
                 </li>
               ))}

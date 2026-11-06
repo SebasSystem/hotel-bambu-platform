@@ -42,4 +42,24 @@ test.describe('whatsapp', () => {
     await expect(cta).toHaveAttribute('target', '_blank');
     await expect(cta).toHaveAttribute('rel', /noopener/);
   });
+  test('with a WhatsApp number the header fits the phone viewport (C2 overflow) @mobile', async ({
+    page,
+  }) => {
+    const number = original ?? TEST_NUMBER;
+    await expect
+      .poll(async () => (await (await page.request.get('/')).text()).includes(`wa.me/${number}`), {
+        timeout: 20_000,
+      })
+      .toBe(true);
+    await page.goto('/');
+    const overflow = await page.evaluate(
+      () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+    );
+    expect(overflow).toBe(0);
+    await expect(
+      page.getByRole('banner').locator(`a[href*="wa.me/${number}"]`).filter({ visible: true }),
+    ).toBeVisible();
+    // WhatsApp replaces the phone fallback in the hero.
+    await expect(page.locator('#inicio a[href^="tel:"]')).toHaveCount(0);
+  });
 });

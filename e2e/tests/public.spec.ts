@@ -34,10 +34,11 @@ test.describe('public site', () => {
     );
     const types = (await jsonLd(page)).map((block) => block['@type']);
     expect(types).toContain('BreadcrumbList');
-    expect(types.some((type) => type === 'HotelRoom' || type === 'Offer')).toBe(true);
+    // The room node is multi-typed ["HotelRoom", "Product"] (schema.org hotels guide).
+    expect(types.some((type) => Array.isArray(type) && type.includes('HotelRoom'))).toBe(true);
   });
 
-  test('room detail lists its equipment and the hotel-wide amenities; no services page', async ({
+  test('room detail lists its equipment and the hotel-wide amenities; /servicios goes home', async ({
     page,
   }) => {
     await page.goto(await firstRoomPath(page));
@@ -47,8 +48,8 @@ test.describe('public site', () => {
     await expect(
       page.getByRole('navigation').first().getByRole('link', { name: 'Servicios' }),
     ).toHaveCount(0);
-    const services = await page.goto('/servicios');
-    expect(services?.status()).toBe(404);
+    await page.goto('/servicios');
+    await expect(page).toHaveURL(/\/$/);
   });
 
   test('room type pages generate their SEO title from the type and the city', async ({ page }) => {
@@ -110,6 +111,93 @@ test.describe('public site', () => {
   });
 });
 
+test.describe('home structure and contact fallback (C3)', () => {
+  test('home follows the approved order with a trust strip and room type cards @mobile', async ({
+    page,
+  }) => {
+    await page.goto('/');
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText('Hotel Bambú Plaza');
+    const trust = page.getByRole('region', { name: 'Datos del hotel' });
+    await expect(trust).toContainText(/RNT \d+/);
+    // The old room amenity grid is gone; room amenities are chips on the type cards.
+    await expect(page.getByRole('heading', { name: 'En todas las habitaciones' })).toHaveCount(0);
+    const rooms = page.locator('#habitaciones-title').locator('xpath=ancestor::section[1]');
+    await expect(rooms.getByRole('article').first()).toBeVisible();
+    await expect(rooms.getByRole('list', { name: 'Incluye' }).first()).toBeVisible();
+    const order = await page
+      .locator('main section[aria-labelledby]')
+      .evaluateAll((sections) => sections.map((s) => s.getAttribute('aria-labelledby')));
+    const expected = ['hero-title', 'datos-title', 'habitaciones-title', 'ubicacion-title'];
+    expect(order.filter((id) => expected.includes(id ?? ''))).toEqual(expected);
+    expect(order.at(-1)).toBe('cierre-title');
+  });
+
+  test('without a WhatsApp number every CTA calls the hotel phone', async ({ page }) => {
+    await page.goto('/');
+    const html = await page.content();
+    test.skip(html.includes('wa.me/'), 'Needs a hotel without a WhatsApp number');
+    const call = page
+      .getByRole('main')
+      .getByRole('link', { name: /^Llamar al \d{3} \d{3} \d{4}$/ });
+    await expect(call.first()).toHaveAttribute('href', /^tel:\+?\d+$/);
+    await expect(page.locator('.whatsapp-fab')).toHaveCount(0);
+    await expect(page.getByRole('banner').locator('a[href^="tel:"]').first()).toBeAttached();
+  });
+
+  test('the footer NAP matches the Hotel JSON-LD', async ({ page }) => {
+    await page.goto('/');
+    const hotel = (await jsonLd(page)).find((block) => block['@type'] === 'Hotel') as {
+      name: string;
+      telephone?: string;
+      address?: Record<string, string>;
+    };
+    const nap = page.getByTestId('footer-nap');
+    await expect(nap).toContainText(hotel.name);
+    if (hotel.telephone) await expect(nap).toContainText(hotel.telephone);
+    if (hotel.address) {
+      const { streetAddress, addressLocality, addressRegion } = hotel.address;
+      await expect(nap).toContainText(
+        [streetAddress, addressLocality, addressRegion].filter(Boolean).join(', '),
+      );
+    }
+  });
+
+  test('no page declares FAQPage or self-serving reviews', async ({ page }) => {
+    for (const path of ['/', '/politicas-del-hotel', '/ubicacion']) {
+      await page.goto(path);
+      const text = JSON.stringify(await jsonLd(page));
+      expect(text).not.toContain('FAQPage');
+      expect(text).not.toContain('aggregateRating');
+      expect(text).not.toContain('"review"');
+    }
+  });
+});
+
+test.describe('merged pages (C3 redirects)', () => {
+  for (const [from, to] of [
+    ['/contacto', '/ubicacion'],
+    ['/preguntas-frecuentes', '/politicas-del-hotel'],
+    ['/servicios', '/'],
+  ] as const) {
+    test(`${from} answers a 301 to ${to}`, async ({ request }) => {
+      const response = await request.get(from, { maxRedirects: 0 });
+      expect(response.status()).toBe(301);
+      expect(new URL(response.headers()['location'] ?? '', 'http://x').pathname).toBe(to);
+    });
+  }
+
+  test('the merged pages carry their own H1 and breadcrumbs', async ({ page }) => {
+    await page.goto('/ubicacion');
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText('Ubicación y cómo llegar');
+    await page.goto('/politicas-del-hotel');
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText(
+      'Políticas y preguntas frecuentes',
+    );
+    const types = (await jsonLd(page)).map((block) => block['@type']);
+    expect(types).toContain('BreadcrumbList');
+  });
+});
+
 test.describe('catalogue and gallery (mockup port)', () => {
   test('room type chips are shareable links with a live count', async ({ page }) => {
     await page.goto('/habitaciones');
@@ -123,7 +211,7 @@ test.describe('catalogue and gallery (mockup port)', () => {
     await expect(page).toHaveURL(/\?tipo=[a-z]+$/);
     await expect(chips.getByRole('link', { name: label })).toHaveAttribute('aria-current', 'page');
     await expect(page.locator('main [aria-live="polite"]')).toHaveText(/\d+ tipos? de habitaci/);
-    const kickers = await page.locator('main article p:first-of-type').allTextContents();
+    const kickers = await page.locator('main article [data-room-kind]').allTextContents();
     expect(kickers.every((text) => text.trim().toLowerCase() === label.toLowerCase())).toBe(true);
   });
 

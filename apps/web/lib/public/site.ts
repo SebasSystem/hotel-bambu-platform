@@ -3,7 +3,7 @@ import type {
   PublicHotelAmenity,
   PublicHotel,
   PublicMedia,
-  PublicRoomSummary,
+  PublicRoomTypeSummary,
   PublicSite,
   SectionKey,
 } from './types';
@@ -72,7 +72,7 @@ export function homeHotelAmenities(site: PublicSite): PublicHotelAmenity[] {
 export function heroImages(
   site: PublicSite,
   gallery: PublicGalleryItem[],
-  rooms: PublicRoomSummary[],
+  rooms: PublicRoomTypeSummary[],
 ): PublicMedia[] {
   if (site.heroSlides.length > 0) {
     return site.heroSlides.map((slide) => ({
@@ -107,4 +107,19 @@ export function displayPhone(value: string): string {
 
 export function telHref(value: string): string {
   return `tel:${value.replace(/[^\d+]/g, '')}`;
+}
+
+/**
+ * Hero subtitle from the hotel tagline. The approved tagline starts with the hotel name
+ * ("Hotel Bambú Plaza: descanso…"), which the H1 already shows: drop that prefix, capitalise the
+ * rest and close it with a full stop.
+ */
+export function heroTagline(tagline: string | null, name: string): string | null {
+  const text = tagline?.trim();
+  if (!text) return null;
+  if (!text.toLowerCase().startsWith(name.toLowerCase())) return text;
+  const rest = text.slice(name.length).replace(/^\s*[:–-]\s*/, '');
+  if (rest === text.slice(name.length)) return text;
+  const sentence = `${rest.charAt(0).toUpperCase()}${rest.slice(1)}`;
+  return /[.!?]$/.test(sentence) ? sentence : `${sentence}.`;
 }

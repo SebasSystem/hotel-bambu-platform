@@ -8,7 +8,8 @@ import { buttonClass, iconButtonClass } from '@/components/ui/button';
 import { trapTab, focusableWithin } from '@/lib/a11y/focus-trap';
 import { ui } from '@/lib/i18n/es';
 import { isActivePath, type NavItem } from '@/lib/public/navigation';
-import { WhatsAppLink } from './whatsapp-link';
+import type { ContactCta } from '@/lib/public/cta';
+import { ContactCtaLink } from './contact-cta';
 
 /** Same value as `--breakpoint-desk`: the desktop navigation takes over from here. */
 const DESKTOP_QUERY = '(min-width: 62.5rem)';
@@ -19,13 +20,7 @@ const DESKTOP_QUERY = '(min-width: 62.5rem)';
  * the panel, Escape / backdrop / route change / desktop resize close it, focus returns to the
  * toggle, and the page behind (`[data-menu-inert]`) is inert and does not scroll.
  */
-export function MobileMenu({
-  links,
-  whatsappUrl,
-}: {
-  links: readonly NavItem[];
-  whatsappUrl: string | null;
-}) {
+export function MobileMenu({ links, cta }: { links: readonly NavItem[]; cta: ContactCta | null }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -126,9 +121,9 @@ export function MobileMenu({
                 ))}
               </ul>
             </nav>
-            {whatsappUrl ? (
-              <WhatsAppLink
-                href={whatsappUrl}
+            {cta ? (
+              <ContactCtaLink
+                cta={cta}
                 source="header"
                 className={`${buttonClass('primary')} mt-3 w-full`}
               />

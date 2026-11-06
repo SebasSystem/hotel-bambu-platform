@@ -1,13 +1,12 @@
 import { ChevronDown } from 'lucide-react';
-import type { CSSProperties, ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import { cardClass } from '@/components/ui/card';
 import { ui } from '@/lib/i18n/es';
 import { paragraphs } from '@/lib/public/format';
 import { displayPhone, fullAddress, mapLinks, telHref } from '@/lib/public/site';
-import type { PublicFaq, PublicHotel, PublicMedia } from '@/lib/public/types';
+import type { PublicFaq, PublicHotel, PublicNearbyPlace } from '@/lib/public/types';
 import { SiteIcon } from './icon';
 import { MapEmbed } from './map-embed';
-import { Picture } from './picture';
 import { WhatsAppLink } from './whatsapp-link';
 
 /** Reusable content blocks shared by the home narrative and the inner pages. */
@@ -43,56 +42,6 @@ export function IconBadge({
   );
 }
 
-interface Feature {
-  id: string;
-  name: string;
-  description: string | null;
-  iconKey: string | null;
-  media?: PublicMedia | null;
-}
-
-/**
- * Mockup amenity cards (`.amenities-grid`): 4 columns, paper tile, icon circle, serif title and a
- * muted note; hover lifts 5 px. Used for the home room amenities.
- */
-export function FeatureGrid({ items, columns = 4 }: { items: Feature[]; columns?: 3 | 4 }) {
-  return (
-    <ul
-      className={`grid grid-cols-1 gap-2.5 xs:grid-cols-2 tab:gap-4 ${
-        columns === 4 ? 'desk:grid-cols-4' : 'desk:grid-cols-3'
-      }`}
-    >
-      {items.map((item, index) => (
-        <li
-          key={item.id}
-          data-reveal
-          style={{ '--i': index } as CSSProperties}
-          className={`${cardClass('tile', true)} flex items-center gap-4 overflow-hidden xs:min-h-[220px] xs:flex-col xs:items-stretch xs:justify-between xs:gap-0`}
-        >
-          {item.media ? (
-            <div className="-mx-[18px] -mt-[18px] mb-6 aspect-[4/3] overflow-hidden tab:-mx-6 tab:-mt-6">
-              <Picture
-                media={item.media}
-                sizes="(min-width: 62.5rem) 25vw, (min-width: 26.25rem) 45vw, 92vw"
-                className="block size-full"
-                imgClassName="size-full object-cover"
-              />
-            </div>
-          ) : (
-            <IconBadge iconKey={item.iconKey} />
-          )}
-          <div>
-            <h3 className="text-h3 text-charcoal xs:mt-8 xs:mb-2">{item.name}</h3>
-            {item.description ? (
-              <p className="text-[0.85rem] text-muted-foreground">{item.description}</p>
-            ) : null}
-          </div>
-        </li>
-      ))}
-    </ul>
-  );
-}
-
 /** FAQ rows styled as mockup `.detail-block`: top border, serif question, rotating chevron. */
 export function FaqList({ faqs }: { faqs: PublicFaq[] }) {
   return (
@@ -119,41 +68,87 @@ export function hasLocation(hotel: PublicHotel): boolean {
   return Boolean(mapLinks(hotel) || hotel.directions || hotel.nearbyAttractions);
 }
 
-/** Location: address + directions card and the on-demand map card (mockup contact grid). */
+/** Nearby places with their measured distance and travel time (admin › Lugares cercanos). */
+export function NearbyList({ places }: { places: PublicNearbyPlace[] }) {
+  if (places.length === 0) return null;
+  return (
+    <ul data-testid="nearby-places" className="border-b border-line">
+      {places.map((place) => {
+        const meta = [place.distanceText, place.travelTimeText].filter(Boolean).join(' · ');
+        return (
+          <li
+            key={place.id}
+            className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1 border-t border-line py-3.5"
+          >
+            <span className="font-bold text-charcoal">
+              {place.name}
+              {place.category ? (
+                <span className="ml-2 text-sm font-normal text-muted-foreground">
+                  {place.category}
+                </span>
+              ) : null}
+            </span>
+            {meta ? <span className="text-sm text-ink-muted-strong">{meta}</span> : null}
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
+/**
+ * Location: address card (with the nearby places and, on the location page, the directions text)
+ * and the on-demand map card (mockup contact grid). Works without nearby places.
+ */
 export function LocationBlock({
   hotel,
+  nearby = [],
   showDetails = true,
+  children,
 }: {
   hotel: PublicHotel;
+  nearby?: PublicNearbyPlace[];
   showDetails?: boolean;
+  /** Extra content after the address (a flex column: `mt-auto` pins actions to the bottom). */
+  children?: ReactNode;
 }) {
   const links = mapLinks(hotel);
   const address = fullAddress(hotel);
   const hasCard = Boolean(
-    address || (showDetails && (hotel.directions || hotel.nearbyAttractions)),
+    address ||
+    nearby.length > 0 ||
+    children ||
+    (showDetails && (hotel.directions || hotel.nearbyAttractions)),
   );
   return (
     <div className="grid gap-7 *:min-w-0 desk:grid-cols-[0.85fr_1.15fr]">
       {hasCard ? (
-        <div className={cardClass('panel')}>
+        <div className={`${cardClass('panel')} flex flex-col`}>
           {address ? (
             <>
               <p className="detail-label">{ui.contact.address}</p>
               <p className="text-h3 leading-snug font-display text-charcoal">{address}</p>
             </>
           ) : null}
+          {nearby.length > 0 ? (
+            <div className="detail-block mt-6">
+              <h3 className="detail-label">{ui.location.nearby}</h3>
+              <NearbyList places={nearby} />
+            </div>
+          ) : null}
           {showDetails && hotel.directions ? (
             <div className="detail-block mt-6">
-              <h2 className="detail-label">{ui.map.directions}</h2>
+              <h3 className="detail-label">{ui.map.directions}</h3>
               <TextBlock text={hotel.directions} className="text-muted-foreground" />
             </div>
           ) : null}
           {showDetails && hotel.nearbyAttractions ? (
             <div className="detail-block">
-              <h2 className="detail-label">{ui.location.nearby}</h2>
+              <h3 className="detail-label">{ui.location.surroundings}</h3>
               <TextBlock text={hotel.nearbyAttractions} className="text-muted-foreground" />
             </div>
           ) : null}
+          {children ? <div className="mt-7 flex flex-1 flex-col">{children}</div> : null}
         </div>
       ) : null}
       {links ? (
@@ -198,9 +193,12 @@ const valueLink =
 export function ContactList({
   hotel,
   whatsappUrl,
+  showAddress = true,
 }: {
   hotel: PublicHotel;
   whatsappUrl: string | null;
+  /** Off when the address is already shown above the list. */
+  showAddress?: boolean;
 }) {
   const address = fullAddress(hotel);
   return (
@@ -226,7 +224,7 @@ export function ContactList({
           </a>
         </Row>
       ) : null}
-      {address ? <Row label={ui.contact.address}>{address}</Row> : null}
+      {showAddress && address ? <Row label={ui.contact.address}>{address}</Row> : null}
       {hotel.openingHours?.length ? (
         <Row label={ui.contact.hours}>
           {hotel.openingHours.map((row) => (

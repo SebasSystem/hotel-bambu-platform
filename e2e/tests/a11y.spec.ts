@@ -8,9 +8,7 @@ const PAGES = [
   'ROOM',
   '/galeria',
   '/ubicacion',
-  '/preguntas-frecuentes',
   '/politicas-del-hotel',
-  '/contacto',
   '/legal/cookies',
   '/admin/login',
 ];

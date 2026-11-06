@@ -1,4 +1,4 @@
-import type { PublicRoomSummary } from './types';
+import type { PublicRoomTypeSummary } from './types';
 
 /** Public room-type vocabulary and URL filter values (`/habitaciones?tipo=pareja`). */
 export const ROOM_TYPES_PUBLIC = {
@@ -22,7 +22,9 @@ export function roomTypeFromParam(param: string | string[] | undefined): RoomTyp
 }
 
 /** Published rooms of every listed type (home fact stack, Hotel `numberOfRooms`). */
-export function publishedRoomTotal(types: Pick<PublicRoomSummary, 'publishedRoomCount'>[]): number {
+export function publishedRoomTotal(
+  types: Pick<PublicRoomTypeSummary, 'publishedRoomCount'>[],
+): number {
   return types.reduce((total, type) => total + type.publishedRoomCount, 0);
 }
 
@@ -39,7 +41,11 @@ export function roomExcerpt(description: string | null, max = 180): string | nul
 }
 
 /** Other room types for the detail page: same kind first, then the rest. */
-export function otherRooms(rooms: PublicRoomSummary[], current: PublicRoomSummary, limit = 3) {
+export function otherRooms(
+  rooms: PublicRoomTypeSummary[],
+  current: PublicRoomTypeSummary,
+  limit = 3,
+) {
   const others = rooms.filter((room) => room.slug !== current.slug);
   return [
     ...others.filter((room) => room.type === current.type),
@@ -56,7 +62,7 @@ export interface RoomTypeFilter {
 }
 
 /** Catalogue chips: one per kind that has published room types, in the stable kind order. */
-export function roomTypeFilters(rooms: Pick<PublicRoomSummary, 'type'>[]): RoomTypeFilter[] {
+export function roomTypeFilters(rooms: Pick<PublicRoomTypeSummary, 'type'>[]): RoomTypeFilter[] {
   return ORDER.flatMap((type) => {
     const count = rooms.filter((room) => room.type === type).length;
     if (count === 0) return [];
@@ -65,9 +71,59 @@ export function roomTypeFilters(rooms: Pick<PublicRoomSummary, 'type'>[]): RoomT
   });
 }
 
-export function filterRoomsByType<T extends Pick<PublicRoomSummary, 'type'>>(
+export function filterRoomsByType<T extends Pick<PublicRoomTypeSummary, 'type'>>(
   rooms: T[],
   active: RoomTypeKey | null,
 ): T[] {
   return active ? rooms.filter((room) => room.type === active) : rooms;
+}
+
+/** Lowercase bed names for running text (admin labels are title case). */
+const BED_NAMES: Record<string, [singular: string, plural: string]> = {
+  SINGLE: ['cama sencilla', 'camas sencillas'],
+  DOUBLE: ['cama doble', 'camas dobles'],
+  QUEEN: ['cama queen', 'camas queen'],
+  KING: ['cama king', 'camas king'],
+  BUNK: ['camarote', 'camarotes'],
+  SOFA_BED: ['sofá cama', 'sofás cama'],
+};
+
+/** "1 cama doble, 2 camas sencillas", or null when the type has no beds configured. */
+export function bedsText(
+  beds: { type: string; count: number }[] | null | undefined,
+): string | null {
+  const parts = (beds ?? [])
+    .filter((bed) => bed.count > 0)
+    .map((bed) => {
+      const [one, many] = BED_NAMES[bed.type] ?? [bed.type.toLowerCase(), bed.type.toLowerCase()];
+      return `${bed.count} ${bed.count === 1 ? one : many}`;
+    });
+  return parts.length > 0 ? parts.join(', ') : null;
+}
+
+function listOf(items: string[]): string {
+  if (items.length <= 1) return items.join('');
+  return `${items.slice(0, -1).join(', ')} y ${items.at(-1)}`;
+}
+
+/**
+ * Lead text of a room type page: the first paragraph of the hotel's description, or a factual
+ * sentence built from the type (capacity, city, room amenities) when there is none yet.
+ */
+export function roomTypeLead(
+  type: {
+    name: string;
+    capacity: number;
+    description: string | null;
+    amenities: { name: string }[];
+  },
+  city: string | null,
+): string {
+  const written = roomExcerpt(type.description, 400);
+  if (written) return written;
+  const people = `${type.capacity} ${type.capacity === 1 ? 'persona' : 'personas'}`;
+  const amenities = type.amenities.map((amenity) => amenity.name.toLowerCase());
+  return `${type.name} para ${people}${city ? ` en el corazón de ${city}` : ''}${
+    amenities.length > 0 ? `, con ${listOf(amenities)}` : ''
+  }.`;
 }

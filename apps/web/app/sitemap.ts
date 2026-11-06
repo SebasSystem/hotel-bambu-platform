@@ -6,7 +6,8 @@ import { absoluteUrl, isLegalApproved } from '@/lib/seo/config';
 export const dynamic = 'force-dynamic';
 
 /**
- * sitemap.xml (requirement 19.1): public pages plus every published room with its last edit.
+ * sitemap.xml (requirement 19.1): public pages plus every published room type with its last edit. The merged
+ * `/contacto` and `/preguntas-frecuentes` are 301s (C3) and stay out.
  * Legal pages are listed only once the hotel approved them (`LEGAL_APPROVED=true`).
  */
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
@@ -16,9 +17,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { path: routes.rooms, priority: 0.9 },
     { path: routes.gallery, priority: 0.6 },
     { path: routes.location, priority: 0.8 },
-    { path: routes.faq, priority: 0.6 },
     { path: routes.policies, priority: 0.5 },
-    { path: routes.contact, priority: 0.7 },
   ];
   const legal = isLegalApproved()
     ? [routes.legalData, routes.legalPrivacy, routes.legalCookies].map((path) => ({

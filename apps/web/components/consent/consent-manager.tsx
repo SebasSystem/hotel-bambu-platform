@@ -68,9 +68,7 @@ const SOURCE_BY_PATH: Record<string, AnalyticsSource> = {
   [routes.rooms]: 'rooms',
   [routes.gallery]: 'gallery',
   [routes.location]: 'location',
-  [routes.faq]: 'faq',
   [routes.policies]: 'policies',
-  [routes.contact]: 'contact',
 };
 
 /** Aggregated PAGE_VIEW / ROOM_VIEW counters (requirement 11), only with analytics consent. */

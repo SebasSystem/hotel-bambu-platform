@@ -1,109 +1,90 @@
 import Link from 'next/link';
-import type { ReactNode } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
 import { buttonClass } from '@/components/ui/button';
-import { Chip } from '@/components/ui/chip';
 import { Eyebrow } from '@/components/ui/eyebrow';
 import { SectionHeading } from '@/components/ui/section-heading';
 import { ui } from '@/lib/i18n/es';
-import type { HomeFact } from '@/lib/public/facts';
-import { formatRoomPrice } from '@/lib/public/format';
+import type { ContactCta } from '@/lib/public/cta';
 import { galleryLabel } from '@/lib/public/gallery';
 import { routes } from '@/lib/public/navigation';
-import { roomExcerpt, roomTypeLabel } from '@/lib/public/rooms';
+import { napOf } from '@/lib/public/nap';
+import { telHref } from '@/lib/public/site';
+import type { TrustItem } from '@/lib/public/trust';
 import type {
-  PublicAmenity,
   PublicGalleryItem,
+  PublicHotel,
   PublicMedia,
-  PublicRoomSummary,
+  PublicNearbyPlace,
+  PublicPolicy,
+  PublicRoomTypeDetail,
+  PublicRoomTypeSummary,
 } from '@/lib/public/types';
-import { FeatureGrid, IconBadge, TextBlock } from './blocks';
+import { LocationBlock, TextBlock } from './blocks';
+import { ContactCtaLink } from './contact-cta';
 import { PhotoGallery } from './photo-gallery';
 import { Picture } from './picture';
+import { RoomCard } from './room-card';
 import { SiteIcon } from './icon';
 import { container } from './styles';
-import { WhatsAppLink } from './whatsapp-link';
 
-/** Home sections in the mockup order (spec §4). Each renders only with real content. */
+/**
+ * Home sections in the approved order (docs/research/seo-content-strategy.md §3, C3): trust strip,
+ * room types, location, about, reviews slot, policies summary, gallery strip, final CTA. Each one
+ * renders only with real content (requirement 4.4); headings are code, facts come from the API.
+ */
 
 const section = 'py-[clamp(78px,10vw,150px)]';
 
-export function HomeIntro({
-  eyebrow,
-  title,
-  text,
-  facts,
-  link,
-}: {
-  eyebrow: string | null;
-  title: string;
-  text: string | null;
-  facts: HomeFact[];
-  link: { href: string; label: string } | null;
-}) {
+/** Verifiable facts right under the hero: RNT, address, rooms and the hotel amenities. */
+export function TrustStrip({ items }: { items: TrustItem[] }) {
+  if (items.length === 0) return null;
   return (
-    <section aria-labelledby="intro-title" className={section}>
-      <div
-        className={`${container} grid items-start gap-[clamp(40px,8vw,120px)] desk:grid-cols-[0.9fr_1.1fr]`}
+    <section aria-labelledby="datos-title" className="border-b border-line bg-paper">
+      <h2 id="datos-title" className="sr-only">
+        {ui.home.trustLabel}
+      </h2>
+      <ul
+        className={`${container} grid gap-x-8 py-[clamp(28px,4vw,48px)] tab:grid-cols-2 desk:grid-cols-3`}
       >
-        <div data-reveal>
-          <SectionHeading id="intro-title" eyebrow={eyebrow} title={title}>
-            <TextBlock
-              text={text}
-              className="mt-[18px] max-w-[650px] text-lead text-muted-foreground"
-            />
-          </SectionHeading>
-          {link ? (
-            <Link href={link.href} className={`${buttonClass('ghost')} mt-7`}>
-              {link.label}
-            </Link>
-          ) : null}
-        </div>
-        {facts.length > 0 ? (
-          <ul data-reveal className="border-t border-line">
-            {facts.map((fact) => (
-              <li key={fact.id} className="fact">
-                {fact.value ? (
-                  <span className="font-display text-fact leading-none text-green">
-                    {fact.value}
-                  </span>
-                ) : (
-                  <IconBadge iconKey={fact.iconKey} className="self-center" />
-                )}
-                <span>
-                  <span
-                    className={`block ${fact.value ? 'text-muted-foreground' : 'font-bold text-charcoal'}`}
-                  >
-                    {fact.label}
-                  </span>
-                  {fact.note ? (
-                    <span className="mt-1 block text-sm text-muted-foreground">{fact.note}</span>
-                  ) : null}
+        {items.map((item, index) => (
+          <li
+            key={item.id}
+            data-reveal
+            style={{ '--i': index } as CSSProperties}
+            className="flex items-start gap-4 border-t border-line py-5 first:border-t-0 tab:[&:nth-child(2)]:border-t-0 desk:[&:nth-child(3)]:border-t-0"
+          >
+            <span className="inline-grid size-11 shrink-0 place-items-center rounded-full bg-green-50 text-green">
+              <SiteIcon iconKey={item.iconKey} className="size-5" />
+            </span>
+            <span>
+              <strong className="block leading-snug font-bold text-charcoal">{item.title}</strong>
+              {item.text ? (
+                <span className="mt-1 block text-sm leading-normal text-ink-muted-strong">
+                  {item.text}
                 </span>
-              </li>
-            ))}
-          </ul>
-        ) : null}
-      </div>
+              ) : null}
+            </span>
+          </li>
+        ))}
+      </ul>
     </section>
   );
 }
 
-/** Deep-green band with the first published room type; the eyebrow counts the published rooms. */
-export function RoomsShowcase({
-  title,
+/** Deep-green band with one card per published room type (replaces the old amenity grid). */
+export function RoomTypesSection({
   rooms,
+  details,
   roomCount,
-  whatsappUrl,
+  ctaFor,
 }: {
-  title: string;
-  rooms: PublicRoomSummary[];
+  rooms: PublicRoomTypeSummary[];
+  details: Map<string, PublicRoomTypeDetail>;
   roomCount: number;
-  whatsappUrl: string | null;
+  ctaFor: (room: PublicRoomTypeSummary) => ContactCta | null;
 }) {
-  const room = rooms[0];
-  if (!room) return null;
-  const price = formatRoomPrice(room);
-  const excerpt = roomExcerpt(room.description);
+  if (rooms.length === 0) return null;
+  const columns = rooms.length >= 3 ? 'desk:grid-cols-3' : 'desk:grid-cols-2';
   return (
     <section
       aria-labelledby="habitaciones-title"
@@ -115,8 +96,8 @@ export function RoomsShowcase({
           <SectionHeading
             id="habitaciones-title"
             surface="dark"
-            eyebrow={roomCount > 0 ? ui.rooms.countLabel(roomCount) : null}
-            title={title}
+            eyebrow={roomCount > 0 ? ui.home.roomsKicker(roomCount) : ui.nav.rooms}
+            title={ui.home.roomsTitle}
           />
           <Link
             href={routes.rooms}
@@ -125,144 +106,16 @@ export function RoomsShowcase({
             {ui.rooms.seeAll}
           </Link>
         </div>
-
-        <article
-          data-reveal
-          className="grid overflow-hidden rounded-[22px] bg-paper text-charcoal tab:rounded-xl desk:min-h-[560px] desk:grid-cols-[1.25fr_0.75fr]"
-        >
-          <div className="relative min-h-[420px] bg-sand">
-            {room.cover ? (
-              <Picture
-                media={room.cover}
-                sizes="(min-width: 62.5rem) 60vw, 100vw"
-                className="absolute inset-0 block size-full"
-                imgClassName="size-full object-cover"
-                objectPosition="50% 55%"
+        <ul className={`grid gap-6 tab:grid-cols-2 ${columns}`}>
+          {rooms.map((room, index) => (
+            <li key={room.slug} className="flex">
+              <RoomCard
+                room={room}
+                detail={details.get(room.slug)}
+                index={index}
+                cta={ctaFor(room)}
+                frame={rooms.length <= 2 ? 'wide' : 'square'}
               />
-            ) : null}
-          </div>
-          <div className="flex flex-col justify-center p-[clamp(30px,5vw,64px)]">
-            <p className="mb-3 text-[0.78rem] font-bold tracking-[0.15em] text-green uppercase">
-              {ui.rooms.featured} · {roomTypeLabel(room.type)}
-            </p>
-            <h3 className="text-feature text-balance text-charcoal">{room.name}</h3>
-            {excerpt ? <p className="mt-4 text-muted-foreground">{excerpt}</p> : null}
-            <ul className="mt-6 flex flex-wrap gap-2">
-              <li>
-                <Chip>{ui.rooms.upTo(room.capacity)}</Chip>
-              </li>
-              {room.amenities.slice(0, 4).map((amenity) => (
-                <li key={amenity.name}>
-                  <Chip>
-                    <SiteIcon iconKey={amenity.iconKey} className="text-green" />
-                    {amenity.name}
-                  </Chip>
-                </li>
-              ))}
-            </ul>
-            {price ? (
-              <p className="mt-6 rounded-sm bg-ivory p-4 text-sm text-muted-foreground">
-                <span className="sr-only">{price.summary}</span>
-                <span aria-hidden="true">
-                  {ui.rooms.from}{' '}
-                  <span className="font-display text-2xl text-charcoal">{price.amount}</span>{' '}
-                  {price.unit} · {price.taxes}
-                </span>
-              </p>
-            ) : null}
-            <div className="mt-7 flex flex-wrap gap-2.5">
-              <Link href={routes.room(room.slug)} className={buttonClass('ghost')}>
-                {ui.rooms.seeDetail}
-                <span className="sr-only"> {room.name}</span>
-              </Link>
-              {whatsappUrl ? (
-                <WhatsAppLink
-                  href={whatsappUrl}
-                  source="room_card"
-                  entityId={room.slug}
-                  className={buttonClass('primary')}
-                >
-                  {ui.whatsapp.room}
-                </WhatsAppLink>
-              ) : null}
-            </div>
-          </div>
-        </article>
-      </div>
-    </section>
-  );
-}
-
-export function AmenitiesSection({ amenities }: { amenities: PublicAmenity[] }) {
-  if (amenities.length === 0) return null;
-  return (
-    <section aria-labelledby="comodidades-title" className={section}>
-      <div className={container}>
-        <div data-reveal className="mb-12">
-          <SectionHeading
-            id="comodidades-title"
-            eyebrow={ui.home.amenitiesKicker}
-            title={ui.home.amenitiesTitle}
-          />
-        </div>
-        <FeatureGrid items={amenities} />
-      </div>
-    </section>
-  );
-}
-
-/**
- * Mockup sustainability panel: sand, 32 px radius, heading on the left and the hotel-wide amenities
- * (admin › Comodidades, scope "Todo el hotel", shown on the home) on the right.
- */
-export function HotelAmenitiesPanel({
-  eyebrow,
-  title,
-  body,
-  amenities,
-}: {
-  eyebrow: string | null;
-  title: string;
-  body: string | null;
-  amenities: PublicAmenity[];
-}) {
-  if (amenities.length === 0) return null;
-  return (
-    <section
-      aria-labelledby="hotel-amenities-title"
-      className="px-(--gutter) pb-[clamp(78px,10vw,150px)]"
-    >
-      <div
-        data-reveal
-        className="mx-auto grid max-w-[calc(var(--container-site)-2*var(--gutter))] items-center gap-10 rounded-[22px] bg-sand p-[clamp(32px,7vw,92px)] tab:rounded-xl desk:grid-cols-[1.1fr_0.9fr] desk:gap-[70px]"
-      >
-        <div>
-          <SectionHeading
-            id="hotel-amenities-title"
-            surface="sand"
-            eyebrow={eyebrow}
-            title={title}
-          />
-          <TextBlock text={body} className="mt-[18px] max-w-[560px] text-ink-muted-strong" />
-        </div>
-        <ul className="grid gap-3">
-          {amenities.map((amenity) => (
-            <li
-              key={amenity.id}
-              className="flex items-start gap-3.5 rounded-sm bg-white/52 p-[19px]"
-            >
-              <SiteIcon
-                iconKey={amenity.iconKey}
-                className="mt-0.5 size-[1.3rem] shrink-0 text-green"
-              />
-              <span>
-                <strong className="block font-bold text-charcoal">{amenity.name}</strong>
-                {amenity.description ? (
-                  <span className="mt-0.5 block text-sm text-ink-muted-strong">
-                    {amenity.description}
-                  </span>
-                ) : null}
-              </span>
             </li>
           ))}
         </ul>
@@ -271,19 +124,211 @@ export function HotelAmenitiesPanel({
   );
 }
 
-export function GalleryStripSection({
-  eyebrow,
-  title,
-  intro,
-  ctaLabel,
-  items,
+/**
+ * "Estamos en Mocoa.": address, phone, nearby places (optional), consent-gated map, the contact
+ * CTA and "Cómo llegar" (the location page).
+ */
+export function LocationSection({
+  hotel,
+  nearby,
+  cta,
 }: {
-  eyebrow: string | null;
-  title: string;
-  intro: string | null;
-  ctaLabel: string | null;
-  items: PublicGalleryItem[];
+  hotel: PublicHotel;
+  nearby: PublicNearbyPlace[];
+  cta: ContactCta | null;
 }) {
+  const phone = napOf(hotel).telephone;
+  return (
+    <section aria-labelledby="ubicacion-title" className={`bg-sand ${section}`}>
+      <div className={container}>
+        <SectionHeading
+          id="ubicacion-title"
+          surface="sand"
+          eyebrow={ui.location.kicker}
+          title={
+            hotel.municipality ? ui.location.title(hotel.municipality) : ui.location.titleFallback
+          }
+          className="mb-12"
+        />
+        <LocationBlock hotel={hotel} nearby={nearby} showDetails={false}>
+          {phone ? (
+            <dl className="mb-7">
+              <dt className="detail-label">{ui.contact.phone}</dt>
+              <dd>
+                <a
+                  href={telHref(phone)}
+                  className="text-h3 leading-snug font-display text-charcoal underline decoration-sage decoration-2 underline-offset-4 hover:decoration-green"
+                >
+                  {phone}
+                </a>
+              </dd>
+            </dl>
+          ) : null}
+          <div className="mt-auto flex flex-wrap gap-3 pt-2">
+            {cta ? (
+              <ContactCtaLink
+                cta={cta}
+                source="location"
+                className={buttonClass('primary')}
+                whatsappLabel={ui.whatsapp.cta}
+                phoneLabel={ui.phone.call}
+                ariaLabel={cta.kind === 'phone' ? cta.label : undefined}
+              />
+            ) : null}
+            <Link href={routes.location} className={buttonClass('ghost')}>
+              {ui.map.directions}
+              <span className="sr-only"> a {hotel.name}</span>
+            </Link>
+          </div>
+        </LocationBlock>
+      </div>
+    </section>
+  );
+}
+
+/** "Sobre nosotros": the hotel's own text (families and business travellers) next to a photo. */
+export function AboutSection({
+  title,
+  text,
+  media,
+}: {
+  title: string;
+  text: string;
+  media: PublicMedia | null;
+}) {
+  return (
+    <section aria-labelledby="nosotros-title" className={section}>
+      <div
+        className={`${container} grid items-center gap-[clamp(40px,7vw,110px)] ${media ? 'desk:grid-cols-[1.1fr_0.9fr]' : ''}`}
+      >
+        <div data-reveal>
+          <SectionHeading id="nosotros-title" eyebrow={ui.home.aboutKicker} title={title}>
+            <TextBlock
+              text={text}
+              className="mt-[18px] max-w-[650px] text-lead text-muted-foreground"
+            />
+          </SectionHeading>
+        </div>
+        {media ? (
+          <div
+            data-reveal
+            className="relative aspect-[4/5] overflow-hidden rounded-[22px] bg-sand tab:rounded-xl desk:max-h-[640px]"
+          >
+            <Picture
+              media={media}
+              sizes="(min-width: 62.5rem) 40vw, 92vw"
+              className="absolute inset-0 block size-full"
+              imgClassName="size-full object-cover"
+            />
+          </div>
+        ) : null}
+      </div>
+    </section>
+  );
+}
+
+/**
+ * Guest reviews extension point (research §3 row 6). There is no review source yet (Google
+ * Business Profile pending), so the home passes none and nothing renders: no empty UI and no
+ * self-serving review markup. Feed real excerpts (with permission) to show the section.
+ */
+export interface GuestReview {
+  id: string;
+  quote: string;
+  author: string;
+  origin: string | null;
+  date: string | null;
+}
+
+export function ReviewsSection({ reviews }: { reviews: GuestReview[] }) {
+  if (reviews.length === 0) return null;
+  return (
+    <section aria-labelledby="opiniones-title" className={section}>
+      <div className={container}>
+        <SectionHeading id="opiniones-title" title={ui.home.reviewsKicker} />
+        <ul className="mt-12 grid gap-6 tab:grid-cols-2 desk:grid-cols-3">
+          {reviews.map((review) => (
+            <li key={review.id}>
+              <figure className="h-full rounded-lg bg-paper p-7">
+                <blockquote className="text-lead text-charcoal">{review.quote}</blockquote>
+                <figcaption className="mt-5 text-sm text-muted-foreground">
+                  {[review.author, review.origin, review.date].filter(Boolean).join(' · ')}
+                </figcaption>
+              </figure>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </section>
+  );
+}
+
+/** Policies at a glance: check-in/out when set, the published policy titles, link to the page. */
+export function PoliciesSummary({
+  hotel,
+  policies,
+  faqCount,
+}: {
+  hotel: Pick<PublicHotel, 'checkInTime' | 'checkOutTime'>;
+  policies: PublicPolicy[];
+  faqCount: number;
+}) {
+  const times: [string, string][] = [
+    ...(hotel.checkInTime ? [[ui.contact.checkIn, hotel.checkInTime] as [string, string]] : []),
+    ...(hotel.checkOutTime ? [[ui.contact.checkOut, hotel.checkOutTime] as [string, string]] : []),
+  ];
+  if (times.length === 0 && policies.length === 0 && faqCount === 0) return null;
+  return (
+    <section
+      aria-labelledby="politicas-title"
+      className="px-(--gutter) pb-[clamp(78px,10vw,150px)]"
+    >
+      <div
+        data-reveal
+        className="mx-auto grid max-w-[calc(var(--container-site)-2*var(--gutter))] items-center gap-10 rounded-[22px] bg-sand p-[clamp(32px,6vw,80px)] tab:rounded-xl desk:grid-cols-[1fr_1fr] desk:gap-[70px]"
+      >
+        <div>
+          <SectionHeading
+            id="politicas-title"
+            surface="sand"
+            eyebrow={ui.home.policiesKicker}
+            title={ui.home.policiesTitle}
+          />
+          <Link href={routes.policies} className={`${buttonClass('dark')} mt-8`}>
+            {ui.home.policiesAll}
+          </Link>
+        </div>
+        <div className="grid gap-6">
+          {times.length > 0 ? (
+            <dl className="grid grid-cols-2 gap-6">
+              {times.map(([label, value]) => (
+                <div key={label}>
+                  <dt className="detail-label">{label}</dt>
+                  <dd className="font-display text-fact leading-none text-green">{value}</dd>
+                </div>
+              ))}
+            </dl>
+          ) : null}
+          {policies.length > 0 ? (
+            <ul className="grid gap-3">
+              {policies.map((policy) => (
+                <li
+                  key={policy.id}
+                  className="flex items-center gap-3.5 rounded-sm bg-white/52 px-[19px] py-4 font-bold text-charcoal"
+                >
+                  <SiteIcon iconKey="shield-check" className="size-5 shrink-0 text-green" />
+                  {policy.title}
+                </li>
+              ))}
+            </ul>
+          ) : null}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+export function GalleryStripSection({ items }: { items: PublicGalleryItem[] }) {
   if (items.length === 0) return null;
   const tiles = [...items].sort((a, b) => Number(b.featured) - Number(a.featured)).slice(0, 4);
   return (
@@ -291,13 +336,17 @@ export function GalleryStripSection({
       <div className={container}>
         <div className="mb-12 flex flex-col gap-6 tab:flex-row tab:items-end tab:justify-between">
           <div data-reveal>
-            <SectionHeading id="galeria-title" eyebrow={eyebrow} title={title} intro={intro} />
+            <SectionHeading
+              id="galeria-title"
+              eyebrow={ui.home.galleryKicker}
+              title={ui.home.galleryTitle}
+            />
           </div>
           <Link
             href={routes.gallery}
             className={`${buttonClass('ghost')} shrink-0 self-start tab:self-auto`}
           >
-            {ctaLabel ?? ui.gallery.seeAll}
+            {ui.gallery.seeAll}
           </Link>
         </div>
         <PhotoGallery

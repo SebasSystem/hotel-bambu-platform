@@ -18,7 +18,7 @@ export function generateMetadata(): Metadata {
       default: 'Hotel Bambú Plaza',
       template: '%s · Hotel Bambú Plaza',
     },
-    description: 'Hotel Bambú Plaza: habitaciones, servicios, ubicación y contacto por WhatsApp.',
+    description: 'Hotel Bambú Plaza: habitaciones, ubicación y contacto directo.',
     robots: isIndexable() ? { index: true, follow: true } : { index: false, follow: false },
     openGraph: {
       type: 'website',

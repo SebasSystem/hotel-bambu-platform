@@ -10,10 +10,16 @@ export const ui = {
     rooms: 'Habitaciones',
     gallery: 'Galería',
     location: 'Ubicación',
+    policies: 'Políticas',
     faq: 'Preguntas frecuentes',
-    policies: 'Políticas del hotel',
-    contact: 'Contacto',
   },
+  /** H1 and breadcrumb name of the merged inner pages (C3). */
+  pages: {
+    location: 'Ubicación y cómo llegar',
+    policies: 'Políticas y preguntas frecuentes',
+    gallery: 'Galería de fotos',
+  },
+  phone: { call: 'Llamar' },
   whatsapp: {
     cta: 'Escríbenos por WhatsApp',
     short: 'WhatsApp',
@@ -29,12 +35,12 @@ export const ui = {
   },
   rooms: {
     seeAll: 'Ver habitaciones',
-    seeDetail: 'Ver detalle',
+    seeDetail: 'Ver habitación',
     from: 'Desde',
     capacity: (n: number) => (n === 1 ? '1 persona' : `${n} personas`),
-    noPrice: 'Consulta la tarifa por WhatsApp',
-    noPriceNoWhatsApp: 'Consulta la tarifa con el hotel',
-    confirm: 'El precio final y la disponibilidad se confirman por WhatsApp.',
+    noPrice: 'Consultar tarifa',
+    noPriceNote: 'Te la confirmamos al consultar tus fechas.',
+    confirm: 'El precio final y la disponibilidad se confirman directamente con el hotel.',
     countLabel: (n: number) => (n === 1 ? '1 habitación' : `${n} habitaciones`),
     typeCount: (n: number) => (n === 1 ? '1 tipo de habitación' : `${n} tipos de habitación`),
     all: 'Todas',
@@ -50,9 +56,12 @@ export const ui = {
     schedule: 'Horarios',
     upTo: (n: number) => `Hasta ${n} ${n === 1 ? 'persona' : 'personas'}`,
     featured: 'Habitación destacada',
+    /** Mockup "Elige según tu capacidad y necesidades…", without the availability promise. */
+    intro:
+      'Elige según tu capacidad y necesidades. Cada tipo muestra sus fotos reales, camas y comodidades.',
   },
   pricesDisclaimer:
-    'Las tarifas publicadas son informativas. El precio final y la disponibilidad se confirman por WhatsApp.',
+    'Las tarifas publicadas son informativas. El precio final y la disponibilidad se confirman directamente con el hotel.',
   map: {
     load: 'Cargar mapa',
     notice:
@@ -71,6 +80,7 @@ export const ui = {
     count: (n: number) => (n === 1 ? '1 foto' : `${n} fotos`),
     filter: 'Filtrar por categoría',
     seeAllPhotos: (n: number) => `Ver las ${n} fotos`,
+    intro: 'Fotos reales de nuestras instalaciones, sin imágenes de catálogo.',
   },
   hero: {
     pause: 'Pausar presentación',
@@ -107,23 +117,47 @@ export const ui = {
     call: 'Llamar',
     direct: 'Contacto directo',
   },
-  location: { nearby: 'Alrededores', kicker: 'Cómo llegar' },
+  location: {
+    nearby: 'Lugares cercanos',
+    surroundings: 'Alrededores',
+    kicker: 'Ubicación',
+    /** Mockup "Ubicación y contacto" heading, true for the hotel. */
+    title: (city: string) => `Estamos en ${city}.`,
+    titleFallback: 'Dónde estamos',
+    distance: 'Distancia',
+    time: 'Tiempo',
+    contactTitle: (city: string) => `Cuéntanos cuándo vienes a ${city}.`,
+    contactTitleFallback: 'Cuéntanos cuándo vienes.',
+  },
   closing: {
-    title: (name: string) => `Planea tu estadía en ${name}`,
-    withWhatsApp:
-      'Escríbenos y te confirmamos disponibilidad y tarifa. Abrir WhatsApp no constituye una reserva.',
-    withoutWhatsApp: 'Conoce nuestras habitaciones y sus características.',
+    kicker: 'Tu próxima estadía',
+    /** Mockup contact heading, used for the final CTA panel. */
+    title: 'Tu estadía empieza con una conversación.',
+    withWhatsApp: (city: string | null) =>
+      `Cuéntanos cuándo vienes${city ? ` a ${city}` : ''} y te confirmamos disponibilidad y tarifa. Abrir WhatsApp no constituye una reserva.`,
+    withPhone: (city: string | null) =>
+      `Cuéntanos cuándo vienes${city ? ` a ${city}` : ''}: llámanos y te confirmamos disponibilidad y tarifa.`,
+    withoutContact: 'Conoce nuestras habitaciones y sus características.',
   },
   home: {
-    roomsAll: (n: number) => `Ver las ${n} habitaciones`,
-    amenitiesKicker: 'Lo esencial, bien cuidado',
-    hotelAmenitiesTitle: 'Comodidades del hotel',
+    heroKicker: (place: string) => `Hotel en ${place}`,
+    trustLabel: 'Datos del hotel',
+    roomsKicker: (n: number) => (n === 1 ? '1 habitación' : `${n} habitaciones`),
+    /** Mockup "Un espacio para bajar el ritmo." adapted to the hotel's own words. */
+    roomsTitle: 'Un espacio para descansar al final del día.',
     hotelWide: 'En todo el hotel',
+    aboutKicker: 'Sobre nosotros',
+    /** Mockup "Hospitalidad serena, cerca de todo…" without the unverified "cerca de todo". */
+    aboutTitle: (city: string | null) =>
+      city ? `Hospitalidad cálida en el corazón de ${city}.` : 'Hospitalidad cálida.',
+    policiesKicker: 'Antes de llegar',
+    policiesTitle: 'Políticas del hotel',
+    policiesAll: 'Ver políticas y preguntas frecuentes',
     galleryKicker: 'Una mirada al hotel',
-    amenitiesTitle: 'En todas las habitaciones',
-    faqAll: 'Ver todas las preguntas',
+    galleryTitle: 'Espacios para sentirte a gusto.',
+    reviewsKicker: 'Opiniones de huéspedes',
   },
-  faq: { other: '¿Tienes otra pregunta?' },
+  faq: { title: 'Preguntas frecuentes', other: '¿Tienes otra pregunta?' },
   consent: {
     bannerLabel: 'Aviso de cookies',
     bannerTitle: 'Tu privacidad',

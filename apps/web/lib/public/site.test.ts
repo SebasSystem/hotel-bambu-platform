@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import type { PublicGalleryItem, PublicMedia, PublicRoomSummary, PublicSite } from './types';
+import type { PublicGalleryItem, PublicMedia, PublicRoomTypeSummary, PublicSite } from './types';
 import {
   displayPhone,
+  heroTagline,
   fullAddress,
   heroImages,
   homeHotelAmenities,
@@ -85,7 +86,7 @@ describe('heroImages', () => {
   const gallery = [
     { id: 'g', category: 'ROOMS', featured: true, media: photo('g1') },
   ] as PublicGalleryItem[];
-  const rooms = [{ cover: photo('r1') }] as PublicRoomSummary[];
+  const rooms = [{ cover: photo('r1') }] as PublicRoomTypeSummary[];
 
   it('uses the admin hero slides, in order and all of them, when there are any', () => {
     const slides = ['s1', 's2', 's3', 's4'].map((id) => ({ id, caption: null, media: photo(id) }));
@@ -149,5 +150,22 @@ describe('isSectionEnabled', () => {
     const site = siteWith({ sections: [{ key: 'ABOUT', sortOrder: 0 }] });
     expect(isSectionEnabled(site, 'ABOUT')).toBe(true);
     expect(isSectionEnabled(site, 'FAQ')).toBe(false);
+  });
+});
+
+describe('heroTagline', () => {
+  it('drops a leading hotel name already shown in the H1 and capitalises the rest', () => {
+    expect(
+      heroTagline(
+        'Hotel Bambú Plaza: descanso, comodidad y confianza en el corazón de Mocoa',
+        'Hotel Bambú Plaza',
+      ),
+    ).toBe('Descanso, comodidad y confianza en el corazón de Mocoa.');
+  });
+
+  it('keeps other taglines as written and is null without one', () => {
+    expect(heroTagline('Tu casa en Mocoa.', 'Hotel Bambú Plaza')).toBe('Tu casa en Mocoa.');
+    expect(heroTagline('  ', 'Hotel Bambú Plaza')).toBeNull();
+    expect(heroTagline(null, 'Hotel Bambú Plaza')).toBeNull();
   });
 });

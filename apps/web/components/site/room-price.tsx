@@ -2,26 +2,27 @@ import { ui } from '@/lib/i18n/es';
 import { formatRoomPrice, type RoomPriceInput } from '@/lib/public/format';
 
 /**
- * Informative rate (requirements 4.4, 17.6): "Desde $ X por noche" + taxes note, or the
- * "consult the rate" fallback. Never presented as a booking price.
+ * Informative rate (requirements 4.4, 17.6): "Desde $ X por noche" + taxes note, or "Consultar
+ * tarifa" when the type has no published rate (never an invented figure). Never a booking price.
  */
 export function RoomPrice({
   room,
-  hasWhatsApp,
   size = 'md',
   showConfirmNote = false,
 }: {
   room: RoomPriceInput;
-  hasWhatsApp: boolean;
   size?: 'md' | 'lg';
   showConfirmNote?: boolean;
 }) {
   const price = formatRoomPrice(room);
   if (!price) {
     return (
-      <p className="text-sm font-bold text-green">
-        {hasWhatsApp ? ui.rooms.noPrice : ui.rooms.noPriceNoWhatsApp}
-      </p>
+      <div>
+        <p className={`font-display text-charcoal ${size === 'lg' ? 'text-2xl' : 'text-lg'}`}>
+          {ui.rooms.noPrice}
+        </p>
+        <p className="mt-1 text-sm text-muted-foreground">{ui.rooms.noPriceNote}</p>
+      </div>
     );
   }
   return (

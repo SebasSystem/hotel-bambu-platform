@@ -10,12 +10,13 @@ import { WhatsAppFab } from '@/components/site/whatsapp-fab';
 import { CONSENT_COOKIE, parseConsentValue } from '@/lib/consent/consent';
 import { ui } from '@/lib/i18n/es';
 import { getSite } from '@/lib/public/api';
-import { whatsAppLink } from '@/lib/public/whatsapp';
+import { contactCta } from '@/lib/public/cta';
 
 export async function generateMetadata(): Promise<Metadata> {
   const { hotel } = await getSite();
+  // Pages set absolute titles from the research templates (lib/seo/page-seo.ts).
   return {
-    title: { default: hotel.name, template: `%s · ${hotel.name}` },
+    title: { default: hotel.name, template: `%s – ${hotel.name}` },
     description: hotel.shortDescription ?? undefined,
   };
 }
@@ -27,7 +28,8 @@ export async function generateMetadata(): Promise<Metadata> {
  */
 export default async function SiteLayout({ children }: { children: ReactNode }) {
   const [site, cookieStore] = await Promise.all([getSite(), cookies()]);
-  const whatsappUrl = whatsAppLink(site, { kind: 'general' });
+  const cta = contactCta(site, { kind: 'general' });
+  const whatsappUrl = cta?.kind === 'whatsapp' ? cta.href : null;
   const consent = parseConsentValue(cookieStore.get(CONSENT_COOKIE)?.value);
 
   return (
@@ -35,16 +37,17 @@ export default async function SiteLayout({ children }: { children: ReactNode }) 
       <a href="#contenido" className="skip-link">
         {ui.skipToContent}
       </a>
-      <Header hotelName={site.hotel.name} whatsappUrl={whatsappUrl} />
+      <Header cta={cta} />
       <main id="contenido" tabIndex={-1} data-menu-inert="" className="outline-none">
         {children}
       </main>
-      {/* On phones the floating WhatsApp button must not cover the last footer row (spec defect 5). */}
+      {/* On phones the floating WhatsApp button must not cover the last footer row (spec defect 5).
+          Without WhatsApp there is no floating button: the header keeps the phone CTA. */}
       <div
         data-menu-inert=""
         className={whatsappUrl ? 'bg-charcoal pb-[79px] tab:pb-0' : undefined}
       >
-        <Footer site={site} whatsappUrl={whatsappUrl} />
+        <Footer site={site} cta={cta} />
       </div>
       {whatsappUrl ? <WhatsAppFab href={whatsappUrl} /> : null}
       <MotionBoot />

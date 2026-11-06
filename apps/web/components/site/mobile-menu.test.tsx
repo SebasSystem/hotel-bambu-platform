@@ -2,6 +2,7 @@
 import { act, cleanup, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { ContactCta } from '@/lib/public/cta';
 import { MobileMenu } from './mobile-menu';
 
 let pathname = '/';
@@ -13,10 +14,12 @@ const links = [
   { href: '/galeria', label: 'Galería' },
 ];
 
-function renderMenu(whatsappUrl: string | null = 'https://wa.me/573000000000') {
+function renderMenu(
+  cta: ContactCta | null = { kind: 'whatsapp', href: 'https://wa.me/573000000000' },
+) {
   return render(
     <>
-      <MobileMenu links={links} whatsappUrl={whatsappUrl} />
+      <MobileMenu links={links} cta={cta} />
       <main data-menu-inert="">
         <a href="#fuera">Fuera del menú</a>
       </main>
@@ -101,7 +104,7 @@ describe('MobileMenu', () => {
     act(() => {
       view.rerender(
         <>
-          <MobileMenu links={links} whatsappUrl={null} />
+          <MobileMenu links={links} cta={null} />
           <main data-menu-inert="" />
         </>,
       );
@@ -118,5 +121,19 @@ describe('MobileMenu', () => {
       'page',
     );
     expect(screen.getByRole('link', { name: 'Inicio' }).getAttribute('aria-current')).toBeNull();
+  });
+  it('offers the phone call when the hotel has no WhatsApp number', async () => {
+    const user = userEvent.setup();
+    renderMenu({
+      kind: 'phone',
+      href: 'tel:+573106798260',
+      phone: '310 679 8260',
+      label: 'Llamar al 310 679 8260',
+    });
+    await user.click(toggle());
+    expect(screen.getByRole('link', { name: 'Llamar al 310 679 8260' }).getAttribute('href')).toBe(
+      'tel:+573106798260',
+    );
+    expect(screen.queryByRole('link', { name: /WhatsApp/ })).toBeNull();
   });
 });

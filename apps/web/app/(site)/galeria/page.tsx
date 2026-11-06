@@ -4,18 +4,25 @@ import { PhotoGallery } from '@/components/site/photo-gallery';
 import { container } from '@/components/site/styles';
 import { ui } from '@/lib/i18n/es';
 import { pageMetadata } from '@/lib/seo/metadata';
+import { gallerySeo } from '@/lib/seo/page-seo';
 import { getGallery, getSite } from '@/lib/public/api';
 import { galleryCategoryFromParam, galleryFilters } from '@/lib/public/gallery';
 import { routes } from '@/lib/public/navigation';
 
 export async function generateMetadata(): Promise<Metadata> {
-  const site = await getSite();
-  return pageMetadata({
+  const [site, items] = await Promise.all([getSite(), getGallery()]);
+  const seo = gallerySeo(
+    site.hotel,
+    galleryFilters(items).map((filter) => filter.label),
+  );
+  const meta = pageMetadata({
     path: routes.gallery,
     siteName: site.hotel.name,
-    title: ui.nav.gallery,
-    description: `Fotografías reales de ${site.hotel.name}.`,
+    title: seo.title,
+    description: seo.description,
+    image: items.find((item) => item.featured)?.media ?? items[0]?.media ?? null,
   });
+  return { ...meta, title: { absolute: seo.title } };
 }
 
 /**
@@ -33,9 +40,9 @@ export default async function GalleryPage({ searchParams }: PageProps<'/galeria'
     <>
       <PageHeader
         path={routes.gallery}
-        title={ui.nav.gallery}
+        title={ui.pages.gallery}
         kicker={ui.home.galleryKicker}
-        intro={null}
+        intro={ui.gallery.intro}
       />
       <Toolbar label={ui.gallery.filter} count={ui.gallery.count(visible.length)}>
         {filters.length > 1 ? (

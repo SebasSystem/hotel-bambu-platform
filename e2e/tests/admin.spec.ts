@@ -110,11 +110,11 @@ test.describe('admin', () => {
       await expect
         .poll(
           async () =>
-            (await (await page.request.get('/preguntas-frecuentes')).text()).includes(edited),
+            (await (await page.request.get('/politicas-del-hotel')).text()).includes(edited),
           { timeout: 20_000 },
         )
         .toBe(true);
-      await page.goto('/preguntas-frecuentes');
+      await page.goto('/politicas-del-hotel');
       await rejectCookies(page);
       await expect(page.getByText(edited)).toBeVisible();
     } finally {

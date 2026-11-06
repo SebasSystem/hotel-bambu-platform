@@ -1,5 +1,6 @@
 import { formatRoomPrice } from '@/lib/public/format';
-import type { PublicHotel, PublicRoomDetail } from '@/lib/public/types';
+import { bedsText } from '@/lib/public/rooms';
+import type { PublicHotel, PublicRoomTypeDetail } from '@/lib/public/types';
 
 /**
  * Generated SEO title and meta description of a room type page (owner decision 2026-11-05, ADR
@@ -9,7 +10,7 @@ import type { PublicHotel, PublicRoomDetail } from '@/lib/public/types';
  */
 
 type SeoRoomType = Pick<
-  PublicRoomDetail,
+  PublicRoomTypeDetail,
   | 'name'
   | 'capacity'
   | 'beds'
@@ -23,31 +24,11 @@ type SeoHotel = Pick<PublicHotel, 'name' | 'municipality' | 'department'>;
 
 const MAX_DESCRIPTION = 160;
 
-/** Lowercase bed names for running text (admin labels are title case). */
-const BED_NAMES: Record<string, [singular: string, plural: string]> = {
-  SINGLE: ['cama sencilla', 'camas sencillas'],
-  DOUBLE: ['cama doble', 'camas dobles'],
-  QUEEN: ['cama queen', 'camas queen'],
-  KING: ['cama king', 'camas king'],
-  BUNK: ['camarote', 'camarotes'],
-  SOFA_BED: ['sofá cama', 'sofás cama'],
-};
-
 const people = (count: number) => `${count} ${count === 1 ? 'persona' : 'personas'}`;
 
 function listOf(items: string[]): string {
   if (items.length <= 1) return items.join('');
   return `${items.slice(0, -1).join(', ')} y ${items.at(-1)}`;
-}
-
-function bedsText(beds: SeoRoomType['beds']): string | null {
-  const parts = (beds ?? [])
-    .filter((bed) => bed.count > 0)
-    .map((bed) => {
-      const [one, many] = BED_NAMES[bed.type] ?? [bed.type.toLowerCase(), bed.type.toLowerCase()];
-      return `${bed.count} ${bed.count === 1 ? one : many}`;
-    });
-  return parts.length > 0 ? parts.join(', ') : null;
 }
 
 export function roomTypeSeo(

@@ -10,6 +10,8 @@ import { container } from './styles';
 
 interface PageHeaderProps {
   title: string;
+  /** Breadcrumb name of the page when it differs from the H1 (default: the title). */
+  crumbName?: string;
   /** Canonical path of the page: adds the BreadcrumbList JSON-LD (requirement 19.2). */
   path?: string;
   kicker?: string | null;
@@ -20,7 +22,15 @@ interface PageHeaderProps {
 }
 
 /** Inner-page header: breadcrumb, H1 and intro on sand. */
-export function PageHeader({ title, path, kicker, intro, crumbs = [], children }: PageHeaderProps) {
+export function PageHeader({
+  title,
+  crumbName = title,
+  path,
+  kicker,
+  intro,
+  crumbs = [],
+  children,
+}: PageHeaderProps) {
   return (
     <div className="border-b border-line bg-sand">
       {path ? (
@@ -28,7 +38,7 @@ export function PageHeader({ title, path, kicker, intro, crumbs = [], children }
           data={breadcrumbJsonLd([
             { name: ui.nav.home, path: routes.home },
             ...crumbs.map((crumb) => ({ name: crumb.label, path: crumb.href })),
-            { name: title, path },
+            { name: crumbName, path },
           ])}
         />
       ) : null}
@@ -60,7 +70,7 @@ export function PageHeader({ title, path, kicker, intro, crumbs = [], children }
             <li className="flex items-center gap-2">
               <span aria-hidden="true">/</span>
               <span aria-current="page" className="text-charcoal">
-                {title}
+                {crumbName}
               </span>
             </li>
           </ol>

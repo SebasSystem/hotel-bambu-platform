@@ -2,13 +2,15 @@ import { CACHE_TAGS, roomCacheTag } from '@hotel-bambu/shared';
 import { unstable_rethrow } from 'next/navigation';
 import { connection } from 'next/server';
 import { cache } from 'react';
+import { heroImages } from './site';
 import type {
   PublicFaq,
   PublicGalleryItem,
+  PublicMedia,
   PublicNearbyPlace,
   PublicPolicy,
-  PublicRoomDetail,
-  PublicRoomSummary,
+  PublicRoomTypeDetail,
+  PublicRoomTypeSummary,
   PublicSite,
 } from './types';
 
@@ -74,11 +76,11 @@ export const getSite = cache(async (): Promise<PublicSite> => {
 
 /** Published room types with their published room counts (ADR 0016). */
 export const getRoomTypes = cache(() =>
-  optional(publicGet<PublicRoomSummary[]>('/room-types', [CACHE_TAGS.rooms]), []),
+  optional(publicGet<PublicRoomTypeSummary[]>('/room-types', [CACHE_TAGS.rooms]), []),
 );
 
 export type RoomResult =
-  | { kind: 'room'; room: PublicRoomDetail }
+  | { kind: 'room'; room: PublicRoomTypeDetail }
   | { kind: 'redirect'; slug: string }
   | { kind: 'not-found' };
 
@@ -87,7 +89,7 @@ export type RoomResult =
  * migration) answers `{ redirectTo }`, which the page turns into a permanent redirect.
  */
 export const getRoomType = cache(async (slug: string): Promise<RoomResult> => {
-  const data = await publicGet<PublicRoomDetail | { redirectTo: string }>(
+  const data = await publicGet<PublicRoomTypeDetail | { redirectTo: string }>(
     `/room-types/${encodeURIComponent(slug)}`,
     [CACHE_TAGS.rooms, roomCacheTag(slug), CACHE_TAGS.amenities],
   );
@@ -109,3 +111,26 @@ export const getFaqs = cache(() => optional(publicGet<PublicFaq[]>('/faq', [CACH
 export const getPolicies = cache(() =>
   optional(publicGet<PublicPolicy[]>('/policies', [CACHE_TAGS.policies]), []),
 );
+
+/**
+ * Detail of every listed type (beds, area), for cards that show the bed setup. Each call shares the
+ * tagged Data Cache with the type page; a type that fails or moved is simply left out.
+ */
+export const getRoomTypeDetails = cache(async (): Promise<Map<string, PublicRoomTypeDetail>> => {
+  const types = await getRoomTypes();
+  const results = await Promise.all(
+    types.map((type) => optional(getRoomType(type.slug), { kind: 'not-found' } as RoomResult)),
+  );
+  return new Map(
+    results.flatMap((result) => (result.kind === 'room' ? [[result.room.slug, result.room]] : [])),
+  );
+});
+
+/**
+ * Real hotel photos for share images and the Hotel JSON-LD: the hero slides, else the hero
+ * fallback (featured gallery, gallery, room covers). Never the logo (research §7).
+ */
+export const getSiteImages = cache(async (): Promise<PublicMedia[]> => {
+  const [site, gallery, types] = await Promise.all([getSite(), getGallery(), getRoomTypes()]);
+  return heroImages(site, gallery, types);
+});

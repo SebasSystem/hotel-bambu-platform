@@ -4,7 +4,9 @@ import { RoomCard } from '@/components/site/room-card';
 import { container } from '@/components/site/styles';
 import { ui } from '@/lib/i18n/es';
 import { pageMetadata } from '@/lib/seo/metadata';
-import { getRoomTypes, getSite } from '@/lib/public/api';
+import { roomsSeo } from '@/lib/seo/page-seo';
+import { getRoomTypeDetails, getRoomTypes, getSite } from '@/lib/public/api';
+import { contactCta } from '@/lib/public/cta';
 import { routes } from '@/lib/public/navigation';
 import {
   filterRoomsByType,
@@ -12,17 +14,18 @@ import {
   roomTypeFilters,
   roomTypeFromParam,
 } from '@/lib/public/rooms';
-import { whatsAppLink } from '@/lib/public/whatsapp';
 
 export async function generateMetadata(): Promise<Metadata> {
   const [site, rooms] = await Promise.all([getSite(), getRoomTypes()]);
-  const city = site.hotel.municipality ? ` en ${site.hotel.municipality}` : '';
-  return pageMetadata({
+  const seo = roomsSeo(site.hotel, rooms, contactCta(site, { kind: 'general' })?.kind ?? null);
+  const meta = pageMetadata({
     path: routes.rooms,
     siteName: site.hotel.name,
-    title: `${ui.nav.rooms}${city}`,
-    description: `${ui.rooms.typeCount(rooms.length)} en ${site.hotel.name}: fotos, capacidad, comodidades incluidas y tarifa informativa.`,
+    title: seo.title,
+    description: seo.description,
+    image: rooms[0]?.cover ?? null,
   });
+  return { ...meta, title: { absolute: seo.title } };
 }
 
 /**
@@ -31,7 +34,12 @@ export async function generateMetadata(): Promise<Metadata> {
  * (ADR 0016: one card per type; the kicker counts the published rooms).
  */
 export default async function RoomsPage({ searchParams }: PageProps<'/habitaciones'>) {
-  const [site, rooms, query] = await Promise.all([getSite(), getRoomTypes(), searchParams]);
+  const [site, rooms, details, query] = await Promise.all([
+    getSite(),
+    getRoomTypes(),
+    getRoomTypeDetails(),
+    searchParams,
+  ]);
   const roomCount = publishedRoomTotal(rooms);
   const filters = roomTypeFilters(rooms);
   const requested = roomTypeFromParam(query.tipo);
@@ -42,9 +50,12 @@ export default async function RoomsPage({ searchParams }: PageProps<'/habitacion
     <>
       <PageHeader
         path={routes.rooms}
-        title={ui.nav.rooms}
+        title={
+          site.hotel.municipality ? `${ui.nav.rooms} en ${site.hotel.municipality}` : ui.nav.rooms
+        }
+        crumbName={ui.nav.rooms}
         kicker={roomCount > 0 ? ui.rooms.countLabel(roomCount) : null}
-        intro={null}
+        intro={ui.rooms.intro}
       />
       <Toolbar label={ui.rooms.filter} count={ui.rooms.typeCount(visible.length)}>
         {filters.length > 1 ? (
@@ -67,14 +78,18 @@ export default async function RoomsPage({ searchParams }: PageProps<'/habitacion
 
       <section aria-label={ui.nav.rooms} className={`${container} pt-12 pb-[110px]`}>
         {visible.length > 0 ? (
-          <ul className="grid gap-6 tab:grid-cols-2 desk:grid-cols-3">
+          <ul
+            className={`grid gap-6 tab:grid-cols-2 ${visible.length >= 3 ? 'desk:grid-cols-3' : ''}`}
+          >
             {visible.map((room, index) => (
               <li key={room.slug} className="flex">
                 <RoomCard
                   room={room}
+                  detail={details.get(room.slug)}
                   index={index}
                   headingLevel="h2"
-                  whatsappUrl={whatsAppLink(site, { kind: 'roomType', name: room.name })}
+                  frame={visible.length < 3 ? 'wide' : 'square'}
+                  cta={contactCta(site, { kind: 'roomType', name: room.name })}
                 />
               </li>
             ))}

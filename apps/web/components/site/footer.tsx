@@ -5,7 +5,9 @@ import { CookieSettingsButton } from '@/components/consent/consent-manager';
 import { SOCIAL_PLATFORM_LABELS } from '@/lib/labels';
 import { ui } from '@/lib/i18n/es';
 import { footerNav, infoNav, legalNav } from '@/lib/public/navigation';
-import { displayPhone, fullAddress, telHref } from '@/lib/public/site';
+import type { ContactCta } from '@/lib/public/cta';
+import { napOf } from '@/lib/public/nap';
+import { displayPhone, telHref } from '@/lib/public/site';
 import type { PublicSite } from '@/lib/public/types';
 import { container } from './styles';
 import { WhatsAppLink } from './whatsapp-link';
@@ -26,15 +28,15 @@ function Column({ title, children }: { title: string; children: ReactNode }) {
 
 /**
  * Footer (mockup `.footer`, requirement 4.2.10): charcoal, brand + blurb and three columns
- * (Explorar, Información, Contacto) from the site data; the bottom row carries the legal name,
- * RNT and ESCNNA notice only when configured (17.6), legal links and the cookie settings.
+ * (Explorar, Información, Contacto) from the site data. The contact column prints the full NAP
+ * from `napOf`, the same source as the Hotel JSON-LD, so both always match. The bottom row carries
+ * the legal name, RNT and ESCNNA notice only when configured (17.6), legal links and cookies.
  */
-export function Footer({ site, whatsappUrl }: { site: PublicSite; whatsappUrl: string | null }) {
+export function Footer({ site, cta }: { site: PublicSite; cta: ContactCta | null }) {
   const { hotel } = site;
-  const address = fullAddress(hotel);
-  const hasContact = Boolean(
-    (whatsappUrl && hotel.whatsappNumber) || hotel.phone || hotel.email || address,
-  );
+  const nap = napOf(hotel);
+  const whatsappUrl = cta?.kind === 'whatsapp' ? cta.href : null;
+  const hasContact = Boolean(whatsappUrl || nap.telephone || hotel.email || nap.addressLine);
   const year = new Date().getFullYear();
 
   return (
@@ -95,35 +97,38 @@ export function Footer({ site, whatsappUrl }: { site: PublicSite; whatsappUrl: s
           </nav>
 
           {hasContact ? (
-            <Column title={ui.footer.contact}>
-              {whatsappUrl && hotel.whatsappNumber ? (
-                <li>
+            <div>
+              <h2 className="mb-4 font-sans text-[0.74rem] leading-normal font-bold tracking-label text-ivory uppercase">
+                {ui.footer.contact}
+              </h2>
+              <address data-testid="footer-nap" className="grid gap-2 not-italic">
+                <strong className="font-bold text-ivory">{nap.name}</strong>
+                {nap.addressLine ? <span>{nap.addressLine}</span> : null}
+                {nap.telephone ? (
+                  <a href={telHref(nap.telephone)} className={`${footerLink} justify-self-start`}>
+                    {ui.contact.phone} {nap.telephone}
+                  </a>
+                ) : null}
+                {whatsappUrl && hotel.whatsappNumber ? (
                   <WhatsAppLink
                     href={whatsappUrl}
                     source="footer"
                     icon={false}
-                    className={footerLink}
+                    className={`${footerLink} justify-self-start`}
                   >
                     WhatsApp {displayPhone(hotel.whatsappNumber)}
                   </WhatsAppLink>
-                </li>
-              ) : null}
-              {hotel.phone ? (
-                <li>
-                  <a href={telHref(hotel.phone)} className={footerLink}>
-                    {ui.contact.phone} {hotel.phone}
-                  </a>
-                </li>
-              ) : null}
-              {hotel.email ? (
-                <li>
-                  <a href={`mailto:${hotel.email}`} className={`${footerLink} break-all`}>
+                ) : null}
+                {hotel.email ? (
+                  <a
+                    href={`mailto:${hotel.email}`}
+                    className={`${footerLink} justify-self-start break-all`}
+                  >
                     {hotel.email}
                   </a>
-                </li>
-              ) : null}
-              {address ? <li>{address}</li> : null}
-            </Column>
+                ) : null}
+              </address>
+            </div>
           ) : null}
         </div>
 

@@ -9,14 +9,6 @@ import type {
 
 export type { PublicMedia, PublicNearbyPlace, PublicRoomTypeDetail, PublicRoomTypeSummary };
 
-/**
- * Since ADR 0016 a public "room" card or page is a room type (`/habitaciones/<type slug>`); the
- * physical rooms only add up to `publishedRoomCount`. The aliases keep the page code stable until
- * the C3 restructure.
- */
-export type PublicRoomSummary = PublicRoomTypeSummary;
-export type PublicRoomDetail = PublicRoomTypeDetail;
-
 export interface PublicHotel {
   name: string;
   legalName: string | null;

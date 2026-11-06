@@ -7,25 +7,28 @@ import type { PublicMedia } from '@/lib/public/types';
 import { HeroCarousel } from './hero-carousel';
 import { HeroTitle } from './hero-client';
 import { Picture } from './picture';
-import { WhatsAppLink } from './whatsapp-link';
+import type { ContactCta } from '@/lib/public/cta';
+import { ContactCtaLink } from './contact-cta';
 
 interface HeroProps {
   title: string;
   kicker: string | null;
   subtitle: string | null;
-  ctaLabel: string | null;
-  /** Ordered slides; the first one is the LCP image. Up to D3 this is the single hero + fallbacks. */
+  /** "Desde $ 120.000 COP/noche", only when a published type has a rate. */
+  rate: string | null;
+  /** Ordered slides; the first one is the LCP image. */
   images: PublicMedia[];
-  whatsappUrl: string | null;
+  /** WhatsApp, else "Llamar al …" (`contactCta`). */
+  cta: ContactCta | null;
 }
 
 /**
  * Home hero (mockup `.hero-carousel`): full-bleed photos on deep green with the mockup gradients,
- * eyebrow, serif display title, copy and two CTAs (WhatsApp light + rooms ghost). No quick date
- * search (owner decision), so the bottom padding drops from 190 to 120 px. Without photos it is
- * a plain deep-green band.
+ * kicker ("Hotel en Mocoa, Putumayo"), the hotel name as H1, the tagline, the "desde" rate and two
+ * CTAs (WhatsApp or the phone call, plus "Ver habitaciones"). No quick date search (owner
+ * decision), so the bottom padding drops from 190 to 120 px. Without photos it is a plain band.
  */
-export function Hero({ title, kicker, subtitle, ctaLabel, images, whatsappUrl }: HeroProps) {
+export function Hero({ title, kicker, subtitle, rate, images, cta }: HeroProps) {
   const slides = images.map((media, index) => (
     <Picture
       key={media.id}
@@ -64,13 +67,21 @@ export function Hero({ title, kicker, subtitle, ctaLabel, images, whatsappUrl }:
             {subtitle}
           </p>
         ) : null}
+        {rate ? (
+          <p data-testid="hero-rate" className="mt-5 text-[1.05rem] font-bold text-white">
+            {rate}
+          </p>
+        ) : null}
         <div className="mt-6 flex flex-wrap gap-3">
-          {whatsappUrl ? (
-            <WhatsAppLink href={whatsappUrl} source="hero" className={buttonClass('light')}>
-              {ctaLabel ?? ui.whatsapp.room}
-            </WhatsAppLink>
+          {cta ? (
+            <ContactCtaLink
+              cta={cta}
+              source="hero"
+              className={buttonClass('light')}
+              whatsappLabel={ui.whatsapp.stay}
+            />
           ) : null}
-          <Link href={routes.rooms} className={buttonClass(whatsappUrl ? 'ghostOnDark' : 'light')}>
+          <Link href={routes.rooms} className={buttonClass(cta ? 'ghostOnDark' : 'light')}>
             {ui.rooms.seeAll}
           </Link>
         </div>

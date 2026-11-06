@@ -1,193 +1,157 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import type { ReactNode } from 'react';
-import { FaqList, hasLocation, LocationBlock } from '@/components/site/blocks';
+import { ContactCtaLink } from '@/components/site/contact-cta';
+import { hasLocation } from '@/components/site/blocks';
 import { Hero } from '@/components/site/hero';
 import {
-  AmenitiesSection,
+  AboutSection,
   CtaPanel,
   GalleryStripSection,
-  HomeIntro,
-  HotelAmenitiesPanel,
-  RoomsShowcase,
+  LocationSection,
+  PoliciesSummary,
+  ReviewsSection,
+  RoomTypesSection,
+  TrustStrip,
 } from '@/components/site/home-sections';
-import { container } from '@/components/site/styles';
-import { WhatsAppLink } from '@/components/site/whatsapp-link';
 import { JsonLd } from '@/components/seo/json-ld';
 import { buttonClass } from '@/components/ui/button';
-import { SectionHeading } from '@/components/ui/section-heading';
 import { ui } from '@/lib/i18n/es';
-import { hotelJsonLd } from '@/lib/seo/json-ld';
+import { hotelJsonLd, websiteJsonLd } from '@/lib/seo/json-ld';
 import { pageMetadata } from '@/lib/seo/metadata';
-import { getFaqs, getGallery, getRoomTypes, getSite } from '@/lib/public/api';
-import { homeFacts } from '@/lib/public/facts';
+import { homeSeo } from '@/lib/seo/page-seo';
+import {
+  getFaqs,
+  getGallery,
+  getNearbyPlaces,
+  getPolicies,
+  getRoomTypeDetails,
+  getRoomTypes,
+  getSite,
+  getSiteImages,
+} from '@/lib/public/api';
+import { contactCta } from '@/lib/public/cta';
 import { routes } from '@/lib/public/navigation';
-import { publishedRoomTotal } from '@/lib/public/rooms';
-import { heroImages, homeHotelAmenities, introText } from '@/lib/public/site';
-import type { SectionKey } from '@/lib/public/types';
-import { whatsAppLink } from '@/lib/public/whatsapp';
+import { fromRate } from '@/lib/public/rates';
+import { publishedRoomTotal, roomTypeFilters } from '@/lib/public/rooms';
+import { heroTagline, homeHotelAmenities, introText, isSectionEnabled } from '@/lib/public/site';
+import { trustItems } from '@/lib/public/trust';
 
 export async function generateMetadata(): Promise<Metadata> {
-  const site = await getSite();
+  const [site, rooms, images] = await Promise.all([getSite(), getRoomTypes(), getSiteImages()]);
   const { hotel } = site;
-  const title = hotel.municipality ? `${hotel.name} · ${hotel.municipality}` : hotel.name;
+  const seo = homeSeo(hotel, rooms, contactCta(site, { kind: 'general' })?.kind ?? null);
   const meta = pageMetadata({
     path: routes.home,
     siteName: hotel.name,
-    title,
-    // Generic fallback until the hotel writes its short description (no invented facts).
-    description:
-      hotel.shortDescription ??
-      `${hotel.name}: habitaciones, comodidades, ubicación y contacto directo.`,
-    image: site.heroSlides[0]?.media ?? null,
+    title: seo.title,
+    description: seo.description,
+    image: images[0] ?? null,
   });
-  return { ...meta, title: { absolute: title } };
+  return { ...meta, title: { absolute: seo.title } };
 }
 
 /**
- * Home in the mockup order (spec §4): hero carousel, intro + fact stack, deep-green rooms band,
- * amenities, services panel, gallery strip, CTA panel. Sections follow the order and enabled
- * flags of the landing content (admin › Contenido) and are skipped without real content (4.4).
- * Headings are code (ADR 0016); the copy comes from the hotel profile. No quick date search and no
- * booking drawer (owner decision): every CTA goes to WhatsApp.
+ * Home in the approved order (docs/research/seo-content-strategy.md §3, C3): hero (location
+ * kicker, tagline, "desde" rate, contact CTA), trust strip, room type cards, location, about,
+ * reviews slot (hidden until real reviews exist), policies summary, gallery strip and the final CTA
+ * panel; the layout adds the NAP footer. The order is fixed by the strategy; admin › Contenido
+ * only switches sections on or off. Headings are code (ADR 0016), facts come from the API.
  */
 export default async function HomePage() {
-  const [site, rooms, gallery, faqs] = await Promise.all([
+  const [site, rooms, details, gallery, nearby, policies, faqs, images] = await Promise.all([
     getSite(),
     getRoomTypes(),
+    getRoomTypeDetails(),
     getGallery(),
+    getNearbyPlaces(),
+    getPolicies(),
     getFaqs(),
+    getSiteImages(),
   ]);
   const { hotel } = site;
-  const whatsappUrl = whatsAppLink(site, { kind: 'general' });
+  const cta = contactCta(site, { kind: 'general' });
   const roomCount = publishedRoomTotal(rooms);
-  const region = [hotel.municipality, hotel.department].filter(Boolean).join(' · ') || null;
-  const slides = heroImages(site, gallery, rooms);
-
-  const renderers: Partial<Record<SectionKey, () => ReactNode>> = {
-    ABOUT: () => {
-      // Owner feedback: no about text, no intro (the facts alone read as filler).
-      const text = introText(hotel.description);
-      if (!text) return null;
-      const facts = homeFacts(roomCount, homeHotelAmenities(site));
-      return (
-        <HomeIntro
-          key="ABOUT"
-          eyebrow={region}
-          title={hotel.name}
-          text={text}
-          facts={facts}
-          link={null}
-        />
-      );
-    },
-    ROOMS: () => (
-      <RoomsShowcase
-        key="ROOMS"
-        title={ui.nav.rooms}
-        rooms={rooms}
-        roomCount={roomCount}
-        whatsappUrl={
-          rooms[0] ? whatsAppLink(site, { kind: 'roomType', name: rooms[0].name }) : null
-        }
-      />
-    ),
-    SERVICES: () => (
-      <div key="SERVICES">
-        <AmenitiesSection amenities={site.homeAmenities} />
-        <HotelAmenitiesPanel
-          eyebrow={null}
-          title={ui.home.hotelAmenitiesTitle}
-          body={null}
-          amenities={homeHotelAmenities(site)}
-        />
-      </div>
-    ),
-    GALLERY: () => (
-      <GalleryStripSection
-        key="GALLERY"
-        eyebrow={ui.home.galleryKicker}
-        title={ui.nav.gallery}
-        intro={null}
-        ctaLabel={null}
-        items={gallery}
-      />
-    ),
-    LOCATION: () => {
-      if (!hasLocation(hotel)) return null;
-      return (
-        <section
-          key="LOCATION"
-          aria-labelledby="ubicacion-title"
-          className="bg-sand py-(--section-y)"
-        >
-          <div className={container}>
-            <div className="mb-12 flex flex-col gap-6 tab:flex-row tab:items-end tab:justify-between">
-              <SectionHeading
-                id="ubicacion-title"
-                surface="sand"
-                eyebrow={region}
-                title={ui.nav.location}
-              />
-              <Link href={routes.location} className={`${buttonClass('ghost')} shrink-0`}>
-                {ui.map.directions}
-              </Link>
-            </div>
-            <LocationBlock hotel={hotel} showDetails={false} />
-          </div>
-        </section>
-      );
-    },
-    FAQ: () => {
-      const selected = faqs.filter((faq) => faq.showOnHome).slice(0, 5);
-      if (selected.length === 0) return null;
-      return (
-        <section key="FAQ" aria-labelledby="preguntas-title" className="py-(--section-y)">
-          <div className={`${container} grid gap-12 desk:grid-cols-[0.9fr_1.1fr]`}>
-            <div>
-              <SectionHeading id="preguntas-title" title={ui.nav.faq} />
-              <Link href={routes.faq} className={`${buttonClass('ghost')} mt-8`}>
-                {ui.home.faqAll}
-              </Link>
-            </div>
-            <FaqList faqs={selected} />
-          </div>
-        </section>
-      );
-    },
-  };
-
+  const place = [hotel.municipality, hotel.department].filter(Boolean).join(', ') || null;
+  const rate = fromRate(rooms);
+  const about = isSectionEnabled(site, 'ABOUT') ? introText(hotel.description) : null;
+  const aboutMedia =
+    gallery.find((item) => item.category === 'COMMON_AREAS')?.media ??
+    gallery[0]?.media ??
+    rooms[0]?.cover ??
+    null;
   const ctaMedia = gallery.at(-1)?.media ?? rooms.at(-1)?.cover ?? null;
+  const trust = trustItems({
+    hotel,
+    roomCount,
+    roomKinds: roomTypeFilters(rooms).map((filter) => filter.label),
+    amenities: isSectionEnabled(site, 'SERVICES') ? homeHotelAmenities(site) : [],
+  });
 
   return (
     <>
-      <JsonLd data={hotelJsonLd(site, rooms)} />
+      <JsonLd data={websiteJsonLd(hotel.name)} />
+      <JsonLd data={hotelJsonLd(site, rooms, images)} />
       <Hero
         title={hotel.name}
-        kicker={region}
-        subtitle={hotel.tagline ?? hotel.shortDescription}
-        ctaLabel={null}
-        images={slides}
-        whatsappUrl={whatsappUrl}
+        kicker={place ? ui.home.heroKicker(place) : null}
+        subtitle={heroTagline(hotel.tagline, hotel.name) ?? hotel.shortDescription}
+        rate={rate?.label ?? null}
+        images={images}
+        cta={cta}
       />
-      {site.sections.map((section) => renderers[section.key]?.() ?? null)}
-      <CtaPanel
-        eyebrow={ui.nav.contact}
-        title={ui.closing.title(hotel.name)}
-        text={whatsappUrl ? ui.closing.withWhatsApp : ui.closing.withoutWhatsApp}
-        media={ctaMedia}
-        action={
-          whatsappUrl ? (
-            <WhatsAppLink href={whatsappUrl} source="contact" className={buttonClass('light')}>
-              {ui.whatsapp.cta}
-            </WhatsAppLink>
-          ) : (
-            <Link href={routes.rooms} className={buttonClass('light')}>
-              {ui.rooms.seeAll}
-            </Link>
-          )
-        }
-      />
+      <TrustStrip items={trust} />
+      {isSectionEnabled(site, 'ROOMS') ? (
+        <RoomTypesSection
+          rooms={rooms}
+          details={details}
+          roomCount={roomCount}
+          ctaFor={(room) => contactCta(site, { kind: 'roomType', name: room.name })}
+        />
+      ) : null}
+      {isSectionEnabled(site, 'LOCATION') && hasLocation(hotel) ? (
+        <LocationSection hotel={hotel} nearby={nearby} cta={cta} />
+      ) : null}
+      {about ? (
+        <AboutSection
+          title={ui.home.aboutTitle(hotel.municipality)}
+          text={about}
+          media={aboutMedia}
+        />
+      ) : null}
+      {/* Extension point: real guest reviews (Google Business Profile) are not available yet. */}
+      <ReviewsSection reviews={[]} />
+      {isSectionEnabled(site, 'FAQ') ? (
+        <PoliciesSummary hotel={hotel} policies={policies} faqCount={faqs.length} />
+      ) : null}
+      {isSectionEnabled(site, 'GALLERY') ? <GalleryStripSection items={gallery} /> : null}
+      {isSectionEnabled(site, 'CONTACT') ? (
+        <CtaPanel
+          eyebrow={ui.closing.kicker}
+          title={ui.closing.title}
+          text={
+            cta?.kind === 'whatsapp'
+              ? ui.closing.withWhatsApp(hotel.municipality)
+              : cta
+                ? ui.closing.withPhone(hotel.municipality)
+                : ui.closing.withoutContact
+          }
+          media={ctaMedia}
+          action={
+            cta ? (
+              <ContactCtaLink
+                cta={cta}
+                source="contact"
+                className={buttonClass('light')}
+                whatsappLabel={ui.whatsapp.cta}
+              />
+            ) : (
+              <Link href={routes.rooms} className={buttonClass('light')}>
+                {ui.rooms.seeAll}
+              </Link>
+            )
+          }
+        />
+      ) : null}
     </>
   );
 }

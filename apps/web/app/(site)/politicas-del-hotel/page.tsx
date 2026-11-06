@@ -1,35 +1,46 @@
 import type { Metadata } from 'next';
-import { TextBlock } from '@/components/site/blocks';
+import { FaqList, TextBlock } from '@/components/site/blocks';
+import { ContactCtaLink } from '@/components/site/contact-cta';
 import { PageHeader } from '@/components/site/page-header';
 import { container } from '@/components/site/styles';
+import { buttonClass } from '@/components/ui/button';
 import { cardClass } from '@/components/ui/card';
+import { SectionHeading } from '@/components/ui/section-heading';
 import { ui } from '@/lib/i18n/es';
 import { pageMetadata } from '@/lib/seo/metadata';
+import { policiesSeo } from '@/lib/seo/page-seo';
 import { routes } from '@/lib/public/navigation';
-import { getPolicies, getSite } from '@/lib/public/api';
+import { getFaqs, getPolicies, getSite, getSiteImages } from '@/lib/public/api';
+import { contactCta } from '@/lib/public/cta';
 
 export async function generateMetadata(): Promise<Metadata> {
-  const site = await getSite();
-  return pageMetadata({
+  const [site, images] = await Promise.all([getSite(), getSiteImages()]);
+  const seo = policiesSeo(site.hotel);
+  const meta = pageMetadata({
     path: routes.policies,
     siteName: site.hotel.name,
-    title: ui.nav.policies,
-    description: `Check-in, check-out y políticas de ${site.hotel.name}.`,
+    title: seo.title,
+    description: seo.description,
+    image: images[0] ?? null,
   });
+  return { ...meta, title: { absolute: seo.title } };
 }
 
 /**
- * Hotel policies (requirement 4.1, spec §4): check-in/out figures, then each published policy as
- * a mockup detail block inside a paper card, and the ESCNNA notice.
+ * "Políticas y preguntas frecuentes" (research §4, C3: `/preguntas-frecuentes` merged here with a
+ * 301): check-in/out figures, each published policy as a mockup detail block inside a paper card,
+ * the ESCNNA notice, then the visible FAQ (no FAQPage markup: the rich result is retired) and the
+ * contact card.
  */
 export default async function PoliciesPage() {
-  const [site, policies] = await Promise.all([getSite(), getPolicies()]);
+  const [site, policies, faqs] = await Promise.all([getSite(), getPolicies(), getFaqs()]);
   const { hotel } = site;
+  const cta = contactCta(site, { kind: 'general' });
   const hasTimes = Boolean(hotel.checkInTime || hotel.checkOutTime);
 
   return (
     <>
-      <PageHeader path={routes.policies} title={ui.nav.policies} />
+      <PageHeader path={routes.policies} title={ui.pages.policies} />
       <div className={`${container} pt-12 pb-[110px]`}>
         <div className="grid max-w-4xl gap-7">
           {hasTimes ? (
@@ -78,10 +89,36 @@ export default async function PoliciesPage() {
             </aside>
           ) : null}
 
-          {!hasTimes && policies.length === 0 ? (
+          {!hasTimes && policies.length === 0 && faqs.length === 0 ? (
             <p className="text-lg text-muted-foreground">{ui.empty.generic}</p>
           ) : null}
         </div>
+
+        {faqs.length > 0 || cta ? (
+          <section
+            id="preguntas-frecuentes"
+            aria-labelledby="preguntas-title"
+            className="mt-[clamp(56px,7vw,96px)] grid scroll-mt-28 gap-12 desk:grid-cols-[1.4fr_0.6fr]"
+          >
+            <div>
+              <SectionHeading id="preguntas-title" title={ui.faq.title} className="mb-8" />
+              {faqs.length > 0 ? <FaqList faqs={faqs} /> : null}
+            </div>
+            {cta ? (
+              <aside className={`${cardClass('panel')} h-fit desk:mt-[88px]`}>
+                <h3 className="text-h3 text-charcoal">{ui.faq.other}</h3>
+                <p className="mt-3 text-sm text-muted-foreground">
+                  {cta.kind === 'whatsapp' ? ui.whatsapp.external : ui.rooms.confirm}
+                </p>
+                <ContactCtaLink
+                  cta={cta}
+                  source="faq"
+                  className={`${buttonClass('primary')} mt-6`}
+                />
+              </aside>
+            ) : null}
+          </section>
+        ) : null}
       </div>
     </>
   );
