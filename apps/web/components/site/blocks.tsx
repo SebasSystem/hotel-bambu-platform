@@ -5,7 +5,6 @@ import { ui } from '@/lib/i18n/es';
 import { paragraphs } from '@/lib/public/format';
 import { displayPhone, fullAddress, mapLinks, telHref } from '@/lib/public/site';
 import type { PublicFaq, PublicHotel, PublicNearbyPlace } from '@/lib/public/types';
-import { SiteIcon } from './icon';
 import { MapEmbed } from './map-embed';
 import { WhatsAppLink } from './whatsapp-link';
 

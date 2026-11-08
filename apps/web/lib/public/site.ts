@@ -64,6 +64,15 @@ export function homeHotelAmenities(site: PublicSite): PublicHotelAmenity[] {
 }
 
 /**
+ * Home hero photos: the carousel only while the HERO home section is enabled. Switched off in
+ * admin › Contenido, the hero stays as a plain band with the H1, tagline and CTAs, because the
+ * home must always have its H1 (owner review 2026-11-08).
+ */
+export function homeHeroSlides(site: PublicSite, images: PublicMedia[]): PublicMedia[] {
+  return isSectionEnabled(site, 'HERO') ? images : [];
+}
+
+/**
  * Hero photos: the admin hero slides in their order (caption on the media), the single hero source
  * (ADR 0016). Without slides, the D2 fallback: featured gallery photos, then the other gallery
  * photos, then room type covers, max 3. Only real hotel photos with alt text (the API exposes

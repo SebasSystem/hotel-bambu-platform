@@ -32,7 +32,13 @@ import { contactCta } from '@/lib/public/cta';
 import { routes } from '@/lib/public/navigation';
 import { fromRate } from '@/lib/public/rates';
 import { publishedRoomTotal, roomTypeFilters } from '@/lib/public/rooms';
-import { heroTagline, homeHotelAmenities, introText, isSectionEnabled } from '@/lib/public/site';
+import {
+  heroTagline,
+  homeHeroSlides,
+  homeHotelAmenities,
+  introText,
+  isSectionEnabled,
+} from '@/lib/public/site';
 import { trustItems } from '@/lib/public/trust';
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -53,7 +59,8 @@ export async function generateMetadata(): Promise<Metadata> {
  * Home in the approved order (docs/research/seo-content-strategy.md §3, C3): hero (location
  * kicker, tagline, "desde" rate, contact CTA), trust strip, room type cards, location, about,
  * reviews slot (hidden until real reviews exist), policies summary, gallery strip and the final CTA
- * panel; the layout adds the NAP footer. The order is fixed by the strategy; admin › Contenido
+ * panel; the layout adds the NAP footer. The HERO toggle only removes the carousel photos: the
+ * hero band with the H1 always renders. The order is fixed by the strategy; admin › Contenido
  * only switches sections on or off. Headings are code (ADR 0016), facts come from the API.
  */
 export default async function HomePage() {
@@ -94,7 +101,7 @@ export default async function HomePage() {
         kicker={place ? ui.home.heroKicker(place) : null}
         subtitle={heroTagline(hotel.tagline, hotel.name) ?? hotel.shortDescription}
         rate={rate?.label ?? null}
-        images={images}
+        images={homeHeroSlides(site, images)}
         cta={cta}
       />
       {isSectionEnabled(site, 'ROOMS') ? (

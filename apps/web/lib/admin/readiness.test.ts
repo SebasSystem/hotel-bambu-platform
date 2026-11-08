@@ -117,6 +117,8 @@ describe('publishChecklist', () => {
     data.faqs.push({ published: true, question: '[DEMO] ¿Aceptan mascotas?', answer: 'Sí.' });
     const policies = item(data, 'policies');
     expect(policies.done).toBe(false);
+    // Wording matches the renamed public page (owner review 2026-11-08).
+    expect(policies.title).toBe('Información para huéspedes sin textos de ejemplo');
     expect(policies.note).toBe('1 texto de ejemplo [DEMO]');
     // An unpublished demo text does not block, but no published policy does.
     data.faqs.pop();
@@ -219,6 +221,8 @@ describe('heroPhotoIssues', () => {
     expect(heroPhotoIssues(landscape)).toEqual([]);
     expect(heroPhotoIssues(portrait)).toEqual(['portrait', 'small']);
     expect(heroPhotoIssues({ width: 1200, height: 800 })).toEqual(['small']);
+    // The largest hero variant is 1920 px wide (owner review 2026-11-08).
+    expect(heroPhotoIssues({ width: 1600, height: 900 })).toEqual(['small']);
     expect(heroPhotoIssues({ width: null, height: null })).toEqual(['unknown']);
   });
 });

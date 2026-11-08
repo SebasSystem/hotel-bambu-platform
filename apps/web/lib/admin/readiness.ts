@@ -7,9 +7,13 @@ import type { Faq, HotelProfile, NearbyPlace, Policy, RoomType, SocialLink } fro
  * API needs no extra endpoint.
  */
 
-/** Hero photos: landscape and wide enough for a full-bleed 1440 px viewport (ADR 0015). */
+/**
+ * Hero photos: landscape and at least as wide as the largest hero variant (1920 px), so a
+ * full-bleed hero stays sharp on large and high-density screens (ADR 0015; raised from 1600 px in
+ * the owner review 2026-11-08).
+ */
 export const HERO_MIN_SLIDES = 3;
-export const HERO_MIN_WIDTH = 1600;
+export const HERO_MIN_WIDTH = 1920;
 
 export interface PhotoSize {
   width: number | null;
@@ -167,7 +171,7 @@ export function publishChecklist(data: ReadinessData): ChecklistItem[] {
     },
     {
       id: 'policies',
-      title: 'Políticas y preguntas reales',
+      title: 'Información para huéspedes sin textos de ejemplo',
       note:
         publishedPolicies.length === 0
           ? 'No hay políticas publicadas'

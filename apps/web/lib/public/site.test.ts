@@ -5,6 +5,7 @@ import {
   heroTagline,
   fullAddress,
   heroImages,
+  homeHeroSlides,
   homeHotelAmenities,
   introText,
   isSectionEnabled,
@@ -142,6 +143,20 @@ describe('introText (home "Sobre nosotros")', () => {
   it('is null when there is no real about text, so the intro is hidden', () => {
     expect(introText(null)).toBeNull();
     expect(introText(' \n ')).toBeNull();
+  });
+});
+
+describe('homeHeroSlides (HERO home-section toggle)', () => {
+  const images = [photo('a'), photo('b')];
+
+  it('shows the carousel photos while the HERO section is enabled', () => {
+    const site = siteWith({ sections: [{ key: 'HERO', sortOrder: 0 }] });
+    expect(homeHeroSlides(site, images).map((media) => media.id)).toEqual(['a', 'b']);
+  });
+
+  it('drops the photos when the HERO section is switched off (plain band, H1 kept)', () => {
+    const site = siteWith({ sections: [{ key: 'ROOMS', sortOrder: 1 }] });
+    expect(homeHeroSlides(site, images)).toEqual([]);
   });
 });
 

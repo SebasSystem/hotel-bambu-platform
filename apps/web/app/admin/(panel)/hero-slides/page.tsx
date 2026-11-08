@@ -25,9 +25,10 @@ export default async function HeroSlidesPage() {
           tone={ready >= HERO_MIN_SLIDES ? 'info' : 'warning'}
           title={`${Math.min(ready, HERO_MIN_SLIDES)} de ${HERO_MIN_SLIDES} fotos horizontales visibles`}
         >
-          Use al menos {HERO_MIN_SLIDES} fotos horizontales (más anchas que altas) de{' '}
-          {HERO_MIN_WIDTH} px de ancho o más, por ejemplo 1920 × 1080. Las fotos verticales del
-          celular se recortan arriba y abajo y pierden lo importante.
+          Cada diapositiva necesita una foto horizontal (más ancha que alta) de al menos{' '}
+          {HERO_MIN_WIDTH} px de ancho, por ejemplo 1920 × 1080. Use al menos {HERO_MIN_SLIDES}. Las
+          fotos más pequeñas se ven borrosas en pantallas grandes, y las verticales del celular se
+          recortan arriba y abajo y pierden lo importante.
         </Notice>
       </div>
       <HeroSlidesManager items={slides} />
