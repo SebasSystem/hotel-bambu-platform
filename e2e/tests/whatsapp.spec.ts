@@ -42,7 +42,7 @@ test.describe('whatsapp', () => {
     await expect(cta).toHaveAttribute('target', '_blank');
     await expect(cta).toHaveAttribute('rel', /noopener/);
   });
-  test('with a WhatsApp number the header fits the phone viewport (C2 overflow) @mobile', async ({
+  test('with a WhatsApp number the header shows WhatsApp and phone and fits (C2 overflow) @mobile', async ({
     page,
   }) => {
     const number = original ?? TEST_NUMBER;
@@ -56,9 +56,21 @@ test.describe('whatsapp', () => {
       () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
     );
     expect(overflow).toBe(0);
-    await expect(
-      page.getByRole('banner').locator(`a[href*="wa.me/${number}"]`).filter({ visible: true }),
-    ).toBeVisible();
+    const banner = page.getByRole('banner');
+    const headerWhatsApp = banner.locator(`a[href*="wa.me/${number}"]`).filter({ visible: true });
+    const headerPhone = banner.locator('a[href^="tel:"]').filter({ visible: true });
+    const hasPhone = (await banner.locator('a[href^="tel:"]').count()) > 0;
+    if (test.info().project.name === 'mobile') {
+      // Phones: call icon in the header when the hotel has a phone, WhatsApp in the floating button.
+      if (hasPhone) await expect(headerPhone).toHaveCount(1);
+      else await expect(headerWhatsApp).toBeVisible();
+      await page.mouse.wheel(0, 2000);
+      await expect(page.locator(`.whatsapp-fab a[href*="wa.me/${number}"]`)).toBeVisible();
+    } else {
+      // Desktop: verb-first WhatsApp button, plus the phone next to it when one is set.
+      await expect(headerWhatsApp).toHaveAccessibleName(/Escribir por WhatsApp/);
+      if (hasPhone) await expect(headerPhone).toHaveCount(1);
+    }
     // WhatsApp replaces the phone fallback in the hero.
     await expect(page.locator('#inicio a[href^="tel:"]')).toHaveCount(0);
   });

@@ -10,7 +10,7 @@ import { WhatsAppFab } from '@/components/site/whatsapp-fab';
 import { CONSENT_COOKIE, parseConsentValue } from '@/lib/consent/consent';
 import { ui } from '@/lib/i18n/es';
 import { getSite } from '@/lib/public/api';
-import { contactCta } from '@/lib/public/cta';
+import { contactCta, phoneContact } from '@/lib/public/cta';
 
 export async function generateMetadata(): Promise<Metadata> {
   const { hotel } = await getSite();
@@ -37,15 +37,15 @@ export default async function SiteLayout({ children }: { children: ReactNode }) 
       <a href="#contenido" className="skip-link">
         {ui.skipToContent}
       </a>
-      <Header cta={cta} />
+      <Header cta={cta} phone={phoneContact(site.hotel.phone)} />
       <main id="contenido" tabIndex={-1} data-menu-inert="" className="outline-none">
         {children}
       </main>
-      {/* On phones the floating WhatsApp button must not cover the last footer row (spec defect 5).
-          Without WhatsApp there is no floating button: the header keeps the phone CTA. */}
+      {/* On phones the floating WhatsApp button (55 px + 24 px offset) must not cover the last
+          footer row (spec defect 5). Without WhatsApp there is no floating button. */}
       <div
         data-menu-inert=""
-        className={whatsappUrl ? 'bg-charcoal pb-[79px] tab:pb-0' : undefined}
+        className={whatsappUrl ? 'bg-charcoal pb-[91px] tab:pb-0' : undefined}
       >
         <Footer site={site} cta={cta} />
       </div>

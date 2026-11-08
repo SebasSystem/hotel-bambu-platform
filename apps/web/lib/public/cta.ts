@@ -1,3 +1,4 @@
+import { ui } from '@/lib/i18n/es';
 import { telHref } from './site';
 import { whatsAppLink, type WhatsAppContext, type WhatsAppSource } from './whatsapp';
 
@@ -6,9 +7,9 @@ import { whatsAppLink, type WhatsAppContext, type WhatsAppSource } from './whats
  * valid number is set; otherwise a `tel:` link to the hotel phone. Null when neither exists, so the
  * caller hides the button instead of rendering a dead one.
  */
-export type ContactCta =
-  | { kind: 'whatsapp'; href: string }
-  | { kind: 'phone'; href: string; phone: string; label: string };
+export type PhoneContact = { kind: 'phone'; href: string; phone: string; label: string };
+
+export type ContactCta = { kind: 'whatsapp'; href: string } | PhoneContact;
 
 export interface ContactSource extends WhatsAppSource {
   hotel: WhatsAppSource['hotel'] & { phone: string | null };
@@ -24,11 +25,16 @@ export function localPhone(value: string): string {
   return value.trim();
 }
 
+/** `tel:` link to the hotel phone, or null when it is missing or too short to dial. */
+export function phoneContact(value: string | null | undefined): PhoneContact | null {
+  const raw = value?.trim();
+  if (!raw || raw.replace(/\D/g, '').length < 7) return null;
+  const phone = localPhone(raw);
+  return { kind: 'phone', href: telHref(raw), phone, label: `${ui.phone.callTo} ${phone}` };
+}
+
 export function contactCta(site: ContactSource, context: WhatsAppContext): ContactCta | null {
   const whatsapp = whatsAppLink(site, context);
   if (whatsapp) return { kind: 'whatsapp', href: whatsapp };
-  const raw = site.hotel.phone?.trim();
-  if (!raw || raw.replace(/\D/g, '').length < 7) return null;
-  const phone = localPhone(raw);
-  return { kind: 'phone', href: telHref(raw), phone, label: `Llamar al ${phone}` };
+  return phoneContact(site.hotel.phone);
 }

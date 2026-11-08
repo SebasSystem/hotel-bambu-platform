@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { contactCta, localPhone } from './cta';
+import { contactCta, localPhone, phoneContact } from './cta';
 
 const hotel = (whatsappNumber: string | null, phone: string | null) => ({
   hotel: { whatsappNumber, whatsappGreeting: null, phone },
@@ -49,5 +49,22 @@ describe('localPhone', () => {
 
   it('keeps any other format as written', () => {
     expect(localPhone('+1 555 0100')).toBe('+1 555 0100');
+  });
+});
+
+describe('phoneContact (header phone link, shown even when WhatsApp exists)', () => {
+  it('builds a tel: link with the local number', () => {
+    expect(phoneContact('+57 310 679 8260')).toEqual({
+      kind: 'phone',
+      href: 'tel:+573106798260',
+      phone: '310 679 8260',
+      label: 'Llamar al 310 679 8260',
+    });
+  });
+
+  it('is null for empty or too-short values', () => {
+    expect(phoneContact(null)).toBeNull();
+    expect(phoneContact('  ')).toBeNull();
+    expect(phoneContact('12')).toBeNull();
   });
 });

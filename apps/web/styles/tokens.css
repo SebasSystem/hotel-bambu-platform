@@ -89,6 +89,8 @@
   --breakpoint-xs: 26.25rem;
   --breakpoint-tab: 47.5rem;
   --breakpoint-desk: 62.5rem;
+  /* Header shows the phone number next to WhatsApp (owner review 2026-11-08). */
+  --breakpoint-wide: 80rem;
 
   --ease-standard: cubic-bezier(0.2, 0, 0, 1);
   --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);

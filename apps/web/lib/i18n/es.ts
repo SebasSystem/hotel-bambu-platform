@@ -19,7 +19,7 @@ export const ui = {
     policies: 'Políticas y preguntas frecuentes',
     gallery: 'Galería de fotos',
   },
-  phone: { call: 'Llamar' },
+  phone: { call: 'Llamar', callTo: 'Llamar al' },
   whatsapp: {
     cta: 'Escríbenos por WhatsApp',
     short: 'WhatsApp',

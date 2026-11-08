@@ -234,18 +234,14 @@
   /* ─── Floating WhatsApp (mockup .whatsapp-fab) ───────────────────────── */
   .whatsapp-fab {
     position: fixed;
-    right: max(0.75rem, env(safe-area-inset-right));
-    bottom: max(0.75rem, env(safe-area-inset-bottom));
+    /* At least 24 px from the edges (owner review 2026-11-08); the footer keeps bottom padding
+       taller than the button so its last row is never covered (layout + footer pb). */
+    right: max(1.5rem, env(safe-area-inset-right));
+    bottom: max(1.5rem, env(safe-area-inset-bottom));
     z-index: var(--z-whatsapp-fab);
     opacity: 0;
     transform: translateY(1rem) scale(0.9);
     pointer-events: none;
-  }
-  @media (min-width: 47.5rem) {
-    .whatsapp-fab {
-      right: max(1.25rem, env(safe-area-inset-right));
-      bottom: max(1.25rem, env(safe-area-inset-bottom));
-    }
   }
   .whatsapp-fab[data-visible='true'] {
     opacity: 1;
