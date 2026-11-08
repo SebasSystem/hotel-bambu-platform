@@ -28,23 +28,26 @@ import { SiteIcon } from './icon';
 import { container } from './styles';
 
 /**
- * Home sections in the approved order (docs/research/seo-content-strategy.md §3, C3): trust strip,
- * room types, location, about, reviews slot, policies summary, gallery strip, final CTA. Each one
+ * Home sections in the approved order (owner review 2026-11-08): room types, facts strip,
+ * location, about, reviews slot, guest information summary, gallery strip, final CTA. Each one
  * renders only with real content (requirement 4.4); headings are code, facts come from the API.
  */
 
 const section = 'py-[clamp(78px,10vw,150px)]';
 
-/** Verifiable facts right under the hero: RNT, address, rooms and the hotel amenities. */
+/**
+ * Verifiable facts after the room types: address, rooms and the hotel amenities. A paper band
+ * between the deep-green rooms band and the sand location section, so it needs no borders.
+ */
 export function TrustStrip({ items }: { items: TrustItem[] }) {
   if (items.length === 0) return null;
   return (
-    <section aria-labelledby="datos-title" className="border-b border-line bg-paper">
+    <section aria-labelledby="datos-title" className="bg-paper">
       <h2 id="datos-title" className="sr-only">
         {ui.home.trustLabel}
       </h2>
       <ul
-        className={`${container} grid gap-x-8 py-[clamp(28px,4vw,48px)] tab:grid-cols-2 desk:grid-cols-3`}
+        className={`${container} grid gap-x-8 py-[clamp(40px,6vw,80px)] tab:grid-cols-2 desk:grid-cols-3`}
       >
         {items.map((item, index) => (
           <li
@@ -281,10 +284,9 @@ export function PoliciesSummary({
   ];
   if (times.length === 0 && policies.length === 0 && faqCount === 0) return null;
   return (
-    <section
-      aria-labelledby="politicas-title"
-      className="px-(--gutter) pb-[clamp(78px,10vw,150px)]"
-    >
+    // Full section rhythm on both sides: the card must never touch the previous section, whichever
+    // home sections are enabled (owner review 2026-11-08).
+    <section aria-labelledby="politicas-title" className={`px-(--gutter) ${section}`}>
       <div
         data-reveal
         className="mx-auto grid max-w-[calc(var(--container-site)-2*var(--gutter))] items-center gap-10 rounded-[22px] bg-sand p-[clamp(32px,6vw,80px)] tab:rounded-xl desk:grid-cols-[1fr_1fr] desk:gap-[70px]"

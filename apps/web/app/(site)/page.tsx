@@ -97,7 +97,6 @@ export default async function HomePage() {
         images={images}
         cta={cta}
       />
-      <TrustStrip items={trust} />
       {isSectionEnabled(site, 'ROOMS') ? (
         <RoomTypesSection
           rooms={rooms}
@@ -105,6 +104,7 @@ export default async function HomePage() {
           ctaFor={(room) => contactCta(site, { kind: 'roomType', name: room.name })}
         />
       ) : null}
+      <TrustStrip items={trust} />
       {isSectionEnabled(site, 'LOCATION') && hasLocation(hotel) ? (
         <LocationSection hotel={hotel} nearby={nearby} cta={cta} />
       ) : null}

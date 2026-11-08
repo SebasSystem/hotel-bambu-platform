@@ -113,13 +113,16 @@ test.describe('public site', () => {
 });
 
 test.describe('home structure and contact fallback (C3)', () => {
-  test('home follows the approved order with a trust strip and room type cards @mobile', async ({
+  test('home follows the approved order with a facts strip and room type cards @mobile', async ({
     page,
   }) => {
     await page.goto('/');
     await expect(page.getByRole('heading', { level: 1 })).toHaveText('Hotel Bambú Plaza');
     const trust = page.getByRole('region', { name: 'Datos del hotel' });
-    await expect(trust).toContainText(/RNT \d+/);
+    await expect(trust).toBeVisible();
+    // The RNT is shown in the footer only (owner review 2026-11-08).
+    await expect(trust).not.toContainText(/RNT/);
+    await expect(page.getByRole('contentinfo')).toContainText(/RNT/);
     // The old room amenity grid is gone; room amenities are chips on the type cards.
     await expect(page.getByRole('heading', { name: 'En todas las habitaciones' })).toHaveCount(0);
     const rooms = page.locator('#habitaciones-title').locator('xpath=ancestor::section[1]');
@@ -128,7 +131,7 @@ test.describe('home structure and contact fallback (C3)', () => {
     const order = await page
       .locator('main section[aria-labelledby]')
       .evaluateAll((sections) => sections.map((s) => s.getAttribute('aria-labelledby')));
-    const expected = ['hero-title', 'datos-title', 'habitaciones-title', 'ubicacion-title'];
+    const expected = ['hero-title', 'habitaciones-title', 'datos-title', 'ubicacion-title'];
     expect(order.filter((id) => expected.includes(id ?? ''))).toEqual(expected);
     expect(order.at(-1)).toBe('cierre-title');
   });

@@ -1,6 +1,7 @@
 /**
- * Home trust strip (research §3 row 2): verifiable facts right under the hero, each with a short
- * benefit line. Benefit lines for known hotel amenities are written here (not in the admin) and
+ * Home facts strip (research §3 row 2): verifiable facts right after the room types, each with a
+ * short benefit line. The RNT is not repeated here: it stays in the footer (owner review
+ * 2026-11-08). Benefit lines for known hotel amenities are written here (not in the admin) and
  * stay hedged: they describe the equipment, never an outcome the hotel has not verified (no
  * "sin cortes", no speeds, no "gratis").
  */
@@ -65,7 +66,6 @@ export function trustItems({
   amenities,
 }: {
   hotel: {
-    rntNumber: string | null;
     address: string | null;
     municipality: string | null;
     department: string | null;
@@ -76,14 +76,6 @@ export function trustItems({
   amenities: TrustAmenity[];
 }): TrustItem[] {
   const items: TrustItem[] = [];
-  if (hotel.rntNumber) {
-    items.push({
-      id: 'rnt',
-      iconKey: 'shield-check',
-      title: `RNT ${hotel.rntNumber}`,
-      text: 'Inscritos en el Registro Nacional de Turismo.',
-    });
-  }
   if (hotel.address) {
     const place = [hotel.municipality, hotel.department].filter(Boolean).join(', ');
     items.push({

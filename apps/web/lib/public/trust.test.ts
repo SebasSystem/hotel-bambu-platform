@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest';
 import { amenityBenefit, trustItems } from './trust';
 
 const hotel = {
-  rntNumber: '232175',
   address: 'Calle 8 # 7-10',
   municipality: 'Mocoa',
   department: 'Putumayo',
@@ -47,28 +46,28 @@ describe('amenityBenefit (benefit lines written in code for known amenities)', (
 });
 
 describe('trustItems', () => {
-  it('lists the RNT, the address, the room count and the hotel amenities in that order', () => {
+  it('lists the address, the room count and the hotel amenities in that order (no RNT)', () => {
     const items = trustItems({
       hotel,
       roomCount: 16,
       roomKinds: ['Individual', 'Pareja'],
       amenities: [amenity('Wi-Fi en todo el hotel', 'wifi'), amenity('Paneles solares', 'sun')],
     });
+    // The RNT lives in the footer only (owner review 2026-11-08).
+    expect(items.map((item) => item.id)).not.toContain('rnt');
     expect(items.map((item) => item.title)).toEqual([
-      'RNT 232175',
       'Calle 8 # 7-10',
       '16 habitaciones',
       'Wi-Fi en todo el hotel',
       'Paneles solares',
     ]);
-    expect(items[0]?.text).toBe('Inscritos en el Registro Nacional de Turismo.');
-    expect(items[1]?.text).toBe('En el corazón de Mocoa, Putumayo.');
-    expect(items[2]?.text).toBe('Individual y pareja.');
+    expect(items[0]?.text).toBe('En el corazón de Mocoa, Putumayo.');
+    expect(items[1]?.text).toBe('Individual y pareja.');
   });
 
   it('skips facts the hotel has not configured', () => {
     const items = trustItems({
-      hotel: { rntNumber: null, address: null, municipality: null, department: null },
+      hotel: { address: null, municipality: null, department: null },
       roomCount: 0,
       roomKinds: [],
       amenities: [],
