@@ -21,8 +21,9 @@ export function mapUrlFor(latitude: number, longitude: number): string {
  * meta description are written from the framed mission only. The phone is not confirmed as
  * WhatsApp, so `whatsappNumber` stays empty.
  *
- * TODO(hotel): legalName, escnnaNotice, email, openingHours, checkInTime, checkOutTime,
- * whatsappNumber, directions.
+ * The ESCNNA notice and the check-in/out times are editable default content (`default-content.ts`).
+ *
+ * TODO(hotel): legalName, email, openingHours, whatsappNumber, directions.
  */
 export const HOTEL_FACTS = {
   tagline: 'Hotel Bambú Plaza: descanso, comodidad y confianza en el corazón de Mocoa',

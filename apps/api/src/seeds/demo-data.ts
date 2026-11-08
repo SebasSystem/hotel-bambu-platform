@@ -5,7 +5,8 @@ import type { RoomKind } from '../generated/prisma/enums.js';
  * Facts used here are the owner-confirmed ones: individual and couple room types, and private
  * bathroom / TV / fan in every room. Rates, beds, descriptions and how many rooms of each type the
  * hotel has are unknown, so the demo invents none of them: types have no description and no rate,
- * and there is one example room per type (ADR 0016).
+ * and there is one example room per type (ADR 0016). Guest policies and FAQ are realistic default
+ * content of the base seed (`default-content.ts`), not demo data (owner review 2026-11-08).
  */
 
 export const DEMO_MARKER = '[DEMO]';
@@ -48,45 +49,3 @@ export function buildDemoRooms(): DemoRoom[] {
     typeSlug: type.slug,
   }));
 }
-
-export const DEMO_FAQS: ReadonlyArray<{ question: string; answer: string; showOnHome: boolean }> = [
-  {
-    question: `${DEMO_MARKER} ¿Cómo reservo una habitación?`,
-    answer: `${DEMO_MARKER} Escríbenos por WhatsApp y te confirmamos disponibilidad y tarifa. Abrir WhatsApp no constituye una reserva.`,
-    showOnHome: true,
-  },
-  {
-    question: `${DEMO_MARKER} ¿Las habitaciones tienen baño privado?`,
-    answer: `${DEMO_MARKER} Sí, todas las habitaciones tienen baño privado, televisor y ventilador.`,
-    showOnHome: true,
-  },
-  {
-    question: `${DEMO_MARKER} ¿Hay internet en el hotel?`,
-    answer: `${DEMO_MARKER} Sí, hay Wi-Fi en todo el hotel.`,
-    showOnHome: true,
-  },
-  {
-    question: `${DEMO_MARKER} ¿A qué hora es el check-in y el check-out?`,
-    answer: `${DEMO_MARKER} Texto de ejemplo. TODO(hotel): confirmar horarios.`,
-    showOnHome: false,
-  },
-];
-
-export const DEMO_POLICIES: ReadonlyArray<{ title: string; content: string }> = [
-  {
-    title: `${DEMO_MARKER} Check-in y check-out`,
-    content: `${DEMO_MARKER} Texto de ejemplo. TODO(hotel): horarios reales.`,
-  },
-  {
-    title: `${DEMO_MARKER} Mascotas`,
-    content: `${DEMO_MARKER} Texto de ejemplo. TODO(hotel): política real.`,
-  },
-  {
-    title: `${DEMO_MARKER} Menores de edad`,
-    content: `${DEMO_MARKER} Texto de ejemplo. TODO(hotel): política real y aviso ESCNNA.`,
-  },
-  {
-    title: `${DEMO_MARKER} Métodos de pago`,
-    content: `${DEMO_MARKER} Texto de ejemplo. TODO(hotel): métodos aceptados al llegar.`,
-  },
-];

@@ -10,6 +10,7 @@ import { OBJECT_STORAGE } from '../modules/media/media.service.js';
 import type { ObjectStorage } from '../modules/media/object-storage.js';
 import { RevalidationService } from '../modules/revalidation/revalidation.service.js';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { DEFAULT_POLICIES, escnnaNoticeFor } from '../seeds/default-content.js';
 import { seedBase } from '../seeds/seed-base.js';
 
 /**
@@ -146,6 +147,53 @@ describe.skipIf(!databaseUrl)('API integration (hotel_test database)', () => {
     expect(site.hotel.hero).toBeUndefined();
     expect(site.whatsappTemplates).toBeUndefined();
     expect(site.sections[0]).toEqual({ key: 'HERO', sortOrder: 0 });
+  });
+
+  it('serves the default guest policies, FAQ, ESCNNA notice and stay times from the base seed', async () => {
+    const policies = (await call('GET', '/public/policies')).json() as { title: string }[];
+    expect(policies.map((p) => p.title)).toEqual(DEFAULT_POLICIES.map((p) => p.title));
+    const faqs = (await call('GET', '/public/faq')).json() as { question: string }[];
+    expect(faqs).toHaveLength(8);
+    expect(faqs[0]!.question).toBe('¿A qué hora es el check-in y el check-out?');
+    const { hotel } = (await call('GET', '/public/site')).json();
+    expect(hotel.escnnaNotice).toBe(escnnaNoticeFor('Hotel Bambú Plaza'));
+    expect(hotel).toMatchObject({ checkInTime: '15:00', checkOutTime: '12:00' });
+  });
+
+  it('re-runs the base seed without overwriting edits and removes leftover [DEMO] rows', async () => {
+    const firstPolicy = await prisma.hotelPolicy.findFirstOrThrow({
+      orderBy: { sortOrder: 'asc' },
+    });
+    await prisma.hotelPolicy.update({
+      where: { id: firstPolicy.id },
+      data: { content: 'Texto editado por el hotel.' },
+    });
+    await prisma.hotelProfile.update({
+      where: { id: 1 },
+      data: { escnnaNotice: 'Aviso editado.', checkInTime: '14:00' },
+    });
+    await prisma.hotelPolicy.create({
+      data: { title: '[DEMO] Mascotas', content: 'x', published: true },
+    });
+    await prisma.faq.create({
+      data: { question: '[DEMO] ¿Hay wifi?', answer: 'x', published: true },
+    });
+
+    const result = await seedBase(prisma);
+    expect(result).toMatchObject({ policies: 'kept', faqs: 'kept', demoRowsRemoved: 2 });
+    expect(await prisma.hotelPolicy.count()).toBe(DEFAULT_POLICIES.length);
+    expect(await prisma.faq.count()).toBe(8);
+    expect(
+      (await prisma.hotelPolicy.findUniqueOrThrow({ where: { id: firstPolicy.id } })).content,
+    ).toBe('Texto editado por el hotel.');
+    const profile = await prisma.hotelProfile.findUniqueOrThrow({ where: { id: 1 } });
+    expect(profile).toMatchObject({ escnnaNotice: 'Aviso editado.', checkInTime: '14:00' });
+
+    // Restore the seeded profile values for the remaining tests.
+    await prisma.hotelProfile.update({
+      where: { id: 1 },
+      data: { escnnaNotice: escnnaNoticeFor('Hotel Bambú Plaza'), checkInTime: '15:00' },
+    });
   });
 
   it('answers 404 for the removed promotion, template and per-room endpoints', async () => {

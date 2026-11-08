@@ -146,7 +146,11 @@ function DataPolicy({ hotel, effectiveDate }: LegalContext) {
         </p>
       </LegalSection>
 
-      <LegalSection id="finalidades" title="3. Finalidades">
+      <LegalSection id="finalidades" title="3. Tratamiento y finalidades">
+        <p>
+          El Hotel realiza la recolección, almacenamiento, uso, circulación y supresión de los datos
+          personales, en medios físicos y digitales, únicamente para las siguientes finalidades:
+        </p>
         <ul>
           <li>Responder consultas sobre disponibilidad, tarifas y servicios.</li>
           <li>
@@ -190,9 +194,19 @@ function DataPolicy({ hotel, effectiveDate }: LegalContext) {
         </ul>
       </LegalSection>
 
-      <LegalSection id="procedimiento" title="6. Consultas y reclamos">
+      <LegalSection id="area-responsable" title="6. Área responsable de consultas y reclamos">
         <p>
-          Escríbenos a <Fill value={c.email} label="correo de contacto" /> o comunícate al{' '}
+          La administración del Hotel es el área responsable de atender las peticiones, consultas y
+          reclamos sobre datos personales. Puedes contactarla en el domicilio indicado arriba, en{' '}
+          <Fill value={c.email} label="correo de contacto" /> o al{' '}
+          <Fill value={c.phone} label="teléfono" />.
+        </p>
+      </LegalSection>
+
+      <LegalSection id="procedimiento" title="7. Procedimiento para ejercer tus derechos">
+        <p>
+          Para conocer, actualizar, rectificar o suprimir tus datos, o revocar la autorización,
+          escríbenos a <Fill value={c.email} label="correo de contacto" /> o comunícate al{' '}
           <Fill value={c.phone} label="teléfono" />, indicando tu nombre, tu documento de identidad,
           la descripción de tu solicitud y un medio de respuesta.
         </p>
@@ -212,7 +226,7 @@ function DataPolicy({ hotel, effectiveDate }: LegalContext) {
         </ul>
       </LegalSection>
 
-      <LegalSection id="seguridad" title="7. Seguridad, conservación y encargados">
+      <LegalSection id="seguridad" title="8. Seguridad, conservación y encargados">
         <p>
           Aplicamos medidas técnicas y administrativas razonables: conexiones cifradas, acceso
           restringido al panel administrativo, contraseñas protegidas y registros de auditoría.
@@ -229,8 +243,13 @@ function DataPolicy({ hotel, effectiveDate }: LegalContext) {
         </p>
       </LegalSection>
 
-      <LegalSection id="vigencia" title="8. Vigencia y cambios">
+      <LegalSection id="vigencia" title="9. Vigencia de la política y de las bases de datos">
         <Effective effectiveDate={effectiveDate} />
+        <p>
+          Las bases de datos del Hotel permanecerán vigentes mientras subsistan las finalidades del
+          tratamiento y durante el tiempo adicional que exijan las normas contables, tributarias,
+          migratorias y de registro hotelero. Después, los datos se suprimirán de forma segura.
+        </p>
         <p>
           Consulta también el <Link href={routes.legalPrivacy}>aviso de privacidad</Link> y la{' '}
           <Link href={routes.legalCookies}>política de cookies</Link>.
@@ -259,10 +278,18 @@ function PrivacyNotice({ hotel, effectiveDate }: LegalContext) {
         <p>
           Puedes conocer, actualizar, rectificar y suprimir tus datos, solicitar prueba de la
           autorización, revocarla y presentar quejas ante la Superintendencia de Industria y
-          Comercio. Escríbenos a <Fill value={c.email} label="correo de contacto" />.
+          Comercio. Escríbenos a <Fill value={c.email} label="correo de contacto" /> o comunícate al{' '}
+          <Fill value={c.phone} label="teléfono" />.
         </p>
       </LegalSection>
-      <LegalSection id="politica" title="Política de tratamiento">
+      <LegalSection id="sensibles" title="Datos sensibles y de menores de edad">
+        <p>
+          Responder preguntas sobre datos sensibles (por ejemplo, de salud) o sobre niñas, niños y
+          adolescentes es facultativo: no estás obligado a hacerlo. Los datos de menores de edad que
+          exija el registro de huéspedes se tratan respetando su interés superior.
+        </p>
+      </LegalSection>
+      <LegalSection id="politica" title="Política de tratamiento y cambios">
         <p>
           Consulta la{' '}
           <Link href={routes.legalData}>política de tratamiento de datos personales</Link>, que

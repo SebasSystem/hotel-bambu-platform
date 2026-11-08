@@ -1,12 +1,6 @@
 import { slugSchema } from '@hotel-bambu/shared';
 import { describe, expect, it } from 'vitest';
-import {
-  DEMO_FAQS,
-  DEMO_MARKER,
-  DEMO_POLICIES,
-  DEMO_ROOM_TYPES,
-  buildDemoRooms,
-} from './demo-data.js';
+import { DEMO_MARKER, DEMO_ROOM_TYPES, buildDemoRooms } from './demo-data.js';
 
 describe('demo data', () => {
   it('uses only the confirmed individual and couple types, with valid unique slugs', () => {
@@ -30,9 +24,10 @@ describe('demo data', () => {
     ]);
   });
 
-  it('marks every visible demo text', () => {
+  it('marks every visible demo text and leaves guest policies and FAQ to the base seed', async () => {
+    const demo: Record<string, unknown> = await import('./demo-data.js');
+    expect(demo['DEMO_FAQS']).toBeUndefined();
+    expect(demo['DEMO_POLICIES']).toBeUndefined();
     for (const room of buildDemoRooms()) expect(room.name.startsWith(DEMO_MARKER)).toBe(true);
-    for (const faq of DEMO_FAQS) expect(faq.question.startsWith(DEMO_MARKER)).toBe(true);
-    for (const policy of DEMO_POLICIES) expect(policy.title.startsWith(DEMO_MARKER)).toBe(true);
   });
 });

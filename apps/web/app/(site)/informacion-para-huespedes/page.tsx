@@ -89,7 +89,11 @@ export default async function GuestInfoPage() {
           ) : null}
 
           {hotel.escnnaNotice ? (
-            <aside className="rounded-lg border border-line bg-notice-bg p-7 text-sm text-notice-fg">
+            <aside
+              id="aviso-escnna"
+              aria-label={ui.pages.escnnaLabel}
+              className="scroll-mt-28 rounded-lg border border-line bg-notice-bg p-7 text-sm text-notice-fg"
+            >
               <TextBlock text={hotel.escnnaNotice} />
             </aside>
           ) : null}

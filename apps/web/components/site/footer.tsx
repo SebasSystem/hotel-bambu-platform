@@ -3,7 +3,8 @@ import type { ReactNode } from 'react';
 import { BrandLogo } from '@/components/brand/brand-logo';
 import { CookieSettingsButton } from '@/components/consent/consent-manager';
 import { ui } from '@/lib/i18n/es';
-import { footerNav, infoNav, legalNav } from '@/lib/public/navigation';
+import { escnnaFooterText } from '@/lib/public/escnna';
+import { footerNav, infoNav, legalNav, routes } from '@/lib/public/navigation';
 import type { ContactCta } from '@/lib/public/cta';
 import { napOf } from '@/lib/public/nap';
 import { displayPhone, telHref } from '@/lib/public/site';
@@ -30,7 +31,9 @@ function Column({ title, children }: { title: string; children: ReactNode }) {
  * Footer (mockup `.footer`, requirement 4.2.10): charcoal, brand + blurb and three columns
  * (Explorar, Información, Contacto) from the site data. The contact column prints the full NAP
  * from `napOf`, the same source as the Hotel JSON-LD, so both always match. The bottom row carries
- * the legal name, RNT and ESCNNA notice only when configured (17.6), legal links and cookies.
+ * the legal name, RNT and ESCNNA notice only when configured (17.6), legal links and cookies. The
+ * ESCNNA notice is shortened to its first sentence with a link to the full text on the guest-info
+ * page (owner review 2026-11-08).
  */
 export function Footer({ site, cta }: { site: PublicSite; cta: ContactCta | null }) {
   const { hotel } = site;
@@ -38,6 +41,7 @@ export function Footer({ site, cta }: { site: PublicSite; cta: ContactCta | null
   const whatsappUrl = cta?.kind === 'whatsapp' ? cta.href : null;
   const hasContact = Boolean(whatsappUrl || nap.telephone || hotel.email || nap.addressLine);
   const year = new Date().getFullYear();
+  const escnna = hotel.escnnaNotice ? escnnaFooterText(hotel.escnnaNotice) : null;
 
   return (
     <footer
@@ -121,7 +125,22 @@ export function Footer({ site, cta }: { site: PublicSite; cta: ContactCta | null
               {ui.footer.rnt}: <span className="font-bold text-ivory">{hotel.rntNumber}</span>
             </p>
           ) : null}
-          {hotel.escnnaNotice ? <p className="max-w-3xl">{hotel.escnnaNotice}</p> : null}
+          {escnna ? (
+            <p className="max-w-3xl">
+              {escnna.text}
+              {escnna.shortened ? (
+                <>
+                  {' '}
+                  <Link
+                    href={`${routes.policies}#aviso-escnna`}
+                    className={`${footerLink} underline`}
+                  >
+                    {ui.footer.escnnaMore}
+                  </Link>
+                </>
+              ) : null}
+            </p>
+          ) : null}
           <div className="flex flex-col gap-3 pt-1 tab:flex-row tab:items-center tab:justify-between">
             <p>{ui.footer.rights(year, hotel.legalName ?? hotel.name)}</p>
             <nav aria-label={ui.footer.legal}>

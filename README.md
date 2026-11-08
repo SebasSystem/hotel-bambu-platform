@@ -52,15 +52,15 @@ Prisma commands run from the API package, e.g. `pnpm --filter @hotel-bambu/api p
 
 Scripts live in the API package: run them as `pnpm --filter @hotel-bambu/api <script>`. Model and seed rules: [ADR 0006](docs/adr/0006-data-model.md).
 
-| Script              | Environments        | Does                                                                                                                                                                         |
-| ------------------- | ------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `db:migrate`        | local               | `prisma migrate dev` (then `db:generate`: Prisma 7 no longer generates or seeds automatically)                                                                               |
-| `db:migrate:deploy` | staging, production | Applies pending migrations only                                                                                                                                              |
-| `db:seed:base`      | all (idempotent)    | Hotel profile (owner-approved facts, written only into empty fields), landing sections, amenities                                                                            |
-| `db:seed:demo`      | local, staging      | The two confirmed room types (no description or rate), one `[DEMO]` room per type without rooms, demo FAQ and policies. Refuses when `NODE_ENV` or `APP_ENV` is `production` |
-| `media:import`      | local, staging      | Processes `assets-source/photos` per `docs/assets/assets-manifest.json`, uploads variants, links media                                                                       |
-| `media:variants`    | all (idempotent)    | Adds the variant widths existing media lack (after the width list changes), derived from each photo's widest stored variant; `--dry-run` only lists them                     |
-| `admin:create`      | all                 | Creates an admin, interactively or one-shot with `ADMIN_EMAIL` + `ADMIN_PASSWORD`                                                                                            |
+| Script              | Environments        | Does                                                                                                                                                                                                                              |
+| ------------------- | ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `db:migrate`        | local               | `prisma migrate dev` (then `db:generate`: Prisma 7 no longer generates or seeds automatically)                                                                                                                                    |
+| `db:migrate:deploy` | staging, production | Applies pending migrations only                                                                                                                                                                                                   |
+| `db:seed:base`      | all (idempotent)    | Hotel profile (owner-approved facts, plus default ESCNNA notice and check-in 15:00 / check-out 12:00, written only into empty fields), landing sections, amenities, default guest policies and FAQ (created only when none exist) |
+| `db:seed:demo`      | local, staging      | The two confirmed room types (no description or rate), one `[DEMO]` room per type without rooms (room data only). Refuses when `NODE_ENV` or `APP_ENV` is `production`                                                            |
+| `media:import`      | local, staging      | Processes `assets-source/photos` per `docs/assets/assets-manifest.json`, uploads variants, links media                                                                                                                            |
+| `media:variants`    | all (idempotent)    | Adds the variant widths existing media lack (after the width list changes), derived from each photo's widest stored variant; `--dry-run` only lists them                                                                          |
+| `admin:create`      | all                 | Creates an admin, interactively or one-shot with `ADMIN_EMAIL` + `ADMIN_PASSWORD`                                                                                                                                                 |
 
 First run on a fresh database:
 
@@ -73,6 +73,8 @@ pnpm --filter @hotel-bambu/api media:import   # needs S3_ACCESS_KEY / S3_SECRET_
 pnpm --filter @hotel-bambu/api admin:create   # prompts for email and password (min 12 characters)
 ```
 
+- Default guest content (`apps/api/src/seeds/default-content.ts`): eight published policies (check-in/out, guest registration, minors, cancellations, payment, VAT for non-residents, pets, smoke-free), eight FAQ built from the profile times and address, and the ESCNNA notice. They are editable starting texts, not legal advice: the hotel reviews them in /admin. A re-run never overwrites an edit; it creates policies/FAQ only when the table is empty.
+- One-off convergence: `db:seed:base` deletes policies and FAQ whose title/question starts with `[DEMO]` (left by earlier demo seeds) before creating the defaults. No other table is touched; `[DEMO]` rooms stay until the hotel replaces them in /admin.
 - Order matters: `db:seed:demo` needs the amenity catalog from `db:seed:base`; `media:import` attaches room photos to the room types that have `[DEMO]` rooms and publishes the types (and their demo rooms) that get a cover image.
 - `media:import` skips `discard` photos and photos already imported (SHA-256), strips EXIF/GPS, and writes AVIF + WebP variants (480/640/750/960/1280/1920, never upscaled) under random keys. Re-running it is safe.
 - `media:variants` brings media uploaded before a width was added up to date: it renders only the missing smaller widths from the widest stored variant (originals are not kept), uploads them next to the existing files, updates `MediaAsset.variants` and, when `WEB_INTERNAL_URL` + `REVALIDATE_SECRET` are set, revalidates the public pages. Existing files are never rewritten, so the immutable cache stays valid. Run it once after deploying a new width (production: `node dist/scripts/media-variants.js` in the API container).

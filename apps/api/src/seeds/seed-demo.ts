@@ -1,12 +1,6 @@
 import type { PrismaClient } from '../generated/prisma/client.js';
 import { AMENITIES } from './base-data.js';
-import {
-  DEMO_FAQS,
-  DEMO_MARKER,
-  DEMO_POLICIES,
-  DEMO_ROOM_TYPES,
-  buildDemoRooms,
-} from './demo-data.js';
+import { DEMO_MARKER, DEMO_ROOM_TYPES, buildDemoRooms } from './demo-data.js';
 import { assertDemoSeedAllowed } from './seed-guards.js';
 
 /** Room equipment only: HOTEL amenities are never assigned per room type (ADR 0015). */
@@ -18,16 +12,14 @@ const LEGACY_DEMO_BEDS = [[{ type: 'SINGLE', count: 1 }], [{ type: 'DOUBLE', cou
 export interface SeedDemoResult {
   roomTypes: number;
   rooms: number;
-  faqs: number;
-  policies: number;
 }
 
 /**
  * Demo seed (local/staging only). Re-runnable: the confirmed room types are created when missing
  * (an existing type keeps its data, except that a [DEMO] description is cleared), each gets the
  * confirmed room equipment, and a type without rooms gets one [DEMO] example room. Existing rooms
- * are never touched. [DEMO] FAQ and policy rows are replaced. Requires db:seed:base first
- * (amenity catalog). New types start as DRAFT; media:import adds photos and publishes them.
+ * are never touched. Requires db:seed:base first (amenity catalog), which also owns the default
+ * guest policies and FAQ and removes the [DEMO] ones earlier demo seeds created. New types start as DRAFT; media:import adds photos and publishes them.
  */
 export async function seedDemo(
   prisma: PrismaClient,
@@ -109,25 +101,9 @@ export async function seedDemo(
       }
     }
 
-    await tx.faq.deleteMany({ where: { question: { startsWith: DEMO_MARKER } } });
-    await tx.faq.createMany({
-      data: DEMO_FAQS.map((faq, index) => ({ ...faq, sortOrder: index, published: true })),
-    });
-
-    await tx.hotelPolicy.deleteMany({ where: { title: { startsWith: DEMO_MARKER } } });
-    await tx.hotelPolicy.createMany({
-      data: DEMO_POLICIES.map((policy, index) => ({
-        ...policy,
-        sortOrder: index,
-        published: true,
-      })),
-    });
-
     return {
       roomTypes: await tx.roomType.count(),
       rooms: await tx.room.count({ where: { name: { startsWith: DEMO_MARKER } } }),
-      faqs: await tx.faq.count({ where: { question: { startsWith: DEMO_MARKER } } }),
-      policies: await tx.hotelPolicy.count({ where: { title: { startsWith: DEMO_MARKER } } }),
     };
   });
 }

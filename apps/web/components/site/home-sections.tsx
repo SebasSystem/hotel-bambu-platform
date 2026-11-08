@@ -268,7 +268,10 @@ export function ReviewsSection({ reviews }: { reviews: GuestReview[] }) {
   );
 }
 
-/** Policies at a glance: check-in/out when set, the published policy titles, link to the page. */
+/** Policy titles shown on the home card; the page link leads to the rest (owner review 2026-11-08). */
+const SUMMARY_POLICIES = 4;
+
+/** Policies at a glance: check-in/out when set, the first policy titles, link to the page. */
 export function PoliciesSummary({
   hotel,
   policies,
@@ -315,7 +318,7 @@ export function PoliciesSummary({
           ) : null}
           {policies.length > 0 ? (
             <ul className="grid gap-3">
-              {policies.map((policy) => (
+              {policies.slice(0, SUMMARY_POLICIES).map((policy) => (
                 <li
                   key={policy.id}
                   className="flex items-center gap-3.5 rounded-sm bg-white/52 px-[19px] py-4 font-bold text-charcoal"
