@@ -99,3 +99,10 @@ transaction:
   `[DEMO]` type descriptions left by earlier runs. Existing rooms are untouched.
 - Integration test: `src/test/room-types-migration.integration.spec.ts` (scratch database, previous
   migrations plus legacy rows, then this migration).
+- Addendum (2026-11-08, owner review A8): `POST /admin/room-types` accepts the same optional
+  `images: [{ mediaAssetId, isCover }]` list as `PUT /admin/room-types/:id/images` (shared
+  `roomTypeImageListSchema`: at most 60, one cover, no repeats). The images are written in the same
+  nested create as the type, so a wrong media id (422 on `images`) leaves no half-created type; a
+  draft accepts any existing image, as the PUT does, and publishing keeps enforcing the cover rule.
+  Chosen over "create, then PUT" from the browser, which could leave a type without its images when
+  the second call fails.

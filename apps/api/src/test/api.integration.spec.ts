@@ -360,6 +360,49 @@ describe.skipIf(!databaseUrl)('API integration (hotel_test database)', () => {
     expect(storage.objects.size).toBeGreaterThan(0);
   });
 
+  it('creates a draft room type with its images in one call (atomic, media validated)', async () => {
+    const unknown = await call('POST', '/admin/room-types', {
+      body: {
+        name: 'Tipo Con Fotos',
+        type: 'FAMILY',
+        capacity: 4,
+        images: [{ mediaAssetId: '00000000-0000-7000-8000-000000000000', isCover: true }],
+      },
+    });
+    expect(unknown.statusCode).toBe(422);
+    expect(unknown.json().details[0].path).toBe('images');
+    // Nothing was written: the slug is still free.
+    expect(await prisma.roomType.count({ where: { slug: 'tipo-con-fotos' } })).toBe(0);
+
+    const twoCovers = await call('POST', '/admin/room-types', {
+      body: {
+        name: 'Tipo Con Fotos',
+        type: 'FAMILY',
+        capacity: 4,
+        images: [
+          { mediaAssetId: mediaId, isCover: true },
+          { mediaAssetId: mediaId, isCover: true },
+        ],
+      },
+    });
+    expect(twoCovers.statusCode).toBe(400);
+
+    const res = await call('POST', '/admin/room-types', {
+      body: {
+        name: 'Tipo Con Fotos',
+        type: 'FAMILY',
+        capacity: 4,
+        images: [{ mediaAssetId: mediaId, isCover: true }],
+      },
+    });
+    expect(res.statusCode).toBe(201);
+    expect(res.json()).toMatchObject({ slug: 'tipo-con-fotos', status: 'DRAFT' });
+    expect(res.json().images).toEqual([
+      expect.objectContaining({ mediaAssetId: mediaId, isCover: true }),
+    ]);
+    expect((await call('DELETE', `/admin/room-types/${res.json().id}`)).statusCode).toBe(204);
+  });
+
   it('publishes the type once it has a cover and shows it publicly with variant URLs', async () => {
     revalidate.mockClear();
     const images = await call('PUT', `/admin/room-types/${typeId}/images`, {

@@ -215,6 +215,16 @@ const roomTypeFields = {
   priceNotes: nullableText(500),
   amenityIds: z.array(idSchema).max(100),
 };
+/** Ordered images of a room type (first = gallery order start). At most one cover, no repeats. */
+export const roomTypeImageListSchema = z
+  .array(z.strictObject({ mediaAssetId: idSchema, isCover: z.boolean().default(false) }))
+  .max(60)
+  .refine((items) => items.filter((i) => i.isCover).length <= 1, 'Only one cover image')
+  .refine(
+    (items) => new Set(items.map((i) => i.mediaAssetId)).size === items.length,
+    'Images must be unique',
+  );
+
 export const roomTypeCreateSchema = z.strictObject({
   ...roomTypeFields,
   slug: roomTypeFields.slug.optional(),
@@ -226,6 +236,8 @@ export const roomTypeCreateSchema = z.strictObject({
   taxesIncluded: roomTypeFields.taxesIncluded.default(true),
   priceNotes: roomTypeFields.priceNotes.optional(),
   amenityIds: roomTypeFields.amenityIds.default([]),
+  /** Images chosen while creating; stored with the type in the same write (drafts accept any image). */
+  images: roomTypeImageListSchema.default([]),
 });
 export const roomTypeUpdateSchema = z.strictObject(roomTypeFields).partial();
 export type RoomTypeCreateInput = z.infer<typeof roomTypeCreateSchema>;
@@ -233,17 +245,8 @@ export type RoomTypeUpdateInput = z.infer<typeof roomTypeUpdateSchema>;
 
 export const roomTypeStatusSchema = z.strictObject({ status: publicationStatusSchema });
 
-/** Full ordered image set of a room type; replaces the previous one. At most one cover. */
-export const roomTypeImagesSchema = z.strictObject({
-  images: z
-    .array(z.strictObject({ mediaAssetId: idSchema, isCover: z.boolean().default(false) }))
-    .max(60)
-    .refine((items) => items.filter((i) => i.isCover).length <= 1, 'Only one cover image')
-    .refine(
-      (items) => new Set(items.map((i) => i.mediaAssetId)).size === items.length,
-      'Images must be unique',
-    ),
-});
+/** Full ordered image set of a room type; replaces the previous one. */
+export const roomTypeImagesSchema = z.strictObject({ images: roomTypeImageListSchema });
 export type RoomTypeImagesInput = z.infer<typeof roomTypeImagesSchema>;
 
 /**

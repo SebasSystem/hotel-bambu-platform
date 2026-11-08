@@ -17,10 +17,12 @@ import {
 import { useUnsavedChangesWarning } from '@/components/admin/hooks';
 import { Button } from '@/components/admin/ui';
 import { browserApi } from '@/lib/api/browser';
+import { isApiError } from '@/lib/api/client';
 import type { Amenity, RoomType } from '@/lib/api/types';
 import { applyApiError } from '@/lib/forms/form-errors';
 import { asNullableNumber, formResolver } from '@/lib/forms/resolver';
 import { BED_TYPE_LABELS, PRICE_UNIT_LABELS, ROOM_TYPE_LABELS, toOptions } from '@/lib/labels';
+import { RoomTypeImageList, toImageInput, type ImageRow } from './room-type-images';
 
 const FIELD_NAMES = [
   'name',
@@ -68,6 +70,8 @@ export function RoomTypeForm({
   const router = useRouter();
   const toast = useToast();
   const [formError, setFormError] = useState<string | null>(null);
+  // Creation only: images chosen before the type exists, sent with the create call.
+  const [newImages, setNewImages] = useState<ImageRow[]>([]);
   const {
     register,
     control,
@@ -80,7 +84,7 @@ export function RoomTypeForm({
     defaultValues: toFormValues(room),
   });
   const beds = useFieldArray({ control, name: 'beds' });
-  useUnsavedChangesWarning(isDirty);
+  useUnsavedChangesWarning(isDirty || newImages.length > 0);
   const err = (name: string) => (errors as ErrorMap)[name];
   const bedError = (index: number, key: string) =>
     (errors.beds as unknown as Record<number, ErrorMap> | undefined)?.[index]?.[key];
@@ -94,13 +98,27 @@ export function RoomTypeForm({
         toast.success('Tipo de habitación guardado.');
         router.refresh();
       } else {
-        const created = await browserApi.post<RoomType>('/admin/room-types', values);
+        const created = await browserApi.post<RoomType>('/admin/room-types', {
+          ...values,
+          images: toImageInput(newImages),
+        });
         reset(toFormValues(created));
-        toast.success('Tipo de habitación creado como borrador. Ahora agregue sus imágenes.');
+        setNewImages([]);
+        toast.success(
+          newImages.length > 0
+            ? 'Tipo de habitación creado como borrador con sus imágenes.'
+            : 'Tipo de habitación creado como borrador. Ahora agregue sus imágenes.',
+        );
         router.push(`/admin/room-types/${created.id}`);
       }
     } catch (error) {
-      setFormError(applyApiError(error, setError, FIELD_NAMES).message);
+      const { message } = applyApiError(error, setError, FIELD_NAMES);
+      // `images` has no form field: surface its errors in the form alert.
+      setFormError(
+        isApiError(error) && error.details.some((d) => d.path.startsWith('images'))
+          ? 'Revise las imágenes: alguna ya no existe en la biblioteca.'
+          : message,
+      );
     }
   });
 
@@ -158,6 +176,21 @@ export function RoomTypeForm({
           registration={register('areaM2', { setValueAs: asNullableNumber })}
         />
       </FormSection>
+
+      {room ? null : (
+        <FormSection
+          title="Imágenes"
+          description="Opcional. Súbalas aquí o elíjalas de la galería; la portada es obligatoria para publicar."
+        >
+          <div className="md:col-span-2">
+            <RoomTypeImageList
+              rows={newImages}
+              onChange={setNewImages}
+              emptyText="Aún no hay imágenes. También puede agregarlas después de crear el tipo."
+            />
+          </div>
+        </FormSection>
+      )}
 
       <FormSection title="Camas">
         <div className="md:col-span-2">

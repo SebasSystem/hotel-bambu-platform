@@ -20,7 +20,7 @@ export default async function NewRoomPage() {
       </Link>
       <PageHeader
         title="Nuevo tipo de habitación"
-        description="Se crea como borrador. Después podrá agregar imágenes y publicarlo."
+        description="Se crea como borrador. Puede agregar imágenes ahora o después; para publicarlo necesita una portada."
       />
       <RoomTypeForm room={null} amenities={amenities} />
     </>

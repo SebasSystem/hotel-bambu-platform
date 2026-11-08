@@ -145,9 +145,30 @@ export class RoomTypesService {
     }
   }
 
+  /** Every id must name an existing media asset (422 on `images` otherwise). */
+  private async findImageMedia(mediaIds: readonly string[]) {
+    const media = await this.prisma.mediaAsset.findMany({
+      where: { id: { in: [...mediaIds] } },
+      select: { id: true, status: true, altText: true },
+    });
+    if (media.length !== mediaIds.length) {
+      throw new UnprocessableEntityException({
+        message: 'Unknown media id.',
+        details: [{ path: 'images', message: 'Unknown media id.', code: 'media' }],
+      });
+    }
+    return media;
+  }
+
+  /**
+   * Creates a DRAFT type. Images chosen in the creation form are written in the same nested create
+   * (atomic: no type without its images when a media id is wrong). Drafts accept unprocessed media,
+   * exactly like PUT /images on a draft; publishing enforces the rules.
+   */
   async create(actorId: string, input: RoomTypeCreateInput) {
-    const { amenityIds, slug: requestedSlug, beds, ...fields } = input;
+    const { amenityIds, images, slug: requestedSlug, beds, ...fields } = input;
     await this.assertRoomAmenities(amenityIds);
+    if (images.length > 0) await this.findImageMedia(images.map((image) => image.mediaAssetId));
     let slug = requestedSlug;
     if (slug) {
       if (!(await this.slugIsFree(slug))) throw new ConflictException('Slug is already in use.');
@@ -163,6 +184,13 @@ export class RoomTypesService {
         status: 'DRAFT',
         sortOrder: (max._max.sortOrder ?? -1) + 1,
         amenities: { create: amenityIds.map((amenityId) => ({ amenityId })) },
+        images: {
+          create: images.map((image, index) => ({
+            mediaAssetId: image.mediaAssetId,
+            isCover: image.isCover,
+            sortOrder: index,
+          })),
+        },
       },
       select: { id: true },
     });
@@ -170,7 +198,7 @@ export class RoomTypesService {
       action: 'roomType.create',
       entity: 'RoomType',
       entityId: type.id,
-      summary: { fields: changedFields(input) },
+      summary: { fields: changedFields(input), images: images.length },
     });
     return this.get(type.id);
   }
@@ -322,13 +350,7 @@ export class RoomTypesService {
       select: { id: true, slug: true, status: true, name: true, capacity: true },
     });
     if (!type) throw new NotFoundException('Room type not found.');
-    const mediaIds = input.images.map((image) => image.mediaAssetId);
-    const media = await this.prisma.mediaAsset.findMany({
-      where: { id: { in: mediaIds } },
-      select: { id: true, status: true, altText: true },
-    });
-    if (media.length !== mediaIds.length)
-      throw new UnprocessableEntityException('Unknown media id.');
+    const media = await this.findImageMedia(input.images.map((image) => image.mediaAssetId));
     const byId = new Map(media.map((m) => [m.id, m]));
 
     if (type.status === 'PUBLISHED') {

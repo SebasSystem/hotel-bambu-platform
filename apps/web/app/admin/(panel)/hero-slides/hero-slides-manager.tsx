@@ -34,8 +34,9 @@ export function HeroSlidesManager({ items }: { items: HeroSlide[] }) {
           label: 'Imagen',
           kind: 'media',
           required: true,
-          hint: `Horizontal (más ancha que alta) y de al menos ${HERO_MIN_WIDTH} px de ancho, por ejemplo 1920 × 1080.`,
+          hint: `Horizontal (más ancha que alta) y de al menos ${HERO_MIN_WIDTH} px de ancho, por ejemplo 1920 × 1080. Puede subirla aquí mismo.`,
           wide: true,
+          mediaWarnings: (media) => heroPhotoIssues(media).map((issue) => ISSUE_TEXT[issue]),
         },
         {
           name: 'altText',
@@ -54,7 +55,14 @@ export function HeroSlidesManager({ items }: { items: HeroSlide[] }) {
         active: item.active,
       })}
       mediaPreview={(item) =>
-        item ? { variants: item.mediaAsset.variants, altText: item.mediaAsset.altText } : null
+        item
+          ? {
+              variants: item.mediaAsset.variants,
+              altText: item.mediaAsset.altText,
+              width: item.mediaAsset.width,
+              height: item.mediaAsset.height,
+            }
+          : null
       }
       itemLabel={(item) => item.caption ?? item.altText ?? item.mediaAsset.altText ?? 'Diapositiva'}
       toggles={[{ name: 'active', on: 'Ocultar', off: 'Mostrar' }]}

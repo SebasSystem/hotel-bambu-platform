@@ -11,7 +11,7 @@ import { asNullableString, formResolver } from '@/lib/forms/resolver';
 import { useConfirm, useToast } from './feedback';
 import { CheckboxField, FormAlert, SelectField, TextAreaField, TextField } from './fields';
 import { useAction, useUnsavedChangesWarning } from './hooks';
-import { MediaField } from './media-picker';
+import { MediaField, type MediaPreview } from './media-picker';
 import { ReorderButtons, moveItem } from './reorder-buttons';
 import { Button, EmptyState, cx, panelClasses } from './ui';
 
@@ -27,6 +27,8 @@ export interface FieldConfig {
   emptyOption?: string;
   /** Full-width in the two-column grid. */
   wide?: boolean;
+  /** Media: problems of the chosen image, shown under the preview (e.g. a small hero photo). */
+  mediaWarnings?: (media: { width: number | null; height: number | null }) => string[];
 }
 
 export interface ResourceManagerProps<T extends { id: string }> {
@@ -45,10 +47,7 @@ export interface ResourceManagerProps<T extends { id: string }> {
   toggles?: readonly { name: keyof T & string; on: string; off: string }[];
   reorderable?: boolean;
   /** Preview data for media fields of an item. */
-  mediaPreview?: (
-    item: T | null,
-    field: string,
-  ) => { variants: unknown; altText: string | null } | null;
+  mediaPreview?: (item: T | null, field: string) => MediaPreview | null;
   deleteDescription?: string;
   /** Extra inline controls before the toggles (e.g. a publish switch). */
   renderActions?: (item: T) => ReactNode;
@@ -186,9 +185,7 @@ function ResourceForm<T extends { id: string }>({
   const toast = useToast();
   const router = useRouter();
   const [formError, setFormError] = useState<string | null>(null);
-  const [previews, setPreviews] = useState<
-    Record<string, { variants: unknown; altText: string | null } | null>
-  >({});
+  const [previews, setPreviews] = useState<Record<string, MediaPreview | null>>({});
   const form = useForm<FieldValues, unknown, FieldValues>({
     resolver: formResolver(item ? updateSchema : createSchema) as never,
     defaultValues: item ? toFormValues(item) : emptyValues,
@@ -292,12 +289,18 @@ function ResourceForm<T extends { id: string }>({
                             : (mediaPreview?.(item, field.name) ?? null)
                         }
                         error={fieldState.error?.message}
+                        warnings={field.mediaWarnings}
                         onChange={(id, media) => {
                           controlled.onChange(id);
                           setPreviews((p) => ({
                             ...p,
                             [field.name]: media
-                              ? { variants: media.variants, altText: media.altText }
+                              ? {
+                                  variants: media.variants,
+                                  altText: media.altText,
+                                  width: media.width,
+                                  height: media.height,
+                                }
                               : null,
                           }));
                         }}
