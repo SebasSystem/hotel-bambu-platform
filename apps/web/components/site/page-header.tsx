@@ -21,7 +21,53 @@ interface PageHeaderProps {
   children?: ReactNode;
 }
 
-/** Inner-page header: breadcrumb, H1 and intro on sand. */
+const crumbLink = 'underline-offset-4 hover:text-green hover:underline';
+
+/**
+ * Visible breadcrumb ("Inicio / Habitaciones / Habitación de pareja"), shared by `PageHeader` and
+ * the room type page. The BreadcrumbList JSON-LD is rendered by the caller.
+ */
+export function Breadcrumbs({
+  crumbs = [],
+  current,
+  className = '',
+}: {
+  /** Intermediate crumbs between "Inicio" and the current page. */
+  crumbs?: { href: string; label: string }[];
+  current: string;
+  className?: string;
+}) {
+  return (
+    <nav aria-label={ui.breadcrumb} className={`text-sm text-ink-muted-strong ${className}`}>
+      <ol className="flex flex-wrap items-center gap-2">
+        <li>
+          <Link href={routes.home} className={crumbLink}>
+            {ui.nav.home}
+          </Link>
+        </li>
+        {crumbs.map((crumb) => (
+          <li key={crumb.href} className="flex items-center gap-2">
+            <span aria-hidden="true">/</span>
+            <Link href={crumb.href} className={crumbLink}>
+              {crumb.label}
+            </Link>
+          </li>
+        ))}
+        <li className="flex items-center gap-2">
+          <span aria-hidden="true">/</span>
+          <span aria-current="page" className="text-charcoal">
+            {current}
+          </span>
+        </li>
+      </ol>
+    </nav>
+  );
+}
+
+/**
+ * Inner-page header: breadcrumb, H1 and intro on sand. Compact (owner review 2026-11-08) so the
+ * page content starts above the fold.
+ */
 export function PageHeader({
   title,
   crumbName = title,
@@ -42,39 +88,10 @@ export function PageHeader({
           ])}
         />
       ) : null}
-      <div className={`${container} pt-[clamp(2.5rem,6vw,5rem)] pb-[3.75rem]`}>
-        <nav
-          aria-label="Ruta de navegación"
-          className="mb-[clamp(1.5rem,4vw,3rem)] text-sm text-ink-muted-strong"
-        >
-          <ol className="flex flex-wrap items-center gap-2">
-            <li>
-              <Link
-                href={routes.home}
-                className="underline-offset-4 hover:text-green hover:underline"
-              >
-                {ui.nav.home}
-              </Link>
-            </li>
-            {crumbs.map((crumb) => (
-              <li key={crumb.href} className="flex items-center gap-2">
-                <span aria-hidden="true">/</span>
-                <Link
-                  href={crumb.href}
-                  className="underline-offset-4 hover:text-green hover:underline"
-                >
-                  {crumb.label}
-                </Link>
-              </li>
-            ))}
-            <li className="flex items-center gap-2">
-              <span aria-hidden="true">/</span>
-              <span aria-current="page" className="text-charcoal">
-                {crumbName}
-              </span>
-            </li>
-          </ol>
-        </nav>
+      <div
+        className={`${container} pt-[clamp(1.5rem,3vw,2.5rem)] pb-[clamp(1.75rem,3.5vw,2.5rem)]`}
+      >
+        <Breadcrumbs crumbs={crumbs} current={crumbName} className="mb-[clamp(1rem,2vw,1.5rem)]" />
         <SectionHeading as="h1" surface="sand" eyebrow={kicker} title={title} intro={intro} />
         {children}
       </div>

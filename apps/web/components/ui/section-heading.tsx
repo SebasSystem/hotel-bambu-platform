@@ -19,7 +19,7 @@ interface SectionHeadingProps {
 
 const titleSize = {
   display: 'text-display max-w-[780px]',
-  page: 'text-display-page max-w-[930px]',
+  page: 'text-page-title max-w-[930px]',
   section: 'text-h2',
 } as const;
 

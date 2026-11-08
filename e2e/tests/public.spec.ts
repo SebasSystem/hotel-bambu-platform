@@ -246,6 +246,33 @@ test.describe('merged pages (C3 redirects)', () => {
   });
 });
 
+test.describe('compact inner-page headers (owner review 2026-11-08)', () => {
+  for (const viewport of [
+    { width: 1440, height: 900 },
+    { width: 390, height: 844 },
+  ]) {
+    test(`page content starts above the fold at ${viewport.width}×${viewport.height}`, async ({
+      page,
+    }) => {
+      await page.setViewportSize(viewport);
+      for (const path of ['/habitaciones', '/galeria', '/ubicacion', '/politicas-del-hotel']) {
+        await page.goto(path);
+        const header = page
+          .getByRole('heading', { level: 1 })
+          .locator('xpath=ancestor::div[contains(@class,"bg-sand")][1]');
+        const box = await header.boundingBox();
+        expect(box, path).not.toBeNull();
+        // The sand header ends in the top part of the screen, leaving room for the content.
+        expect(box!.y + box!.height, path).toBeLessThan(viewport.height * 0.7);
+      }
+      await page.goto(await firstRoomPath(page));
+      const title = await page.getByRole('heading', { level: 1 }).boundingBox();
+      expect(title).not.toBeNull();
+      expect(title!.y + title!.height).toBeLessThan(viewport.height);
+    });
+  }
+});
+
 test.describe('catalogue and gallery (mockup port)', () => {
   test('room type chips are shareable links with a live count', async ({ page }) => {
     await page.goto('/habitaciones');

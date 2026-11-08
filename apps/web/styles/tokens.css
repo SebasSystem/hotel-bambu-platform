@@ -46,6 +46,9 @@
   --text-5xl: clamp(2.75rem, 1.8rem + 4.5vw, 5rem);
   --text-display: clamp(3rem, 7vw, 6.7rem);
   --text-display-page: clamp(3.3rem, 7vw, 6.5rem);
+  /* Inner-page titles stay compact so content starts above the fold (owner review 2026-11-08). */
+  --text-page-title: clamp(2.4rem, 4.6vw, 4.25rem);
+  --text-display-room: clamp(2.2rem, 3.6vw, 3.6rem);
   --text-h2: clamp(2.25rem, 4.8vw, 4.5rem);
   --text-h3: 1.55rem;
   --text-feature: clamp(2.2rem, 4vw, 4rem);

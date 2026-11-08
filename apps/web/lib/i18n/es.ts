@@ -13,6 +13,7 @@ export const ui = {
     policies: 'Políticas',
     faq: 'Preguntas frecuentes',
   },
+  breadcrumb: 'Ruta de navegación',
   /** H1 and breadcrumb name of the merged inner pages (C3). */
   pages: {
     location: 'Ubicación y cómo llegar',

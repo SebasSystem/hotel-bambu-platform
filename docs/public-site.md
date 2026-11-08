@@ -18,6 +18,8 @@ Spanish (es-CO) public pages for visitors. Requirements 4, 5, 8, 17.5–17.6, 19
 | any other URL | Branded 404 (`noindex`) with the contact CTA and links to every section and room type, via `app/(site)/[...missing]` |
 | `POST /api/revalidate` | On-demand revalidation (see ADR 0011) |
 
+Inner pages open with a compact sand header (`PageHeader`: breadcrumb, H1 at `--text-page-title`, intro) so the content starts above the fold on 1440 × 900 and 390 × 844. The room type page uses the same `Breadcrumbs` component next to its gallery, with its own `--text-display-room` title scale.
+
 ## Data and caching
 
 `lib/public/api.ts` defines the loaders. The site profile is required. Every other list is optional: a failure is logged and the page renders without that block. Responses are tagged with `CACHE_TAGS` and invalidated by the API through `/api/revalidate`. See [ADR 0011](adr/0011-public-rendering-and-images.md).

@@ -189,8 +189,9 @@
   }
   .room-detail-media {
     position: relative;
-    height: 60vh;
-    min-height: 420px;
+    /* Leaves the breadcrumb and title above the fold on a 390 × 844 phone. */
+    height: 52vh;
+    min-height: 340px;
     background: var(--color-green-900);
   }
   @media (min-width: 62.5rem) {

@@ -5,6 +5,7 @@ import type { ReactNode } from 'react';
 import { TextBlock } from '@/components/site/blocks';
 import { SiteIcon } from '@/components/site/icon';
 import { PhotoGallery } from '@/components/site/photo-gallery';
+import { Breadcrumbs } from '@/components/site/page-header';
 import { RoomCard } from '@/components/site/room-card';
 import { RoomPrice } from '@/components/site/room-price';
 import { container } from '@/components/site/styles';
@@ -112,41 +113,17 @@ export default async function RoomPage({ params }: PageProps<'/habitaciones/[slu
           {images.length > 0 ? <PhotoGallery images={images} variant="room" /> : null}
         </div>
 
-        <div className="bg-paper px-[clamp(20px,6vw,84px)] py-[clamp(40px,7vw,100px)]">
-          <nav aria-label="Ruta de navegación" className="mb-8 text-sm text-ink-muted-strong">
-            <ol className="flex flex-wrap items-center gap-2">
-              <li>
-                <Link
-                  href={routes.home}
-                  className="underline-offset-4 hover:text-green hover:underline"
-                >
-                  {ui.nav.home}
-                </Link>
-              </li>
-              <li className="flex items-center gap-2">
-                <span aria-hidden="true">/</span>
-                <Link
-                  href={routes.rooms}
-                  className="underline-offset-4 hover:text-green hover:underline"
-                >
-                  {ui.nav.rooms}
-                </Link>
-              </li>
-              <li className="flex items-center gap-2">
-                <span aria-hidden="true">/</span>
-                <span aria-current="page" className="text-charcoal">
-                  {room.name}
-                </span>
-              </li>
-            </ol>
-          </nav>
+        <div className="bg-paper px-[clamp(20px,6vw,84px)] py-[clamp(24px,4vw,56px)]">
+          <Breadcrumbs
+            crumbs={[{ href: routes.rooms, label: ui.nav.rooms }]}
+            current={room.name}
+            className="mb-5"
+          />
 
-          <Eyebrow className="mb-4">
+          <Eyebrow className="mb-3">
             {`${roomTypeLabel(room.type)} · ${ui.rooms.upTo(room.capacity)}`}
           </Eyebrow>
-          <h1 className="text-[clamp(2.6rem,6vw,5.6rem)] text-balance text-charcoal">
-            {room.name}
-          </h1>
+          <h1 className="text-display-room text-balance text-charcoal">{room.name}</h1>
           <p
             data-testid="room-lead"
             className="mt-5 max-w-[560px] text-lead text-pretty text-muted-foreground"
