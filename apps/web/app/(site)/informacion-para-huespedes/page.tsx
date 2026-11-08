@@ -27,12 +27,12 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 /**
- * "Políticas y preguntas frecuentes" (research §4, C3: `/preguntas-frecuentes` merged here with a
- * 301): check-in/out figures, each published policy as a mockup detail block inside a paper card,
+ * "Información para huéspedes" (owner review 2026-11-08; formerly `/politicas-del-hotel`, and C3
+ * merged `/preguntas-frecuentes` here; both answer a 301): check-in/out figures, each published policy as a mockup detail block inside a paper card,
  * the ESCNNA notice, then the visible FAQ (no FAQPage markup: the rich result is retired) and the
  * contact card.
  */
-export default async function PoliciesPage() {
+export default async function GuestInfoPage() {
   const [site, policies, faqs] = await Promise.all([getSite(), getPolicies(), getFaqs()]);
   const { hotel } = site;
   const cta = contactCta(site, { kind: 'general' });
@@ -44,6 +44,7 @@ export default async function PoliciesPage() {
         path={routes.policies}
         title={ui.pages.policies}
         kicker={ui.home.policiesKicker}
+        intro={ui.pages.policiesIntro}
       />
       <div className={`${container} pt-12 pb-[110px]`}>
         <div className="grid max-w-4xl gap-7">

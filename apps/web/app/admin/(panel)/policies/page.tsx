@@ -7,7 +7,7 @@ import { PoliciesManager } from './policies-manager';
 
 export const metadata: Metadata = { title: 'Políticas y preguntas' };
 
-/** One admin page for the one public page «Políticas y preguntas frecuentes» (C3). */
+/** One admin page for the one public page «Información para huéspedes» (C3, renamed 2026-11-08). */
 export default async function PoliciesPage() {
   const [policies, faqs] = await Promise.all([
     serverApi.get<Policy[]>('/admin/policies'),
@@ -17,7 +17,7 @@ export default async function PoliciesPage() {
     <>
       <PageHeader
         title="Políticas y preguntas"
-        description="Lo que se muestra en «Políticas y preguntas frecuentes» del sitio. Solo lo publicado aparece; use las flechas para ordenar."
+        description="Lo que se muestra en «Información para huéspedes» del sitio (normas y preguntas frecuentes). Solo lo publicado aparece; use las flechas para ordenar."
       />
       <div className="grid gap-9">
         <section aria-labelledby="politicas" className="grid gap-3">

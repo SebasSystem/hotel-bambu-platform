@@ -27,8 +27,8 @@ All three are read per request, so changing them needs a restart, not a rebuild.
 ### Crawling
 
 - **`robots.txt`** (`lib/seo/robots.ts`): production allows `/`, disallows `/admin` and `/api/`, and lists the sitemap. `/_next/` stays crawlable so Google can render the pages.
-- **`sitemap.xml`** (`lib/seo/sitemap.ts`) lists the home page, rooms index, every published room type, location, gallery and policies, plus the legal pages once approved. `lastModified` comes from data only: the room type's last edit, the hotel profile (location), or the newer of the two (home, rooms index). Pages without a data date carry no date. Redirected URLs are never listed.
-- **Redirects** (`lib/public/redirects.ts`, `next.config.ts`): `301` from `/contacto` to `/ubicacion`, from `/preguntas-frecuentes` to `/politicas-del-hotel`, and from `/servicios` to `/`. These are every public page removed since v1, checked against the git history. Old per-room and renamed room-type slugs answer a `308` permanent redirect to the type page through the API slug map. Google treats a 308 like a 301. All redirects land on a live page in one hop.
+- **`sitemap.xml`** (`lib/seo/sitemap.ts`) lists the home page, rooms index, every published room type, location, gallery and guest information (`/informacion-para-huespedes`), plus the legal pages once approved. `lastModified` comes from data only: the room type's last edit, the hotel profile (location), or the newer of the two (home, rooms index). Pages without a data date carry no date. Redirected URLs are never listed.
+- **Redirects** (`lib/public/redirects.ts`, `next.config.ts`): `301` from `/contacto` to `/ubicacion`, from `/preguntas-frecuentes` and `/politicas-del-hotel` (renamed in the 2026-11-08 owner review) to `/informacion-para-huespedes`, and from `/servicios` to `/`. These are every public page removed or renamed since v1, checked against the git history. Old per-room and renamed room-type slugs answer a `308` permanent redirect to the type page through the API slug map. Google treats a 308 like a 301. All redirects land on a live page in one hop.
 - **404**: a custom page inside the site shell with status 404 and `noindex, follow`. It links to the rooms, the contact CTA, the main sections and every room type.
 
 ### Structured data (`lib/seo/json-ld.ts`)
@@ -38,7 +38,7 @@ All three are read per request, so changing them needs a restart, not a rebuild.
 | Home | `WebSite` + `Hotel` (`@id` `/#hotel`) |
 | Location | `Hotel` (same `@id`) + `BreadcrumbList` |
 | Room type | `@graph`: `HotelRoom` (`containedInPlace` the hotel) + its `Offer` when priced + `BreadcrumbList` |
-| Rooms, gallery, policies, legal | `BreadcrumbList` |
+| Rooms, gallery, guest information, legal | `BreadcrumbList` |
 
 - **Hotel**: `name` and `PostalAddress` (Google's required fields for LocalBusiness), plus `geo`, `telephone`, `url`, `image`, `amenityFeature`, `numberOfRooms` and `checkinTime`/`checkoutTime` when set. It also has `containsPlace` (one `HotelRoom` per published type), `makesOffer` and `priceRange` (only when rates exist), and `sameAs`. There is no `aggregateRating` or `review` (self-serving reviews are ineligible), no `FAQPage` (no rich result since May 2026) and no `openingHours` (Google Business Profile says hotels should not set business hours).
 - **Rooms are `HotelRoom`, not `["HotelRoom","Product"]`.** A `Product` with an `Offer` makes Google evaluate the page for merchant listings and product snippets, which then warn about shipping, returns and availability that a hotel does not have. The rate is linked the way the schema.org hotels guide allows: Hotel `makesOffer` Offer, Offer `itemOffered` HotelRoom. The Offer has `businessFunction` LeaseOut and a `UnitPriceSpecification` in COP per `DAY`. `occupancy` uses unit code `IE` (persons).
@@ -48,8 +48,8 @@ All three are read per request, so changing them needs a restart, not a rebuild.
 
 - One H1 per page that matches the title's intent, and a logical heading order (axe and Lighthouse accessibility show no heading issues).
 - Alt text: media uploads require alt text in the admin (`altTextSchema`, 1–250 characters). Hero slides may override it. Decorative duplicates (lightbox thumbnails, the CTA background) use an empty `alt`.
-- Descriptive link text ("Ver habitaciones", "Ver políticas y preguntas frecuentes", room names, "Cómo llegar"). There are no bare "ver más" links. The whole room card links to its type page.
-- Internal linking: home → rooms index → each type. Each type links to its siblings, the location page and the policies page. Header and footer link every section, breadcrumbs lead back home, and the 404 page links everywhere.
+- Descriptive link text ("Ver habitaciones", "Ver información para huéspedes", room names, "Cómo llegar"). There are no bare "ver más" links. The whole room card links to its type page.
+- Internal linking: home → rooms index → each type. Each type links to its siblings, the location page and the guest information page. Header and footer link every section, breadcrumbs lead back home, and the 404 page links everywhere.
 
 ### Performance (mobile)
 
@@ -71,7 +71,7 @@ Targets: LCP ≤ 2.5 s, CLS ≤ 0.1, TBT ≤ 300 ms (as a proxy for INP), and Ja
 Run these against the production URL, with `SITE_INDEXABLE=true` and `SITE_URL` set.
 
 1. **Flags**: `curl -s https://<domain>/robots.txt` shows `Allow: /` and the sitemap URL. `curl -s https://<domain>/ | grep -o '<meta name="robots"[^>]*>'` must not say `noindex`.
-2. **Sitemap**: open `https://<domain>/sitemap.xml`. Every room type is listed and nothing redirects. Check redirects with `curl -sI` on `/contacto`, `/preguntas-frecuentes` and `/servicios` (expect `301`).
+2. **Sitemap**: open `https://<domain>/sitemap.xml`. Every room type is listed and nothing redirects. Check redirects with `curl -sI` on `/contacto`, `/preguntas-frecuentes`, `/politicas-del-hotel` and `/servicios` (expect `301`).
 3. **Rich Results Test** (<https://search.google.com/test/rich-results>): test the home page, a room type and `/ubicacion`. Expect valid **Breadcrumbs**. Hotel and HotelRoom have no Google rich result, so the tool only lists them as detected items. There must be no "Merchant listings" or "Product snippets" section.
 4. **Schema Markup Validator** (<https://validator.schema.org/>): test the same URLs. Expect `Hotel`, `HotelRoom`, `Offer` (when priced), `WebSite` and `BreadcrumbList` with no errors.
 5. **Search Console** (<https://search.google.com/search-console>): verify the domain property, submit `https://<domain>/sitemap.xml`, and use URL Inspection on the home page and one room type to request indexing. Over the following weeks, watch the Pages report (indexed vs excluded) and Core Web Vitals.

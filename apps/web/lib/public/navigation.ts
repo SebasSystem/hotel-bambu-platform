@@ -2,8 +2,9 @@ import { ui } from '@/lib/i18n/es';
 
 /**
  * Public routes (requirement 4.1). `/habitaciones/<slug>` matches the admin "Ver en el sitio".
- * C3 merged `/contacto` into `/ubicacion` and `/preguntas-frecuentes` into `/politicas-del-hotel`
- * (301s in `redirects.ts`).
+ * C3 merged `/contacto` into `/ubicacion` and `/preguntas-frecuentes` into the rules + FAQ page,
+ * renamed "Información para huéspedes" in the 2026-11-08 owner review (301s in `redirects.ts`).
+ * The `policies` key is kept: analytics and the admin still call that page "policies".
  */
 export const routes = {
   home: '/',
@@ -11,7 +12,7 @@ export const routes = {
   room: (slug: string) => `/habitaciones/${slug}`,
   gallery: '/galeria',
   location: '/ubicacion',
-  policies: '/politicas-del-hotel',
+  policies: '/informacion-para-huespedes',
   legalData: '/legal/tratamiento-de-datos',
   legalPrivacy: '/legal/aviso-de-privacidad',
   legalCookies: '/legal/cookies',
@@ -31,8 +32,10 @@ export const mainNav: readonly NavItem[] = [
   { href: routes.policies, label: ui.nav.policies },
 ];
 
-/** Mobile menu: the same sections (every page fits the menu since the C3 merge). */
-export const mobileNav: readonly NavItem[] = mainNav;
+/** Mobile menu: the same sections, with the full guest information name (room to spare). */
+export const mobileNav: readonly NavItem[] = mainNav.map((item) =>
+  item.href === routes.policies ? { ...item, label: ui.pages.policies } : item,
+);
 
 /** Footer "Explorar" column. */
 export const footerNav: readonly NavItem[] = [

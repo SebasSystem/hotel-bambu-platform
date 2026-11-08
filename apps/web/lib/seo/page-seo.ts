@@ -134,13 +134,10 @@ export function policiesSeo(hotel: SeoHotel): PageSeoText {
   const schedule =
     times.length > 0 ? `${times.join(', ').replace(/^check-out/, 'Check-out')}.` : null;
   const city = hotel.municipality ? ` en ${hotel.municipality}` : '';
-  const body = `Políticas de ${hotel.name}${city} y respuestas a las preguntas frecuentes de los huéspedes.`;
+  // "Políticas" is reserved for the legal pages (owner review 2026-11-08).
+  const body = `Normas de la estadía y preguntas frecuentes de ${hotel.name}${city}.`;
   return {
-    title: fitTitle([
-      `Políticas y preguntas frecuentes – ${hotel.name}`,
-      `Políticas y preguntas – ${hotel.name}`,
-      `Políticas – ${hotel.name}`,
-    ]),
+    title: fitTitle([`Información para huéspedes – ${hotel.name}`, `Huéspedes – ${hotel.name}`]),
     description: schedule ? fitDescription(schedule, [body]) : fitDescription(body, []),
   };
 }

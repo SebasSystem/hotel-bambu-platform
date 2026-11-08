@@ -10,14 +10,16 @@ export const ui = {
     rooms: 'Habitaciones',
     gallery: 'Galería',
     location: 'Ubicación',
-    policies: 'Políticas',
+    /** Short header label of «Información para huéspedes» (the desktop header has no room). */
+    policies: 'Huéspedes',
     faq: 'Preguntas frecuentes',
   },
   breadcrumb: 'Ruta de navegación',
   /** H1 and breadcrumb name of the merged inner pages (C3). */
   pages: {
     location: 'Ubicación y cómo llegar',
-    policies: 'Políticas y preguntas frecuentes',
+    policies: 'Información para huéspedes',
+    policiesIntro: 'Normas de la estadía y preguntas frecuentes, para que llegues sin sorpresas.',
     gallery: 'Galería de fotos',
   },
   phone: { call: 'Llamar', callTo: 'Llamar al' },
@@ -171,8 +173,8 @@ export const ui = {
     aboutTitle: (city: string | null) =>
       city ? `Hospitalidad cálida en el corazón de ${city}.` : 'Hospitalidad cálida.',
     policiesKicker: 'Antes de llegar',
-    policiesTitle: 'Políticas del hotel',
-    policiesAll: 'Ver políticas y preguntas',
+    policiesTitle: 'Información para huéspedes',
+    policiesAll: 'Ver información para huéspedes',
     galleryKicker: 'Una mirada al hotel',
     galleryTitle: 'Espacios para sentirte a gusto.',
     reviewsKicker: 'Opiniones de huéspedes',

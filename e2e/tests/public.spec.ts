@@ -188,7 +188,7 @@ test.describe('home structure and contact fallback (C3)', () => {
   }) => {
     const seen = { titles: new Set<string>(), descriptions: new Set<string>() };
     const pages = ['/', '/habitaciones', await firstRoomPath(page), '/galeria', '/ubicacion'];
-    for (const path of [...pages, '/politicas-del-hotel']) {
+    for (const path of [...pages, '/informacion-para-huespedes']) {
       await page.goto(path);
       await expect(page.getByRole('heading', { level: 1 })).toHaveCount(1);
       const title = await page.title();
@@ -211,7 +211,7 @@ test.describe('home structure and contact fallback (C3)', () => {
   });
 
   test('no page declares FAQPage or self-serving reviews', async ({ page }) => {
-    for (const path of ['/', '/politicas-del-hotel', '/ubicacion']) {
+    for (const path of ['/', '/informacion-para-huespedes', '/ubicacion']) {
       await page.goto(path);
       const text = JSON.stringify(await jsonLd(page));
       expect(text).not.toContain('FAQPage');
@@ -224,7 +224,8 @@ test.describe('home structure and contact fallback (C3)', () => {
 test.describe('merged pages (C3 redirects)', () => {
   for (const [from, to] of [
     ['/contacto', '/ubicacion'],
-    ['/preguntas-frecuentes', '/politicas-del-hotel'],
+    ['/preguntas-frecuentes', '/informacion-para-huespedes'],
+    ['/politicas-del-hotel', '/informacion-para-huespedes'],
     ['/servicios', '/'],
   ] as const) {
     test(`${from} answers a 301 to ${to}`, async ({ request }) => {
@@ -237,10 +238,8 @@ test.describe('merged pages (C3 redirects)', () => {
   test('the merged pages carry their own H1 and breadcrumbs', async ({ page }) => {
     await page.goto('/ubicacion');
     await expect(page.getByRole('heading', { level: 1 })).toHaveText('Ubicación y cómo llegar');
-    await page.goto('/politicas-del-hotel');
-    await expect(page.getByRole('heading', { level: 1 })).toHaveText(
-      'Políticas y preguntas frecuentes',
-    );
+    await page.goto('/informacion-para-huespedes');
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText('Información para huéspedes');
     const types = (await jsonLd(page)).map((block) => block['@type']);
     expect(types).toContain('BreadcrumbList');
   });
@@ -255,7 +254,12 @@ test.describe('compact inner-page headers (owner review 2026-11-08)', () => {
       page,
     }) => {
       await page.setViewportSize(viewport);
-      for (const path of ['/habitaciones', '/galeria', '/ubicacion', '/politicas-del-hotel']) {
+      for (const path of [
+        '/habitaciones',
+        '/galeria',
+        '/ubicacion',
+        '/informacion-para-huespedes',
+      ]) {
         await page.goto(path);
         const header = page
           .getByRole('heading', { level: 1 })
@@ -335,8 +339,14 @@ test.describe('seo and headers', () => {
     expect(xml).toContain('<urlset');
     expect(xml).toMatch(/\/habitaciones\/[a-z0-9-]+<\/loc>/);
     expect(xml).not.toContain('/admin');
-    // Redirected URLs never appear (C3 merges, D3 removal, old per-room slugs).
-    for (const path of ['/contacto', '/preguntas-frecuentes', '/servicios']) {
+    // Redirected URLs never appear (C3 merges, D3 removal, the guest information rename, old
+    // per-room slugs).
+    for (const path of [
+      '/contacto',
+      '/preguntas-frecuentes',
+      '/servicios',
+      '/politicas-del-hotel',
+    ]) {
       expect(xml).not.toContain(`${path}<`);
     }
     expect(xml).not.toContain('/habitaciones/demo-');

@@ -83,13 +83,15 @@ describe('locationSeo', () => {
 
 describe('policiesSeo', () => {
   it('starts with the schedule only when it is set', () => {
-    expect(policiesSeo(hotel).title).toBe('Políticas y preguntas frecuentes – Hotel Bambú Plaza');
+    expect(policiesSeo(hotel).title).toBe('Información para huéspedes – Hotel Bambú Plaza');
     expect(policiesSeo(hotel).description).toBe(
-      'Políticas de Hotel Bambú Plaza en Mocoa y respuestas a las preguntas frecuentes de los huéspedes.',
+      'Normas de la estadía y preguntas frecuentes de Hotel Bambú Plaza en Mocoa.',
     );
     expect(policiesSeo({ ...hotel, checkInTime: '15:00', checkOutTime: '12:00' }).description).toBe(
-      'Check-in desde las 15:00, check-out hasta las 12:00. Políticas de Hotel Bambú Plaza en Mocoa y respuestas a las preguntas frecuentes de los huéspedes.',
+      'Check-in desde las 15:00, check-out hasta las 12:00. Normas de la estadía y preguntas frecuentes de Hotel Bambú Plaza en Mocoa.',
     );
+    // "Políticas" is reserved for the legal pages.
+    expect(policiesSeo(hotel).title).not.toMatch(/Políticas/);
   });
 });
 

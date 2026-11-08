@@ -13,9 +13,21 @@ describe('PUBLIC_REDIRECTS (merged pages, C3)', () => {
     });
   });
 
-  it('sends the old FAQ page to the merged policies page with a 301', () => {
+  it('serves the guest information page at /informacion-para-huespedes', () => {
+    expect(routes.policies).toBe('/informacion-para-huespedes');
+  });
+
+  it('sends the old FAQ page straight to the guest information page with a 301', () => {
     expect(target('/preguntas-frecuentes')).toEqual({
       source: '/preguntas-frecuentes',
+      destination: routes.policies,
+      statusCode: 301,
+    });
+  });
+
+  it('sends the renamed /politicas-del-hotel to the guest information page with a 301', () => {
+    expect(target('/politicas-del-hotel')).toEqual({
+      source: '/politicas-del-hotel',
       destination: routes.policies,
       statusCode: 301,
     });
@@ -42,8 +54,9 @@ describe('PUBLIC_REDIRECTS (merged pages, C3)', () => {
 
   it('covers every public page removed since v1 (D6 audit of the git history)', () => {
     // Pages deleted from apps/web/app/(site): contacto and preguntas-frecuentes (C3),
-    // servicios (D3). Old room URLs answer a permanent redirect from the API slug map.
-    const removed = ['/contacto', '/preguntas-frecuentes', '/servicios'];
+    // servicios (D3), politicas-del-hotel (renamed in the 2026-11-08 owner review). Old room URLs
+    // answer a permanent redirect from the API slug map.
+    const removed = ['/contacto', '/preguntas-frecuentes', '/servicios', '/politicas-del-hotel'];
     expect(PUBLIC_REDIRECTS.map((rule) => rule.source).sort()).toEqual(removed.sort());
   });
 

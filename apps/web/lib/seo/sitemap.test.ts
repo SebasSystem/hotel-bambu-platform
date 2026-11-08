@@ -31,7 +31,7 @@ describe('buildSitemap', () => {
       'https://hotelbambuplaza.com/habitaciones/habitacion-pareja',
       'https://hotelbambuplaza.com/ubicacion',
       'https://hotelbambuplaza.com/galeria',
-      'https://hotelbambuplaza.com/politicas-del-hotel',
+      'https://hotelbambuplaza.com/informacion-para-huespedes',
     ]);
   });
 
@@ -57,7 +57,7 @@ describe('buildSitemap', () => {
     expect(at('/ubicacion')).toEqual(new Date('2026-11-05T12:00:00.000Z'));
     // No data source for these pages: no invented date.
     expect(at('/galeria')).toBeUndefined();
-    expect(at('/politicas-del-hotel')).toBeUndefined();
+    expect(at('/informacion-para-huespedes')).toBeUndefined();
   });
 
   it('adds the legal pages only once the hotel approved them', () => {
