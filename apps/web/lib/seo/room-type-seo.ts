@@ -1,5 +1,5 @@
 import { formatRoomPrice } from '@/lib/public/format';
-import { bedsText } from '@/lib/public/rooms';
+import { amenitiesInEveryRoom, bedsText } from '@/lib/public/rooms';
 import { localPhone } from '@/lib/public/cta';
 import type { PublicHotel, PublicRoomTypeDetail } from '@/lib/public/types';
 import { fitDescription, fitTitle } from './limits';
@@ -50,7 +50,9 @@ export function roomTypeSeo(
   const place = [hotel.name, city, hotel.department?.trim() || null].filter(Boolean).join(', ');
   const lead = `${type.name} para ${people(type.capacity)} en ${place}.`;
   const details = [bedsText(type.beds), type.areaM2 ? `${type.areaM2} m²` : null].filter(Boolean);
-  const amenities = type.amenities.slice(0, 3).map((amenity) => amenity.name.toLowerCase());
+  const amenities = amenitiesInEveryRoom(type.amenities)
+    .slice(0, 3)
+    .map((amenity) => amenity.name.toLowerCase());
   const price = formatRoomPrice(type);
   const rate = price ? `Desde ${price.amount}${price.unit ? ` ${price.unit}` : ''}.` : null;
 

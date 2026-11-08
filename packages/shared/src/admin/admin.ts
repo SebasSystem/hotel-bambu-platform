@@ -258,12 +258,24 @@ const roomFields = {
   roomTypeId: idSchema,
   status: publicationStatusSchema,
   sortOrder: sortOrderSchema,
+  /**
+   * Differences from the type's amenities (ROOM scope only): add one the type lacks or mark a type
+   * amenity as missing in this room. The full list replaces the previous one when sent.
+   */
+  amenityOverrides: z
+    .array(z.strictObject({ amenityId: idSchema, available: z.boolean() }))
+    .max(60)
+    .refine(
+      (items) => new Set(items.map((i) => i.amenityId)).size === items.length,
+      'Amenities must be unique',
+    ),
 };
 export const roomCreateSchema = z.strictObject({
   name: roomFields.name,
   roomTypeId: roomFields.roomTypeId,
   status: roomFields.status.default('DRAFT'),
   sortOrder: roomFields.sortOrder.optional(),
+  amenityOverrides: roomFields.amenityOverrides.optional(),
 });
 export const roomUpdateSchema = z.strictObject(roomFields).partial();
 export type RoomCreateInput = z.infer<typeof roomCreateSchema>;

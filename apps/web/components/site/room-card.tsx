@@ -7,7 +7,7 @@ import { ui } from '@/lib/i18n/es';
 import type { ContactCta } from '@/lib/public/cta';
 import { formatRoomPrice } from '@/lib/public/format';
 import { routes } from '@/lib/public/navigation';
-import { bedsText, roomExcerpt, roomTypeLabel } from '@/lib/public/rooms';
+import { bedsText, roomAmenityLabel, roomExcerpt, roomTypeLabel } from '@/lib/public/rooms';
 import type { PublicRoomTypeSummary } from '@/lib/public/types';
 import { IMAGE_SIZES } from '@/lib/public/image-sizes';
 import { ContactCtaLink } from './contact-cta';
@@ -88,7 +88,7 @@ export function RoomCard({
               <li key={amenity.name}>
                 <Chip>
                   <SiteIcon iconKey={amenity.iconKey} className="text-green" />
-                  {amenity.name}
+                  {roomAmenityLabel(amenity)}
                 </Chip>
               </li>
             ))}

@@ -160,6 +160,8 @@ export interface Room extends Timestamps {
   sortOrder: number;
   roomTypeId: string;
   roomType: { id: string; name: string; type: RoomKind; status: PublicationStatus };
+  /** Differences from the type's amenities (owner review A9). */
+  amenityOverrides: { amenityId: string; available: boolean }[];
 }
 
 export interface NearbyPlace extends Timestamps {

@@ -9,6 +9,8 @@ import {
   roomTypeLabel,
   bedsText,
   roomTypeLead,
+  roomAmenityLabel,
+  amenitiesInEveryRoom,
 } from './rooms';
 import type { PublicRoomTypeSummary } from './types';
 
@@ -34,8 +36,10 @@ function room(
     beds: null,
     areaM2: null,
     amenities: [
-      { name: 'Wi-Fi', iconKey: 'wifi' },
-      ...(slug.endsWith('tv') ? [{ name: 'Televisor', iconKey: 'tv' }] : []),
+      { name: 'Wi-Fi', iconKey: 'wifi', availability: 'ALL' as const },
+      ...(slug.endsWith('tv')
+        ? [{ name: 'Televisor', iconKey: 'tv', availability: 'ALL' as const }]
+        : []),
     ],
   };
 }
@@ -150,5 +154,40 @@ describe('roomTypeLead', () => {
     expect(roomTypeLead({ ...type, capacity: 1, amenities: [] }, null)).toBe(
       'Habitación de pareja para 1 persona.',
     );
+  });
+});
+
+describe('room amenities across the published rooms (owner review A9)', () => {
+  it('labels an amenity only some rooms have', () => {
+    expect(roomAmenityLabel({ name: 'Aire acondicionado', availability: 'SOME' })).toBe(
+      'Aire acondicionado en algunas habitaciones',
+    );
+    expect(roomAmenityLabel({ name: 'Televisor', availability: 'ALL' })).toBe('Televisor');
+  });
+
+  it('keeps only the amenities every room has for facts and structured data', () => {
+    expect(
+      amenitiesInEveryRoom([
+        { name: 'Televisor', availability: 'ALL' as const },
+        { name: 'Aire acondicionado', availability: 'SOME' as const },
+      ]).map((amenity) => amenity.name),
+    ).toEqual(['Televisor']);
+  });
+
+  it('builds the fallback lead only from amenities every room has', () => {
+    expect(
+      roomTypeLead(
+        {
+          name: 'Suite',
+          capacity: 2,
+          description: null,
+          amenities: [
+            { name: 'Televisor', availability: 'ALL' },
+            { name: 'Aire acondicionado', availability: 'SOME' },
+          ],
+        },
+        'Mocoa',
+      ),
+    ).toBe('Suite para 2 personas en el corazón de Mocoa, con televisor.');
   });
 });

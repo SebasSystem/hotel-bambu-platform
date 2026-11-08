@@ -1,3 +1,5 @@
+import type { AmenityAvailability } from '@hotel-bambu/shared';
+import { ui } from '@/lib/i18n/es';
 import type { PublicRoomTypeSummary } from './types';
 
 /** Public room-type vocabulary and URL filter values (`/habitaciones?tipo=pareja`). */
@@ -106,6 +108,23 @@ function listOf(items: string[]): string {
   return `${items.slice(0, -1).join(', ')} y ${items.at(-1)}`;
 }
 
+/** Public availability of a ROOM amenity across the published rooms of a type (A9). */
+interface RoomAmenity {
+  name: string;
+  /** `SOME`: only some rooms have it. Absent in older payloads: every room. */
+  availability?: AmenityAvailability;
+}
+
+/** Chip text: "Aire acondicionado en algunas habitaciones" when not every room has it. */
+export function roomAmenityLabel(amenity: RoomAmenity): string {
+  return amenity.availability === 'SOME' ? `${amenity.name} ${ui.rooms.inSomeRooms}` : amenity.name;
+}
+
+/** Amenities true for every room of the type: the only ones used in facts, SEO and JSON-LD. */
+export function amenitiesInEveryRoom<T extends RoomAmenity>(amenities: readonly T[]): T[] {
+  return amenities.filter((amenity) => amenity.availability !== 'SOME');
+}
+
 /**
  * Lead text of a room type page: the first paragraph of the hotel's description, or a factual
  * sentence built from the type (capacity, city, room amenities) when there is none yet.
@@ -115,14 +134,16 @@ export function roomTypeLead(
     name: string;
     capacity: number;
     description: string | null;
-    amenities: { name: string }[];
+    amenities: RoomAmenity[];
   },
   city: string | null,
 ): string {
   const written = roomExcerpt(type.description, 400);
   if (written) return written;
   const people = `${type.capacity} ${type.capacity === 1 ? 'persona' : 'personas'}`;
-  const amenities = type.amenities.map((amenity) => amenity.name.toLowerCase());
+  const amenities = amenitiesInEveryRoom(type.amenities).map((amenity) =>
+    amenity.name.toLowerCase(),
+  );
   return `${type.name} para ${people}${city ? ` en el corazón de ${city}` : ''}${
     amenities.length > 0 ? `, con ${listOf(amenities)}` : ''
   }.`;

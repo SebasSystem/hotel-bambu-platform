@@ -614,10 +614,94 @@ describe.skipIf(!databaseUrl)('API integration (hotel_test database)', () => {
     });
     expect(ok.statusCode).toBe(200);
     const type = (await call('GET', '/public/room-types/suite-prueba')).json();
-    expect(type.amenities).toEqual([{ name: 'Televisor', iconKey: 'tv' }]);
+    expect(type.amenities).toEqual([{ name: 'Televisor', iconKey: 'tv', availability: 'ALL' }]);
     // An amenity still assigned to room types cannot move to the HOTEL scope.
     const scope = await call('PATCH', `/admin/amenities/${tv.id}`, { body: { scope: 'HOTEL' } });
     expect(scope.statusCode).toBe(409);
+  });
+
+  it('overrides amenities per room and shows partial ones as available in some rooms', async () => {
+    const amenities = (await call('GET', '/admin/amenities')).json() as {
+      id: string;
+      name: string;
+      scope: string;
+    }[];
+    const tv = amenities.find((a) => a.name === 'Televisor')!;
+    const fan = amenities.find((a) => a.name === 'Ventilador')!;
+    const bathroom = amenities.find((a) => a.name === 'Baño privado')!;
+    const wifi = amenities.find((a) => a.scope === 'HOTEL')!;
+    const publicAmenities = async () =>
+      (await call('GET', '/public/room-types/suite-prueba')).json().amenities as unknown[];
+
+    // Two published rooms of the type (102 is left from the rooms test).
+    const second = await call('POST', '/admin/rooms', {
+      body: { name: '103', roomTypeId: typeId, status: 'PUBLISHED' },
+    });
+    expect(second.statusCode).toBe(201);
+    expect(second.json().amenityOverrides).toEqual([]);
+    const rooms = (await call('GET', '/admin/rooms')).json() as { id: string; name: string }[];
+    const room102 = rooms.find((r) => r.name === '102')!;
+
+    // HOTEL amenities cannot be overridden per room.
+    const bad = await call('PATCH', `/admin/rooms/${room102.id}`, {
+      body: { amenityOverrides: [{ amenityId: wifi.id, available: true }] },
+    });
+    expect(bad.statusCode).toBe(422);
+    expect(bad.json().details[0].path).toBe('amenityOverrides');
+
+    revalidate.mockClear();
+    const changed = await call('PATCH', `/admin/rooms/${room102.id}`, {
+      body: {
+        amenityOverrides: [
+          { amenityId: tv.id, available: false },
+          { amenityId: fan.id, available: true },
+          // Redundant (the type has no private bathroom either): not stored.
+          { amenityId: bathroom.id, available: false },
+        ],
+      },
+    });
+    expect(changed.statusCode).toBe(200);
+    expect(changed.json().amenityOverrides).toHaveLength(2);
+    expect(changed.json().amenityOverrides).toEqual(
+      expect.arrayContaining([
+        { amenityId: tv.id, available: false },
+        { amenityId: fan.id, available: true },
+      ]),
+    );
+    expect(revalidate).toHaveBeenCalledWith(expect.arrayContaining(['rooms']));
+    const audit = await prisma.auditLog.findFirst({
+      where: { action: 'room.update', entityId: room102.id },
+      orderBy: { createdAt: 'desc' },
+    });
+    expect(audit?.summary).toMatchObject({ fields: ['amenityOverrides'] });
+
+    // TV in one of two rooms, fan only in one: both "in some rooms".
+    expect(await publicAmenities()).toEqual([
+      { name: 'Televisor', iconKey: 'tv', availability: 'SOME' },
+      { name: 'Ventilador', iconKey: 'fan', availability: 'SOME' },
+    ]);
+    const [summary] = (await call('GET', '/public/room-types')).json();
+    expect(summary.amenities).toEqual(await publicAmenities());
+
+    // The other room drops the TV too: hidden. Unpublished rooms do not count.
+    await call('PATCH', `/admin/rooms/${second.json().id}`, {
+      body: { amenityOverrides: [{ amenityId: tv.id, available: false }] },
+    });
+    expect(await publicAmenities()).toEqual([
+      { name: 'Ventilador', iconKey: 'fan', availability: 'SOME' },
+    ]);
+    await call('PATCH', `/admin/rooms/${second.json().id}`, { body: { status: 'DRAFT' } });
+    expect(await publicAmenities()).toEqual([
+      { name: 'Ventilador', iconKey: 'fan', availability: 'ALL' },
+    ]);
+
+    // Clearing the overrides restores the inherited amenities; deleting a room removes its rows.
+    await call('PATCH', `/admin/rooms/${room102.id}`, { body: { amenityOverrides: [] } });
+    expect(await publicAmenities()).toEqual([
+      { name: 'Televisor', iconKey: 'tv', availability: 'ALL' },
+    ]);
+    expect((await call('DELETE', `/admin/rooms/${second.json().id}`)).statusCode).toBe(204);
+    expect(await prisma.roomAmenityOverride.count({ where: { roomId: second.json().id } })).toBe(0);
   });
 
   it('manages ordered hero slides and exposes the active ones publicly', async () => {

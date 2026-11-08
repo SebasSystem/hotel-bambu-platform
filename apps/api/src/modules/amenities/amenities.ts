@@ -78,13 +78,16 @@ export class AmenitiesService {
   }
 
   async update(actorId: string, id: string, input: AmenityUpdateInput) {
-    if (
-      input.scope === 'HOTEL' &&
-      (await this.prisma.roomTypeAmenity.count({ where: { amenityId: id } }))
-    ) {
-      throw new ConflictException(
-        'Remove the amenity from every room type before making it hotel-wide.',
-      );
+    if (input.scope === 'HOTEL') {
+      const [types, rooms] = await Promise.all([
+        this.prisma.roomTypeAmenity.count({ where: { amenityId: id } }),
+        this.prisma.roomAmenityOverride.count({ where: { amenityId: id } }),
+      ]);
+      if (types + rooms > 0) {
+        throw new ConflictException(
+          'Remove the amenity from every room type and room before making it hotel-wide.',
+        );
+      }
     }
     const amenity = await this.prisma.amenity.update({ where: { id }, data: input });
     await this.changes.record(
@@ -100,7 +103,10 @@ export class AmenitiesService {
     return amenity;
   }
 
-  /** Amenities assigned to room types are protected by the FK (409); deactivate them instead. */
+  /**
+   * Amenities assigned to room types or used in room overrides are protected by the FK (409);
+   * deactivate them instead.
+   */
   async remove(actorId: string, id: string) {
     await this.prisma.amenity.delete({ where: { id } });
     await this.changes.record(

@@ -68,7 +68,11 @@ const room: PublicRoomTypeDetail = {
   priceUnit: 'PER_NIGHT',
   taxesIncluded: true,
   cover: media,
-  amenities: [{ name: 'Baño privado', iconKey: 'bath' }],
+  amenities: [
+    { name: 'Baño privado', iconKey: 'bath', availability: 'ALL' },
+    // Only in some rooms: left out of the structured data (it would not be true for every room).
+    { name: 'Aire acondicionado', iconKey: 'snowflake', availability: 'SOME' },
+  ],
   publishedRoomCount: 8,
   beds: [{ type: 'DOUBLE', count: 1 }],
   areaM2: null,
@@ -251,6 +255,9 @@ describe('roomJsonLd', () => {
       description: 'Cama doble y luz natural.',
       bed: [{ '@type': 'BedDetails', numberOfBeds: 1, typeOfBed: 'Doble' }],
       containedInPlace: { '@type': 'Hotel', '@id': 'https://hotel.test/#hotel', name: hotel.name },
+      amenityFeature: [
+        { '@type': 'LocationFeatureSpecification', name: 'Baño privado', value: true },
+      ],
     });
     expect(JSON.stringify(data)).not.toContain('Offer');
   });

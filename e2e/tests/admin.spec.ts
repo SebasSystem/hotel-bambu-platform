@@ -183,7 +183,9 @@ test.describe('admin', () => {
       // Home sections: relabelled switches, no order control.
       await page.goto('/admin/content');
       await expect(
-        page.getByRole('switch', { name: 'Mostrar «Resumen de políticas» en la portada' }),
+        page.getByRole('switch', {
+          name: 'Mostrar «Resumen de información para huéspedes» en la portada',
+        }),
       ).toBeVisible();
       await expect(page.getByRole('button', { name: /^Subir|^Bajar/ })).toHaveCount(0);
     } finally {

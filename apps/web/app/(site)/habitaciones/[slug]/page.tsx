@@ -22,7 +22,7 @@ import { roomTypeSeo } from '@/lib/seo/room-type-seo';
 import { getRoomType, getRoomTypes, getSite } from '@/lib/public/api';
 import { contactCta } from '@/lib/public/cta';
 import { routes } from '@/lib/public/navigation';
-import { otherRooms, roomTypeLabel, roomTypeLead } from '@/lib/public/rooms';
+import { otherRooms, roomAmenityLabel, roomTypeLabel, roomTypeLead } from '@/lib/public/rooms';
 
 export async function generateMetadata({
   params,
@@ -159,7 +159,7 @@ export default async function RoomPage({ params }: PageProps<'/habitaciones/[slu
                           iconKey={amenity.iconKey}
                           className="size-[18px] shrink-0 text-green"
                         />
-                        {amenity.name}
+                        {roomAmenityLabel(amenity)}
                       </li>
                     ))}
                   </ul>

@@ -241,14 +241,15 @@ model RoomType {
 /// A physical room: number/name and status. A PUBLISHED room counts on the site when its type is
 /// PUBLISHED; DRAFT and INACTIVE rooms do not count (INACTIVE also covers "out of service").
 model Room {
-  id         String            @id @default(uuid(7)) @db.Uuid
-  name       String
-  roomTypeId String            @db.Uuid
-  roomType   RoomType          @relation(fields: [roomTypeId], references: [id], onDelete: Restrict)
-  status     PublicationStatus @default(DRAFT)
-  sortOrder  Int               @default(0)
-  createdAt  DateTime          @default(now()) @db.Timestamptz(3)
-  updatedAt  DateTime          @updatedAt @db.Timestamptz(3)
+  id               String                @id @default(uuid(7)) @db.Uuid
+  name             String
+  roomTypeId       String                @db.Uuid
+  roomType         RoomType              @relation(fields: [roomTypeId], references: [id], onDelete: Restrict)
+  status           PublicationStatus     @default(DRAFT)
+  sortOrder        Int                   @default(0)
+  createdAt        DateTime              @default(now()) @db.Timestamptz(3)
+  updatedAt        DateTime              @updatedAt @db.Timestamptz(3)
+  amenityOverrides RoomAmenityOverride[]
 
   @@index([roomTypeId, status])
   @@index([sortOrder])
@@ -286,19 +287,20 @@ model RoomTypeImage {
 /// room equipment (scope ROOM: private bathroom, TV, fan...). Only ROOM amenities are linked to
 /// room types through RoomTypeAmenity (enforced by the API).
 model Amenity {
-  id          String            @id @default(uuid(7)) @db.Uuid
-  name        String            @unique
-  description String?
+  id            String                @id @default(uuid(7)) @db.Uuid
+  name          String                @unique
+  description   String?
   /// Key from the controlled icon catalog (@hotel-bambu/shared ICON_KEYS).
-  iconKey     String
-  scope       AmenityScope      @default(ROOM)
-  active      Boolean           @default(true)
+  iconKey       String
+  scope         AmenityScope          @default(ROOM)
+  active        Boolean               @default(true)
   /// HOTEL: shown in the home hotel panel. ROOM: shown in the home "all rooms" grid.
-  showOnHome  Boolean           @default(false)
-  sortOrder   Int               @default(0)
-  createdAt   DateTime          @default(now()) @db.Timestamptz(3)
-  updatedAt   DateTime          @updatedAt @db.Timestamptz(3)
-  roomTypes   RoomTypeAmenity[]
+  showOnHome    Boolean               @default(false)
+  sortOrder     Int                   @default(0)
+  createdAt     DateTime              @default(now()) @db.Timestamptz(3)
+  updatedAt     DateTime              @updatedAt @db.Timestamptz(3)
+  roomTypes     RoomTypeAmenity[]
+  roomOverrides RoomAmenityOverride[]
 
   @@index([active, sortOrder])
   @@index([scope, active, sortOrder])
@@ -312,6 +314,22 @@ model RoomTypeAmenity {
   createdAt  DateTime @default(now()) @db.Timestamptz(3)
 
   @@id([roomTypeId, amenityId])
+  @@index([amenityId])
+}
+
+/// Room-level difference from its type's amenities (owner review A9). `available` true adds an
+/// amenity the type lacks; false marks a type amenity as missing in this room. Only differences are
+/// stored and only ROOM amenities are allowed (enforced by the API). Deleting the room deletes its
+/// overrides; an amenity used here is protected like one assigned to a type (deactivate it instead).
+model RoomAmenityOverride {
+  roomId    String   @db.Uuid
+  room      Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  amenityId String   @db.Uuid
+  amenity   Amenity  @relation(fields: [amenityId], references: [id], onDelete: Restrict)
+  available Boolean
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+
+  @@id([roomId, amenityId])
   @@index([amenityId])
 }
 

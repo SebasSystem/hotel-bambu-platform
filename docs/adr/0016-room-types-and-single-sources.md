@@ -106,3 +106,16 @@ transaction:
   draft accepts any existing image, as the PUT does, and publishing keeps enforcing the cover rule.
   Chosen over "create, then PUT" from the browser, which could leave a type without its images when
   the second call fails.
+- Addendum (2026-11-08, owner review A9): per-room differences live in `RoomAmenityOverride`
+  (`roomId`, `amenityId`, `available`; primary key on the pair, cascade on room delete, restrict on
+  amenity delete like `RoomTypeAmenity`). A room inherits its type's ROOM amenities; `available:
+  true` adds one the type lacks, `false` marks a type amenity as missing in that room. Only real
+  differences are stored (`normalizeRoomAmenityOverrides` in `@hotel-bambu/shared`), so a type
+  without overrides behaves exactly as before. Rooms send the full list as `amenityOverrides` on
+  `POST`/`PATCH /admin/rooms` (replaced in one transaction, audited as `room.update`, `rooms` tag
+  revalidated). Public room types compute `availability` per amenity across their PUBLISHED rooms
+  (`roomTypeAmenityAvailability`): every room → `ALL`, some → `SOME` ("en algunas habitaciones"),
+  none → omitted; without published rooms the type amenities are `ALL`. JSON-LD keeps only `ALL`.
+  Chosen over a separate per-room amenity list (no inheritance: every type change would need
+  editing every room) and over new room types (the owner decision: a new type only when the price
+  differs).

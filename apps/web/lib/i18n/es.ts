@@ -52,6 +52,7 @@ export const ui = {
     all: 'Todas',
     others: 'Otros tipos de habitación',
     includes: 'Incluye',
+    inSomeRooms: 'en algunas habitaciones',
     beds: 'Camas',
     area: 'Área',
     back: 'Todas las habitaciones',

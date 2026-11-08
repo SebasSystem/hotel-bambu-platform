@@ -27,7 +27,7 @@ export const SECTION_COPY: Record<string, { label: string; description: string }
     description: 'El texto «Sobre nosotros» de Datos del hotel, con una foto.',
   },
   FAQ: {
-    label: 'Resumen de políticas',
+    label: 'Resumen de información para huéspedes',
     description: 'Horarios de entrada y salida, títulos de las políticas y enlace a la página.',
   },
   GALLERY: {

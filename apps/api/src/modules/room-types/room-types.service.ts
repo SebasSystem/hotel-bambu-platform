@@ -8,6 +8,7 @@ import { ConfigService } from '@nestjs/config';
 import {
   CACHE_TAGS,
   roomCacheTag,
+  roomTypeAmenityAvailability,
   uniqueSlug,
   type PublicationStatus,
   type RoomTypeCreateInput,
@@ -36,6 +37,9 @@ const ADMIN_INCLUDE = {
   slugRedirects: { select: { oldSlug: true, createdAt: true }, orderBy: { createdAt: 'asc' } },
   _count: { select: { rooms: true } },
 } satisfies Prisma.RoomTypeInclude;
+
+const ACTIVE_ROOM_AMENITY = { active: true, scope: 'ROOM' } as const;
+const PUBLIC_AMENITY_SELECT = { name: true, iconKey: true, sortOrder: true } as const;
 
 /** Rooms that make a published type "available" on the site. */
 const PUBLISHED_ROOMS = { where: { status: 'PUBLISHED' } } as const;
@@ -429,8 +433,22 @@ export class RoomTypesService {
         include: { mediaAsset: { select: PUBLIC_MEDIA_SELECT } },
       },
       amenities: {
-        where: { amenity: { active: true, scope: 'ROOM' } },
-        include: { amenity: { select: { name: true, iconKey: true, sortOrder: true } } },
+        where: { amenity: ACTIVE_ROOM_AMENITY },
+        include: { amenity: { select: PUBLIC_AMENITY_SELECT } },
+      },
+      // Room-level overrides of the published rooms decide "en algunas habitaciones" (A9).
+      rooms: {
+        ...PUBLISHED_ROOMS,
+        select: {
+          amenityOverrides: {
+            where: { amenity: ACTIVE_ROOM_AMENITY },
+            select: {
+              amenityId: true,
+              available: true,
+              amenity: { select: PUBLIC_AMENITY_SELECT },
+            },
+          },
+        },
       },
       _count: { select: { rooms: PUBLISHED_ROOMS } },
     } satisfies Prisma.RoomTypeInclude;
@@ -454,11 +472,34 @@ export class RoomTypesService {
       publishedRoomCount: type._count.rooms,
       /** Sitemap `lastModified` (requirement 19.1). */
       updatedAt: type.updatedAt,
-      amenities: type.amenities
-        .map((a) => a.amenity)
-        .sort((a, b) => a.sortOrder - b.sortOrder)
-        .map(({ name, iconKey }) => ({ name, iconKey })),
+      amenities: this.presentPublicAmenities(type),
     };
+  }
+
+  /**
+   * Type amenities plus room additions, with their availability across the published rooms:
+   * `ALL` (every room, or no published room yet) or `SOME`; amenities in no room are left out.
+   */
+  private presentPublicAmenities(
+    type: Prisma.RoomTypeGetPayload<{ include: ReturnType<RoomTypesService['publicInclude']> }>,
+  ) {
+    const catalog = new Map(type.amenities.map((a) => [a.amenityId, a.amenity]));
+    for (const room of type.rooms) {
+      for (const override of room.amenityOverrides)
+        catalog.set(override.amenityId, override.amenity);
+    }
+    const availability = roomTypeAmenityAvailability(
+      type.amenities.map((a) => a.amenityId),
+      type.rooms.map((room) => room.amenityOverrides),
+    );
+    return [...availability]
+      .map(([id, value]) => ({ amenity: catalog.get(id)!, availability: value }))
+      .sort((a, b) => a.amenity.sortOrder - b.amenity.sortOrder)
+      .map(({ amenity, availability: value }) => ({
+        name: amenity.name,
+        iconKey: amenity.iconKey,
+        availability: value,
+      }));
   }
 
   async listPublished() {

@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import type { AmenityAvailability } from '../admin/room-amenities.js';
 
 // ─── Cache tags (requirement 21) ────────────────────────────────────────────
 
@@ -146,7 +147,11 @@ export interface PublicRoomTypeSummary {
   publishedRoomCount: number;
   /** ISO 8601; last edit of the type (sitemap `lastModified`). */
   updatedAt: string;
-  amenities: { name: string; iconKey: string }[];
+  /**
+   * ROOM amenities across the published rooms: `ALL` = every room, `SOME` = only some rooms
+   * (room-level overrides, shown as "en algunas habitaciones"). Amenities in no room are omitted.
+   */
+  amenities: { name: string; iconKey: string; availability: AmenityAvailability }[];
   /**
    * Bed setup and area, in the list too (D6): room cards show the beds without one detail
    * request per type.

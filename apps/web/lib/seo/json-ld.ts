@@ -1,7 +1,7 @@
 import { BED_TYPE_LABELS } from '@/lib/labels';
 import { napOf } from '@/lib/public/nap';
 import { routes } from '@/lib/public/navigation';
-import { publishedRoomTotal } from '@/lib/public/rooms';
+import { amenitiesInEveryRoom, publishedRoomTotal } from '@/lib/public/rooms';
 import type {
   PublicHotel,
   PublicMedia,
@@ -131,7 +131,8 @@ function roomNode(room: RoomInput): Json {
     floorSize: room.areaM2
       ? { '@type': 'QuantitativeValue', value: room.areaM2, unitCode: 'MTK' }
       : null,
-    amenityFeature: features(room.amenities.map((amenity) => amenity.name)),
+    // Only amenities every room of the type has: a partial one would not be true for "the room".
+    amenityFeature: features(amenitiesInEveryRoom(room.amenities).map((amenity) => amenity.name)),
   });
 }
 

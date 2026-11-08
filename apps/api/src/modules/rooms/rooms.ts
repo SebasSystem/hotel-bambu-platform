@@ -16,10 +16,12 @@ import {
 } from '@nestjs/common';
 import {
   CACHE_TAGS,
+  normalizeRoomAmenityOverrides,
   reorderSchema,
   roomCreateSchema,
   roomUpdateSchema,
   type ReorderInput,
+  type RoomAmenityOverride,
   type RoomCreateInput,
   type RoomUpdateInput,
 } from '@hotel-bambu/shared';
@@ -40,13 +42,17 @@ const ROOM_SELECT = {
   sortOrder: true,
   roomTypeId: true,
   roomType: { select: { id: true, name: true, type: true, status: true } },
+  amenityOverrides: {
+    select: { amenityId: true, available: true },
+    orderBy: { createdAt: 'asc' },
+  },
   createdAt: true,
   updatedAt: true,
 } as const;
 
 /**
- * Physical rooms (ADR 0016): number or name, type and status only. Everything the site shows
- * about a room lives on its RoomType.
+ * Physical rooms (ADR 0016): number or name, type, status and amenity overrides (owner review A9).
+ * Everything else the site shows about a room lives on its RoomType.
  */
 @Injectable()
 export class RoomsService {
@@ -73,34 +79,92 @@ export class RoomsService {
     }
   }
 
+  /**
+   * Validates overrides (ROOM amenities only, 422 on `amenityOverrides`) and keeps only the real
+   * differences from the room's type.
+   */
+  private async prepareOverrides(
+    roomTypeId: string,
+    overrides: readonly RoomAmenityOverride[],
+  ): Promise<RoomAmenityOverride[]> {
+    const ids = overrides.map((o) => o.amenityId);
+    const found = await this.prisma.amenity.count({ where: { id: { in: ids }, scope: 'ROOM' } });
+    if (found !== ids.length) {
+      throw new UnprocessableEntityException({
+        message: 'Only room amenities can be overridden per room.',
+        details: [
+          { path: 'amenityOverrides', message: 'Unknown or hotel-wide amenity.', code: 'scope' },
+        ],
+      });
+    }
+    const typeAmenities = await this.prisma.roomTypeAmenity.findMany({
+      where: { roomTypeId },
+      select: { amenityId: true },
+    });
+    return normalizeRoomAmenityOverrides(
+      typeAmenities.map((a) => a.amenityId),
+      overrides,
+    );
+  }
+
   async create(actorId: string, input: RoomCreateInput) {
-    await this.assertType(input.roomTypeId);
+    const { amenityOverrides, ...fields } = input;
+    await this.assertType(fields.roomTypeId);
+    const overrides = amenityOverrides
+      ? await this.prepareOverrides(fields.roomTypeId, amenityOverrides)
+      : [];
     const max = await this.prisma.room.aggregate({ _max: { sortOrder: true } });
     const room = await this.prisma.room.create({
-      data: { ...input, sortOrder: input.sortOrder ?? nextSortOrder(max._max.sortOrder) },
+      data: {
+        ...fields,
+        sortOrder: fields.sortOrder ?? nextSortOrder(max._max.sortOrder),
+        amenityOverrides: { create: overrides },
+      },
       select: ROOM_SELECT,
     });
     await this.changes.record(
       actorId,
-      { action: 'room.create', entity: 'Room', entityId: room.id },
+      {
+        action: 'room.create',
+        entity: 'Room',
+        entityId: room.id,
+        ...(overrides.length > 0 ? { summary: { amenityOverrides: overrides.length } } : {}),
+      },
       TAGS,
     );
     return room;
   }
 
   async update(actorId: string, id: string, input: RoomUpdateInput) {
-    if (!(await this.prisma.room.count({ where: { id } }))) {
-      throw new NotFoundException('Room not found.');
-    }
-    await this.assertType(input.roomTypeId);
-    const room = await this.prisma.room.update({ where: { id }, data: input, select: ROOM_SELECT });
+    const current = await this.prisma.room.findUnique({
+      where: { id },
+      select: { roomTypeId: true },
+    });
+    if (!current) throw new NotFoundException('Room not found.');
+    const { amenityOverrides, ...fields } = input;
+    await this.assertType(fields.roomTypeId);
+    const overrides = amenityOverrides
+      ? await this.prepareOverrides(fields.roomTypeId ?? current.roomTypeId, amenityOverrides)
+      : null;
+    // The override list is replaced as a whole, in the same transaction as the room fields.
+    const room = await this.prisma.$transaction(async (tx) => {
+      if (overrides) await tx.roomAmenityOverride.deleteMany({ where: { roomId: id } });
+      return tx.room.update({
+        where: { id },
+        data: { ...fields, ...(overrides ? { amenityOverrides: { create: overrides } } : {}) },
+        select: ROOM_SELECT,
+      });
+    });
     await this.changes.record(
       actorId,
       {
         action: 'room.update',
         entity: 'Room',
         entityId: id,
-        summary: { fields: changedFields(input) },
+        summary: {
+          fields: changedFields(input),
+          ...(overrides ? { amenityOverrides: overrides.length } : {}),
+        },
       },
       TAGS,
     );

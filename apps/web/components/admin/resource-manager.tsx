@@ -3,7 +3,7 @@
 import { Pencil, Plus, Trash2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState, type ReactNode } from 'react';
-import { Controller, useForm, type FieldValues } from 'react-hook-form';
+import { Controller, useForm, useWatch, type FieldValues } from 'react-hook-form';
 import type { z } from 'zod';
 import { browserApi } from '@/lib/api/browser';
 import { applyApiError } from '@/lib/forms/form-errors';
@@ -19,7 +19,7 @@ export interface FieldConfig {
   name: string;
   label: string;
   hint?: string;
-  kind: 'text' | 'textarea' | 'url' | 'checkbox' | 'select' | 'media';
+  kind: 'text' | 'textarea' | 'url' | 'checkbox' | 'select' | 'media' | 'custom';
   required?: boolean;
   rows?: number;
   options?: readonly { value: string; label: string }[];
@@ -29,6 +29,13 @@ export interface FieldConfig {
   wide?: boolean;
   /** Media: problems of the chosen image, shown under the preview (e.g. a small hero photo). */
   mediaWarnings?: (media: { width: number | null; height: number | null }) => string[];
+  /** Custom: renders a controlled value (full width); `values` are the current form values. */
+  render?: (control: {
+    value: unknown;
+    onChange: (value: unknown) => void;
+    values: FieldValues;
+    error?: string;
+  }) => ReactNode;
 }
 
 export interface ResourceManagerProps<T extends { id: string }> {
@@ -198,6 +205,8 @@ function ResourceForm<T extends { id: string }>({
     formState: { errors, isSubmitting, isDirty },
   } = form;
   useUnsavedChangesWarning(isDirty);
+  // Custom fields may depend on other fields (e.g. room amenities on the chosen type).
+  const watchedValues = useWatch({ control });
 
   const onSubmit = handleSubmit(async (values) => {
     setFormError(null);
@@ -232,6 +241,25 @@ function ResourceForm<T extends { id: string }>({
         {fields.map((field) => {
           const wide = field.wide || field.kind === 'textarea' ? 'md:col-span-2' : undefined;
           switch (field.kind) {
+            case 'custom':
+              return (
+                <div key={field.name} className="md:col-span-2">
+                  <Controller
+                    control={control}
+                    name={field.name}
+                    render={({ field: controlled, fieldState }) => (
+                      <>
+                        {field.render?.({
+                          value: controlled.value,
+                          onChange: controlled.onChange,
+                          values: watchedValues,
+                          error: fieldState.error?.message,
+                        })}
+                      </>
+                    )}
+                  />
+                </div>
+              );
             case 'textarea':
               return (
                 <TextAreaField
