@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
+import '@/styles/admin.css';
 
 export const metadata: Metadata = {
   title: { default: 'Panel', template: '%s · Panel Hotel Bambú Plaza' },

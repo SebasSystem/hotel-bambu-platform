@@ -1,0 +1,80 @@
+/*
+ * Admin scrollbars (owner review 2026-11-08): thin, transparent track, a thumb that is barely
+ * visible at rest and clearer on hover or while scrolling (`data-scrolling`, set by
+ * `useScrollingFlag` in components/admin/admin-shell.tsx). Imported by app/admin/layout.tsx only
+ * and scoped to the admin shell, so the public site keeps the browser default.
+ *
+ * Standard properties (Chrome 121+, Firefox) come first; Safari only knows ::-webkit-scrollbar,
+ * which Chrome ignores once scrollbar-color is set. Forced-colors mode keeps the system scrollbar.
+ */
+
+html:has([data-admin-shell]) {
+  --admin-thumb-rest: rgb(38 49 43 / 0.16);
+  --admin-thumb-active: rgb(38 49 43 / 0.42);
+  scrollbar-width: thin;
+  scrollbar-color: var(--admin-thumb-rest) transparent;
+}
+
+html:has([data-admin-shell]):hover,
+html:has([data-admin-shell])[data-scrolling] {
+  scrollbar-color: var(--admin-thumb-active) transparent;
+}
+
+/* Desktop sidebar: same behaviour on the dark surface; it only scrolls when its content overflows. */
+.admin-scroll {
+  --admin-thumb-rest: rgb(255 255 255 / 0.1);
+  --admin-thumb-active: rgb(255 255 255 / 0.32);
+  scrollbar-width: thin;
+  scrollbar-color: var(--admin-thumb-rest) transparent;
+  scrollbar-gutter: auto;
+}
+
+.admin-scroll:hover,
+.admin-scroll:focus-within,
+.admin-scroll[data-scrolling] {
+  scrollbar-color: var(--admin-thumb-active) transparent;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html:has([data-admin-shell]),
+  .admin-scroll {
+    transition: scrollbar-color var(--duration-fast, 150ms) ease;
+  }
+}
+
+/* Safari fallback. */
+html:has([data-admin-shell])::-webkit-scrollbar,
+.admin-scroll::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+  background: transparent;
+}
+
+html:has([data-admin-shell])::-webkit-scrollbar-track,
+.admin-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+html:has([data-admin-shell])::-webkit-scrollbar-thumb,
+.admin-scroll::-webkit-scrollbar-thumb {
+  border: 2px solid transparent;
+  border-radius: 999px;
+  background-clip: padding-box;
+  background-color: var(--admin-thumb-rest);
+}
+
+html:has([data-admin-shell]):hover::-webkit-scrollbar-thumb,
+html:has([data-admin-shell])[data-scrolling]::-webkit-scrollbar-thumb,
+.admin-scroll:hover::-webkit-scrollbar-thumb,
+.admin-scroll:focus-within::-webkit-scrollbar-thumb,
+.admin-scroll[data-scrolling]::-webkit-scrollbar-thumb {
+  background-color: var(--admin-thumb-active);
+}
+
+@media (forced-colors: active) {
+  html:has([data-admin-shell]),
+  .admin-scroll {
+    scrollbar-color: auto;
+    scrollbar-width: auto;
+  }
+}

@@ -20,7 +20,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode, type RefObject } from 'react';
 import { BrandLogo } from '@/components/brand/brand-logo';
 import { browserApi, setCsrfToken } from '@/lib/api/browser';
 import { describeApiError } from '@/lib/forms/form-errors';
@@ -173,10 +173,38 @@ function UserBlock({ onLogout, loggingOut }: { onLogout: () => void; loggingOut:
   );
 }
 
+/** How long the scrollbar stays highlighted after the last scroll event. */
+const SCROLLING_IDLE_MS = 900;
+
+/**
+ * Sets `data-scrolling` on the scrolling element (the document or the given ref) while the user
+ * scrolls, so styles/admin.css can make the thin scrollbar clearer only then.
+ */
+function useScrollingFlag(ref?: RefObject<HTMLElement | null>) {
+  useEffect(() => {
+    const target: HTMLElement | Window | null = ref ? ref.current : window;
+    if (!target) return;
+    const flagged = ref ? ref.current! : document.documentElement;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const onScroll = () => {
+      flagged.setAttribute('data-scrolling', '');
+      clearTimeout(timer);
+      timer = setTimeout(() => flagged.removeAttribute('data-scrolling'), SCROLLING_IDLE_MS);
+    };
+    target.addEventListener('scroll', onScroll, { passive: true });
+    return () => {
+      target.removeEventListener('scroll', onScroll);
+      clearTimeout(timer);
+      flagged.removeAttribute('data-scrolling');
+    };
+  }, [ref]);
+}
+
 /**
  * Admin shell on the mockup layout: a 260 px deep-green sidebar (brand, grouped nav, user block)
  * and a 74 px white topbar with the breadcrumb and "Ver sitio". Below the desktop breakpoint the
- * sidebar becomes a modal drawer (AdminDrawer) and nothing overflows the viewport.
+ * sidebar becomes a modal drawer (AdminDrawer) and nothing overflows the viewport. The document
+ * and the sidebar use the thin admin scrollbar (`data-admin-shell`, `.admin-scroll`).
  */
 export function AdminShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
@@ -184,6 +212,9 @@ export function AdminShell({ children }: { children: ReactNode }) {
   const toast = useToast();
   const [loggingOut, setLoggingOut] = useState(false);
   const current = activeNav(pathname);
+  const sidebarRef = useRef<HTMLDivElement>(null);
+  useScrollingFlag();
+  useScrollingFlag(sidebarRef);
 
   const logout = async () => {
     setLoggingOut(true);
@@ -209,7 +240,10 @@ export function AdminShell({ children }: { children: ReactNode }) {
   );
 
   return (
-    <div className="min-h-dvh bg-admin-bg desk:grid desk:grid-cols-[260px_minmax(0,1fr)]">
+    <div
+      data-admin-shell=""
+      className="min-h-dvh bg-admin-bg desk:grid desk:grid-cols-[260px_minmax(0,1fr)]"
+    >
       <a
         href="#admin-main"
         data-surface="dark"
@@ -219,7 +253,10 @@ export function AdminShell({ children }: { children: ReactNode }) {
       </a>
       {/* The green column spans the whole page; its content sticks to the viewport (defect 9). */}
       <aside data-admin-inert="" data-surface="dark" className="hidden bg-green-900 desk:block">
-        <div className="sticky top-0 flex h-dvh flex-col overflow-y-auto px-[18px] py-6 text-ivory">
+        <div
+          ref={sidebarRef}
+          className="admin-scroll sticky top-0 flex h-dvh flex-col overflow-y-auto px-[18px] py-6 text-ivory"
+        >
           {brand}
           <AdminNav pathname={pathname} idPrefix="sidebar" />
           <UserBlock onLogout={() => void logout()} loggingOut={loggingOut} />
