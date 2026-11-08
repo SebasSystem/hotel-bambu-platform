@@ -2,13 +2,13 @@ import Link from 'next/link';
 import type { ReactNode } from 'react';
 import { BrandLogo } from '@/components/brand/brand-logo';
 import { CookieSettingsButton } from '@/components/consent/consent-manager';
-import { SOCIAL_PLATFORM_LABELS } from '@/lib/labels';
 import { ui } from '@/lib/i18n/es';
 import { footerNav, infoNav, legalNav } from '@/lib/public/navigation';
 import type { ContactCta } from '@/lib/public/cta';
 import { napOf } from '@/lib/public/nap';
 import { displayPhone, telHref } from '@/lib/public/site';
 import type { PublicSite } from '@/lib/public/types';
+import { SocialLinks } from './social-links';
 import { container } from './styles';
 import { WhatsAppLink } from './whatsapp-link';
 
@@ -51,25 +51,7 @@ export function Footer({ site, cta }: { site: PublicSite; cta: ContactCta | null
             {hotel.shortDescription ? (
               <p className="mt-5 max-w-[320px] leading-body">{hotel.shortDescription}</p>
             ) : null}
-            {site.socialLinks.length > 0 ? (
-              <ul aria-label={ui.footer.social} className="mt-5 flex flex-wrap gap-x-4 gap-y-2">
-                {site.socialLinks.map((social) => (
-                  <li key={social.id}>
-                    <a
-                      href={social.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className={footerLink}
-                    >
-                      {SOCIAL_PLATFORM_LABELS[
-                        social.platform as keyof typeof SOCIAL_PLATFORM_LABELS
-                      ] ?? social.platform}
-                      <span className="sr-only"> {ui.whatsapp.newTab}</span>
-                    </a>
-                  </li>
-                ))}
-              </ul>
-            ) : null}
+            <SocialLinks links={site.socialLinks} hotelName={hotel.name} />
           </div>
 
           <nav aria-label={ui.footer.explore}>

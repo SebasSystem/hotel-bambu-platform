@@ -98,6 +98,18 @@ export const ui = {
     info: 'Información',
     legal: 'Legal',
     social: 'Redes sociales',
+    /** Public platform names for the footer icons (admin labels live in lib/labels.ts). */
+    socialLabel: (platform: string) =>
+      ({
+        FACEBOOK: 'Facebook',
+        INSTAGRAM: 'Instagram',
+        TIKTOK: 'TikTok',
+        YOUTUBE: 'YouTube',
+        X: 'X',
+        TRIPADVISOR: 'Tripadvisor',
+        GOOGLE_BUSINESS: 'Google',
+      })[platform] ?? 'Sitio web',
+    socialName: (label: string, hotel: string) => `${label} de ${hotel}`,
     rnt: 'Registro Nacional de Turismo (RNT)',
     cookies: 'Configurar cookies',
     rights: (year: number, name: string) => `© ${year} ${name}. Todos los derechos reservados.`,

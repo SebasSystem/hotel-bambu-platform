@@ -28,6 +28,7 @@ Spanish (es-CO) public pages for visitors. Requirements 4, 5, 8, 17.5–17.6, 19
 - The header shows both channels (owner review 2026-11-08), all from the hotel profile: on desktop an "Escribir por WhatsApp" button plus the phone (`phoneContact`) as a `tel:` link next to it (a round icon below 1280 px, icon + number from 1280 px); with only a phone, the phone button. On phones the header keeps a call icon when a phone exists (a WhatsApp icon otherwise) and WhatsApp lives in the floating button.
 - WhatsApp messages come from code defaults plus the editable greeting (`buildWhatsAppMessage` in `packages/shared`: `GENERAL`, or `ROOM_TYPE` naming the room). Links open in a new tab with `rel="noopener noreferrer"`. Opening WhatsApp is not a booking, and the copy says so.
 - The floating WhatsApp button only exists when a number is set (it has no phone fallback). It sits at least 24 px from the bottom-right corner, and the footer keeps bottom padding taller than the button so its last row is never covered.
+- Footer social profiles (`SocialLinks`) show an inline SVG brand icon (no icon dependency, no external script) and the platform name; each link is named "Instagram de Hotel Bambú Plaza" and opens in a new tab. The same URLs feed the Hotel JSON-LD `sameAs`.
 - `WHATSAPP_CLICK`, `MAP_CLICK`, `PAGE_VIEW` and `ROOM_VIEW` events are sent only when `hasConsent('analytics')` is true (see Cookie consent).
 
 ## Rates
