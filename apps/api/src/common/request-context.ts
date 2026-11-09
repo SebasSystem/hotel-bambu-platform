@@ -1,12 +1,9 @@
 import { createParamDecorator, type ExecutionContext, SetMetadata } from '@nestjs/common';
+import type { AuthUser } from '@hotel-bambu/shared';
 import type { FastifyRequest } from 'fastify';
 
-export interface AuthenticatedAdmin {
-  id: string;
-  email: string;
-  name: string | null;
-  role: 'ADMIN';
-}
+/** Signed-in admin with role and effective permissions (shared `AuthUser`, `GET /auth/me`). */
+export type AuthenticatedAdmin = AuthUser;
 
 export interface AuthenticatedSession {
   id: string;

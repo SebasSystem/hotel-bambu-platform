@@ -1,3 +1,4 @@
+import { SYSTEM_ROLE_NAME } from '@hotel-bambu/shared';
 import { z } from 'zod';
 import type { PrismaClient } from '../../generated/prisma/client.js';
 import { PASSWORD_POLICY_MESSAGES, checkPasswordPolicy, hashPassword } from '../auth/password.js';
@@ -12,14 +13,18 @@ export interface CreateAdminInput {
   email: string;
   password: string;
   name?: string | undefined;
+  /** Role name (CLI `--role`); defaults to the system role Administrador. Ignored on reset. */
+  role?: string | undefined;
+  /** Role id; takes precedence over `role`. Ignored on reset. */
+  roleId?: string | undefined;
   /** Existing admin: set a new password, unlock the account and revoke every session. */
   resetPassword?: boolean;
 }
 
-type AdminDb = Pick<PrismaClient, 'adminUser' | 'session' | '$transaction'>;
+type AdminDb = Pick<PrismaClient, 'adminUser' | 'role' | 'session' | '$transaction'>;
 
 /**
- * Creates the first/next administrator (requirement 16.1: no public sign-up, no default
+ * Creates the first/next admin user with a role (requirement 16.1: no public sign-up, no default
  * credentials). Validates the email and password policy before touching the database.
  */
 export async function createAdminUser(
@@ -58,8 +63,19 @@ export async function createAdminUser(
     return { id: existing.id, email, action: 'password_reset' };
   }
 
+  const roleName = input.role?.trim() || SYSTEM_ROLE_NAME;
+  const role = await db.role.findUnique({
+    where: input.roleId ? { id: input.roleId } : { name: roleName },
+    select: { id: true },
+  });
+  if (!role) {
+    throw new AdminCreationError(
+      input.roleId ? 'The selected role does not exist.' : `Role "${roleName}" does not exist.`,
+    );
+  }
+
   const created = await db.adminUser.create({
-    data: { email, passwordHash, name: input.name?.trim() || null },
+    data: { email, passwordHash, name: input.name?.trim() || null, roleId: role.id },
     select: { id: true },
   });
   return { id: created.id, email, action: 'created' };

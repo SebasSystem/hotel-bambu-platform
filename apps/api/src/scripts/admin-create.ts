@@ -1,4 +1,5 @@
 import { createInterface } from 'node:readline/promises';
+import { SYSTEM_ROLE_NAME } from '@hotel-bambu/shared';
 import { createAdminUser } from '../modules/admin-users/create-admin.js';
 import { PASSWORD_MIN_LENGTH } from '../modules/auth/password.js';
 import { createScriptPrisma, log, runScript } from './lib/script-runtime.js';
@@ -7,8 +8,19 @@ import { createScriptPrisma, log, runScript } from './lib/script-runtime.js';
  * Creates an administrator (requirement 15.5 / 16.1). Two modes, never default credentials:
  *   - one-shot: ADMIN_EMAIL=... ADMIN_PASSWORD=... [ADMIN_NAME=...] pnpm admin:create
  *   - interactive (TTY): pnpm admin:create   (password typed without echo, asked twice)
+ * `--role <name>` (or `--role=<name>`) picks the role of a new admin; default Administrador.
  * `--reset-password` sets a new password for an existing admin, unlocks it and ends its sessions.
  */
+
+/** Value of `--role <name>` / `--role=<name>`, if given. */
+function roleArgument(argv: readonly string[]): string | undefined {
+  const index = argv.findIndex((arg) => arg === '--role' || arg.startsWith('--role='));
+  if (index === -1) return undefined;
+  const arg = argv[index]!;
+  const value = arg.startsWith('--role=') ? arg.slice('--role='.length) : argv[index + 1];
+  if (!value?.trim() || value.startsWith('--')) throw new Error('--role needs a role name.');
+  return value.trim();
+}
 
 /** Reads a line from a TTY without echoing it. */
 function promptHidden(question: string): Promise<string> {
@@ -68,13 +80,14 @@ async function readCredentials(): Promise<{ email: string; password: string; nam
 
 await runScript('admin:create', async () => {
   const resetPassword = process.argv.includes('--reset-password');
+  const role = roleArgument(process.argv) ?? SYSTEM_ROLE_NAME;
   const credentials = await readCredentials();
   const prisma = createScriptPrisma();
   try {
-    const result = await createAdminUser(prisma, { ...credentials, resetPassword });
+    const result = await createAdminUser(prisma, { ...credentials, role, resetPassword });
     log(
       result.action === 'created'
-        ? `admin:create: created admin ${result.email} (${result.id})`
+        ? `admin:create: created admin ${result.email} (${result.id}) with role ${role}`
         : `admin:create: password reset for ${result.email}; sessions revoked`,
     );
     if (process.env['ADMIN_PASSWORD']) {

@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import type { Env } from '../../config/env.js';
 import { PrismaService } from '../../prisma/prisma.service.js';
 import type { AuthenticatedAdmin, AuthenticatedSession } from '../../common/request-context.js';
+import { AUTHENTICATED_ADMIN_SELECT, toAuthenticatedAdmin } from './authenticated-admin.js';
 import {
   generateSessionToken,
   hashSessionToken,
@@ -71,14 +72,7 @@ export class SessionService {
       where: { tokenHash: hashSessionToken(token) },
       include: {
         adminUser: {
-          select: {
-            id: true,
-            email: true,
-            name: true,
-            role: true,
-            active: true,
-            passwordChangedAt: true,
-          },
+          select: { ...AUTHENTICATED_ADMIN_SELECT, active: true, passwordChangedAt: true },
         },
       },
     });
@@ -96,7 +90,7 @@ export class SessionService {
     }
     return {
       session: { id: row.id, expiresAt: row.expiresAt },
-      admin: { id: user.id, email: user.email, name: user.name, role: user.role },
+      admin: toAuthenticatedAdmin(user),
     };
   }
 

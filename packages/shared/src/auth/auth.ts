@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import type { Permission } from './permissions.js';
 
 /**
  * Auth contract shared by the API and the admin panel (ADR 0008).
@@ -28,8 +29,17 @@ export const changePasswordSchema = z.strictObject({
 });
 export type ChangePasswordInput = z.infer<typeof changePasswordSchema>;
 
+/** The signed-in admin: role and effective permissions (`manage` already implies `view`). */
+export interface AuthUser {
+  id: string;
+  email: string;
+  name: string | null;
+  role: { id: string; name: string };
+  permissions: Permission[];
+}
+
 export interface AuthSessionResponse {
-  user: { id: string; email: string; name: string | null; role: 'ADMIN' };
+  user: AuthUser;
   csrfToken: string;
   expiresAt: string;
 }

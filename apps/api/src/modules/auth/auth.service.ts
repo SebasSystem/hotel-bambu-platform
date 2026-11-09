@@ -12,6 +12,7 @@ import type { Env } from '../../config/env.js';
 import { PrismaService } from '../../prisma/prisma.service.js';
 import type { AuthenticatedAdmin, AuthenticatedSession } from '../../common/request-context.js';
 import { AuditService } from '../audit/audit.service.js';
+import { AUTHENTICATED_ADMIN_SELECT, toAuthenticatedAdmin } from './authenticated-admin.js';
 import { FixedWindowLimiter, isLocked, nextLockoutState } from './login-throttle.js';
 import {
   PASSWORD_POLICY_MESSAGES,
@@ -68,10 +69,7 @@ export class AuthService {
     const user = await this.prisma.adminUser.findUnique({
       where: { email: input.email },
       select: {
-        id: true,
-        email: true,
-        name: true,
-        role: true,
+        ...AUTHENTICATED_ADMIN_SELECT,
         active: true,
         passwordHash: true,
         lockedUntil: true,
@@ -116,7 +114,7 @@ export class AuthService {
     return {
       token,
       session,
-      admin: { id: user.id, email: user.email, name: user.name, role: user.role },
+      admin: toAuthenticatedAdmin(user),
     };
   }
 

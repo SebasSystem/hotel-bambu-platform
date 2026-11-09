@@ -1,4 +1,10 @@
-import type { AmenityScope, IconKey } from '@hotel-bambu/shared';
+import {
+  PERMISSIONS,
+  SYSTEM_ROLE_NAME,
+  type AmenityScope,
+  type IconKey,
+  type Permission,
+} from '@hotel-bambu/shared';
 import type { LandingSectionKey } from '../generated/prisma/enums.js';
 
 /**
@@ -106,5 +112,53 @@ export const AMENITIES: ReadonlyArray<{
     iconKey: 'droplets',
     scope: 'HOTEL',
     showOnHome: true,
+  },
+];
+
+export interface DefaultRole {
+  /** Stable id: the `admin_roles` migration inserts the same rows. */
+  id: string;
+  name: string;
+  description: string;
+  permissions: readonly Permission[];
+  isSystem: boolean;
+}
+
+/**
+ * Seeded admin roles (feature admin-users-roles). Administrador is the system role (every
+ * permission, immutable). The other two are ordinary roles the owner may edit; re-running the seed
+ * never overwrites their permissions. Recepción gains reservation permissions in a later phase.
+ */
+export const DEFAULT_ROLES: readonly DefaultRole[] = [
+  {
+    id: '00000000-0000-7000-8000-000000000001',
+    name: SYSTEM_ROLE_NAME,
+    description: 'Acceso completo al panel, incluidos usuarios y roles.',
+    permissions: PERMISSIONS,
+    isSystem: true,
+  },
+  {
+    id: '00000000-0000-7000-8000-000000000002',
+    name: 'Editor de contenido',
+    description: 'Edita el hotel, las habitaciones, el contenido y la biblioteca de medios.',
+    permissions: [
+      'dashboard.view',
+      'hotel.view',
+      'hotel.manage',
+      'rooms.view',
+      'rooms.manage',
+      'content.view',
+      'content.manage',
+      'media.view',
+      'media.manage',
+    ],
+    isSystem: false,
+  },
+  {
+    id: '00000000-0000-7000-8000-000000000003',
+    name: 'Recepción',
+    description: 'Consulta el resumen del panel.',
+    permissions: ['dashboard.view'],
+    isSystem: false,
   },
 ];

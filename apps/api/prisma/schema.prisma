@@ -17,11 +17,6 @@ datasource db {
 
 // ─── Enums ──────────────────────────────────────────────────────────────────
 
-/// Single role for now (owner decision 2026-11-05, ADR 0016); EDITOR was removed.
-enum AdminRole {
-  ADMIN
-}
-
 /// Kind of a room type (public label and `?tipo=` filter). Extensible with a migration.
 /// Was the enum "RoomType" until the RoomType model took that name (ADR 0016).
 enum RoomKind {
@@ -96,6 +91,20 @@ enum AmenityScope {
 
 // ─── Administration ─────────────────────────────────────────────────────────
 
+/// Admin role (feature admin-users-roles). `permissions` holds keys of the shared catalog
+/// (`packages/shared/src/auth/permissions.ts`). The single system role (Administrador) always has
+/// every permission and cannot be edited or deleted; a partial unique index keeps it single.
+model Role {
+  id          String      @id @default(uuid(7)) @db.Uuid
+  name        String      @unique
+  description String?
+  permissions String[]    @default([])
+  isSystem    Boolean     @default(false)
+  createdAt   DateTime    @default(now()) @db.Timestamptz(3)
+  updatedAt   DateTime    @updatedAt @db.Timestamptz(3)
+  users       AdminUser[]
+}
+
 model AdminUser {
   id                String     @id @default(uuid(7)) @db.Uuid
   /// Stored lowercase and trimmed (normalized by the application).
@@ -103,7 +112,8 @@ model AdminUser {
   name              String?
   /// Argon2id PHC string. Never plaintext.
   passwordHash      String
-  role              AdminRole  @default(ADMIN)
+  roleId            String     @db.Uuid
+  role              Role       @relation(fields: [roleId], references: [id], onDelete: Restrict)
   active            Boolean    @default(true)
   failedAttempts    Int        @default(0)
   lockedUntil       DateTime?  @db.Timestamptz(3)
@@ -113,6 +123,8 @@ model AdminUser {
   updatedAt         DateTime   @updatedAt @db.Timestamptz(3)
   sessions          Session[]
   auditLogs         AuditLog[]
+
+  @@index([roleId])
 }
 
 /// Server-side session. Only the SHA-256 hash of the opaque token is stored.

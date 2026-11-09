@@ -1,6 +1,8 @@
+import { PERMISSIONS } from '@hotel-bambu/shared';
 import type { PrismaClient } from '../generated/prisma/client.js';
 import {
   AMENITIES,
+  DEFAULT_ROLES,
   HOTEL_FACTS,
   HOTEL_NAME,
   LANDING_SECTIONS,
@@ -25,6 +27,8 @@ export interface SeedBaseResult {
   faqs: 'created' | 'kept';
   /** Leftover [DEMO] policies and FAQ removed on this run (earlier demo seeds created them). */
   demoRowsRemoved: number;
+  /** Admin roles after the run (seeded roles are ensured; owner-created roles are counted too). */
+  roles: number;
 }
 
 const isEmpty = (value: string | null | undefined) => !value?.trim();
@@ -38,6 +42,10 @@ const isEmpty = (value: string | null | undefined) => !value?.trim();
  * only when the hotel has none of them. One-off convergence: policies and FAQ whose title/question
  * starts with "[DEMO]" (created by earlier demo seeds) are deleted first, so a database that only
  * had demo rows receives the defaults. No other table is touched by that cleanup.
+ *
+ * Admin roles (`DEFAULT_ROLES`): a missing seeded role is created (matched by name, or by its stable
+ * id when the owner renamed it); edits of ordinary roles are never overwritten. The system role
+ * always gets the whole permission catalog back.
  */
 export async function seedBase(prisma: PrismaClient): Promise<SeedBaseResult> {
   return prisma.$transaction(async (tx) => {
@@ -86,6 +94,21 @@ export async function seedBase(prisma: PrismaClient): Promise<SeedBaseResult> {
       });
     }
 
+    for (const role of DEFAULT_ROLES) {
+      const existing = await tx.role.findFirst({
+        where: role.isSystem ? { isSystem: true } : { OR: [{ name: role.name }, { id: role.id }] },
+        select: { id: true },
+      });
+      if (!existing) {
+        await tx.role.create({ data: { ...role, permissions: [...role.permissions] } });
+      } else if (role.isSystem) {
+        await tx.role.update({
+          where: { id: existing.id },
+          data: { permissions: [...PERMISSIONS] },
+        });
+      }
+    }
+
     const removedPolicies = await tx.hotelPolicy.deleteMany({
       where: { title: { startsWith: DEMO_MARKER } },
     });
@@ -124,6 +147,7 @@ export async function seedBase(prisma: PrismaClient): Promise<SeedBaseResult> {
       policies: createPolicies ? 'created' : 'kept',
       faqs: createFaqs ? 'created' : 'kept',
       demoRowsRemoved: removedPolicies.count + removedFaqs.count,
+      roles: await tx.role.count(),
     };
   });
 }

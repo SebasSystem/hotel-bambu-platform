@@ -1,4 +1,5 @@
 import 'reflect-metadata';
+import { PERMISSIONS } from '@hotel-bambu/shared';
 import type { NestFastifyApplication } from '@nestjs/platform-fastify';
 import { Test } from '@nestjs/testing';
 import sharp from 'sharp';
@@ -10,6 +11,7 @@ import { OBJECT_STORAGE } from '../modules/media/media.service.js';
 import type { ObjectStorage } from '../modules/media/object-storage.js';
 import { RevalidationService } from '../modules/revalidation/revalidation.service.js';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { DEFAULT_ROLES } from '../seeds/base-data.js';
 import { DEFAULT_POLICIES } from '../seeds/default-content.js';
 import { seedBase } from '../seeds/seed-base.js';
 
@@ -197,6 +199,32 @@ describe.skipIf(!databaseUrl)('API integration (hotel_test database)', () => {
     });
   });
 
+  it('ensures the seeded roles on every run without overwriting edited ordinary roles', async () => {
+    const [system, editor, reception] = DEFAULT_ROLES;
+    await prisma.role.update({ where: { id: system!.id }, data: { permissions: [] } });
+    await prisma.role.update({
+      where: { id: editor!.id },
+      data: { permissions: ['rooms.view'], description: 'Editado' },
+    });
+    // A renamed seeded role is kept (matched by its stable id), not duplicated.
+    await prisma.role.update({ where: { id: reception!.id }, data: { name: 'Front desk' } });
+
+    const result = await seedBase(prisma);
+    expect(result.roles).toBe(3);
+    const roles = await prisma.role.findMany({ orderBy: { id: 'asc' } });
+    expect(roles.map((r) => [r.name, r.permissions, r.isSystem])).toEqual([
+      ['Administrador', [...PERMISSIONS], true],
+      ['Editor de contenido', ['rooms.view'], false],
+      ['Front desk', ['dashboard.view'], false],
+    ]);
+
+    await prisma.role.update({
+      where: { id: editor!.id },
+      data: { permissions: [...editor!.permissions], description: editor!.description },
+    });
+    await prisma.role.update({ where: { id: reception!.id }, data: { name: reception!.name } });
+  });
+
   it('answers 404 for the removed promotion, template and per-room endpoints', async () => {
     for (const url of [
       '/public/promotions',
@@ -264,7 +292,14 @@ describe.skipIf(!databaseUrl)('API integration (hotel_test database)', () => {
     expect(csrf).toBeTruthy();
 
     const me = await call('GET', '/auth/me');
-    expect(me.json()).toMatchObject({ user: { email: ADMIN.email }, csrfToken: csrf });
+    expect(me.json()).toMatchObject({
+      user: {
+        email: ADMIN.email,
+        role: { id: DEFAULT_ROLES[0]!.id, name: 'Administrador' },
+        permissions: [...PERMISSIONS],
+      },
+      csrfToken: csrf,
+    });
     // The raw token is never stored.
     const token = cookie.split('=')[1]!;
     expect(await prisma.session.count({ where: { tokenHash: token } })).toBe(0);

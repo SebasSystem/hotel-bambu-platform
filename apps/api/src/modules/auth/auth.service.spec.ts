@@ -11,7 +11,7 @@ interface FakeUser {
   id: string;
   email: string;
   name: string | null;
-  role: 'ADMIN';
+  role: { id: string; name: string; permissions: string[]; isSystem: boolean };
   active: boolean;
   passwordHash: string;
   failedAttempts: number;
@@ -26,7 +26,7 @@ function setup(overrides: Partial<FakeUser> = {}) {
     id: 'admin-1',
     email: 'admin@example.test',
     name: null,
-    role: 'ADMIN',
+    role: { id: 'role-1', name: 'Editor', permissions: ['rooms.manage'], isSystem: false },
     active: true,
     passwordHash,
     failedAttempts: 0,
@@ -85,7 +85,13 @@ describe('AuthService.login', () => {
   it('opens a session and resets counters on success', async () => {
     const { service, user, sessions } = setup({ failedAttempts: 2 });
     const result = await service.login({ email: user.email, password: PASSWORD }, META, NOW);
-    expect(result.admin).toEqual({ id: 'admin-1', email: user.email, name: null, role: 'ADMIN' });
+    expect(result.admin).toEqual({
+      id: 'admin-1',
+      email: user.email,
+      name: null,
+      role: { id: 'role-1', name: 'Editor' },
+      permissions: ['rooms.view', 'rooms.manage'],
+    });
     expect(sessions.create).toHaveBeenCalledWith('admin-1', META, NOW);
     expect(user.failedAttempts).toBe(0);
     expect(user.lastLoginAt).toEqual(NOW);
