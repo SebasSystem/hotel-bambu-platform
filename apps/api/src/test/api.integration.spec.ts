@@ -33,6 +33,7 @@ const VICTIM = { email: 'it-locked@example.test', password: 'integration-lock-20
 const EDITOR = { email: 'it-editor@example.test', password: 'integration-editor-2026' };
 const RECEPTION = { email: 'it-reception@example.test', password: 'integration-front-2026' };
 const CONTENT_ONLY = { email: 'it-content@example.test', password: 'integration-content-2026' };
+const USER_MANAGER = { email: 'it-users@example.test', password: 'integration-users-2026' };
 
 /** Cookie + CSRF token of one signed-in admin (the default jar is the Administrador). */
 interface Jar {
@@ -88,6 +89,7 @@ describe.skipIf(!databaseUrl)('API integration (hotel_test database)', () => {
   const editor: Jar = { cookie: '', csrf: '' };
   const reception: Jar = { cookie: '', csrf: '' };
   const contentOnly: Jar = { cookie: '', csrf: '' };
+  const userManager: Jar = { cookie: '', csrf: '' };
 
   async function call(
     method: 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE',
@@ -993,6 +995,253 @@ describe.skipIf(!databaseUrl)('API integration (hotel_test database)', () => {
     const remove = await call('DELETE', `/admin/media/${uploadedId}`, { as: contentOnly });
     expect(remove.statusCode).toBe(403);
     expect((await call('DELETE', `/admin/media/${uploadedId}`)).statusCode).toBe(204);
+  });
+
+  it('keeps users and roles management to roles with the users permissions', async () => {
+    for (const url of ['/admin/users', '/admin/roles']) {
+      expect((await call('GET', url, { as: editor })).statusCode, url).toBe(403);
+      expect((await call('GET', url, { as: reception })).statusCode, url).toBe(403);
+    }
+    const create = await call('POST', '/admin/users', {
+      as: editor,
+      body: {
+        email: 'nope@example.test',
+        roleId: DEFAULT_ROLES[0]!.id,
+        password: 'a long enough passphrase',
+      },
+    });
+    expect(create.statusCode).toBe(403);
+  });
+
+  let cashierRoleId = '';
+
+  it('lists roles with user counts and manages custom roles', async () => {
+    const list = await call('GET', '/admin/roles');
+    expect(list.statusCode).toBe(200);
+    const roles = list.json() as { name: string; isSystem: boolean; userCount: number }[];
+    expect(roles[0]).toMatchObject({ name: 'Administrador', isSystem: true, userCount: 2 });
+    expect(roles.find((r) => r.name === 'Recepción')).toMatchObject({ userCount: 1 });
+
+    const created = await call('POST', '/admin/roles', {
+      body: { name: 'Caja', description: 'Cobros', permissions: ['media.manage'] },
+    });
+    expect(created.statusCode).toBe(201);
+    expect(created.json()).toMatchObject({
+      name: 'Caja',
+      permissions: ['media.view', 'media.manage'],
+      isSystem: false,
+      userCount: 0,
+    });
+    cashierRoleId = created.json().id;
+
+    const duplicate = await call('POST', '/admin/roles', {
+      body: { name: 'Caja', permissions: [] },
+    });
+    expect(duplicate.statusCode).toBe(409);
+    expect(duplicate.json().code).toBe('ROLE_NAME_TAKEN');
+    const unknownPermission = await call('POST', '/admin/roles', {
+      body: { name: 'Raro', permissions: ['root.manage'] },
+    });
+    expect(unknownPermission.statusCode).toBe(400);
+
+    const edited = await call('PATCH', `/admin/roles/${cashierRoleId}`, {
+      body: { permissions: ['dashboard.view', 'media.view'] },
+    });
+    expect(edited.statusCode).toBe(200);
+    expect(edited.json().permissions).toEqual(['dashboard.view', 'media.view']);
+
+    const systemId = DEFAULT_ROLES[0]!.id;
+    const editSystem = await call('PATCH', `/admin/roles/${systemId}`, {
+      body: { permissions: [] },
+    });
+    expect(editSystem.statusCode).toBe(422);
+    expect(editSystem.json()).toMatchObject({
+      code: 'SYSTEM_ROLE_IMMUTABLE',
+      message: 'The Administrador role cannot be changed or deleted.',
+    });
+    expect((await call('DELETE', `/admin/roles/${systemId}`)).statusCode).toBe(422);
+
+    const inUse = await call('DELETE', `/admin/roles/${DEFAULT_ROLES[2]!.id}`);
+    expect(inUse.statusCode).toBe(409);
+    expect(inUse.json().code).toBe('ROLE_IN_USE');
+  });
+
+  it('creates admin users with a role and the password policy', async () => {
+    const weak = await call('POST', '/admin/users', {
+      body: { email: 'ana@example.test', roleId: cashierRoleId, password: 'ana@example.test-x' },
+    });
+    expect(weak.statusCode).toBe(422);
+    const unknownRole = await call('POST', '/admin/users', {
+      body: {
+        email: 'ana@example.test',
+        roleId: '00000000-0000-7000-8000-0000000000aa',
+        password: 'cuenta de caja segura',
+      },
+    });
+    expect(unknownRole.statusCode).toBe(422);
+    expect(unknownRole.json().code).toBe('ROLE_NOT_FOUND');
+    const taken = await call('POST', '/admin/users', {
+      body: { email: ADMIN.email, roleId: cashierRoleId, password: 'cuenta de caja segura' },
+    });
+    expect(taken.statusCode).toBe(409);
+    expect(taken.json().code).toBe('EMAIL_TAKEN');
+
+    const created = await call('POST', '/admin/users', {
+      body: {
+        email: ' Ana@Example.test ',
+        name: 'Ana',
+        roleId: cashierRoleId,
+        password: 'cuenta de caja segura',
+      },
+    });
+    expect(created.statusCode).toBe(201);
+    expect(created.json()).toMatchObject({
+      email: 'ana@example.test',
+      name: 'Ana',
+      role: { id: cashierRoleId, name: 'Caja', isSystem: false },
+      active: true,
+      lastLoginAt: null,
+    });
+    expect(JSON.stringify(created.json())).not.toMatch(/password|hash/i);
+
+    const users = (await call('GET', '/admin/users')).json() as { email: string }[];
+    expect(users.map((u) => u.email)).toContain('ana@example.test');
+    const login = await call('POST', '/auth/login', {
+      auth: false,
+      csrf: false,
+      body: { email: 'ana@example.test', password: 'cuenta de caja segura' },
+    });
+    expect(login.statusCode).toBe(200);
+    expect(login.json().user.permissions).toEqual(['dashboard.view', 'media.view']);
+  });
+
+  it('refuses to change its own role or deactivate itself', async () => {
+    const self = await prisma.adminUser.findUniqueOrThrow({ where: { email: ADMIN.email } });
+    const demote = await call('PATCH', `/admin/users/${self.id}`, {
+      body: { roleId: DEFAULT_ROLES[1]!.id },
+    });
+    expect(demote.statusCode).toBe(422);
+    expect(demote.json()).toMatchObject({
+      code: 'SELF_ROLE_CHANGE',
+      message: 'You cannot change your own role.',
+    });
+    const deactivate = await call('PATCH', `/admin/users/${self.id}`, { body: { active: false } });
+    expect(deactivate.statusCode).toBe(422);
+    expect(deactivate.json().code).toBe('SELF_DEACTIVATION');
+    const rename = await call('PATCH', `/admin/users/${self.id}`, {
+      body: { name: 'Admin Pruebas', roleId: self.roleId },
+    });
+    expect(rename.statusCode).toBe(200);
+    expect(rename.json().name).toBe('Admin Pruebas');
+  });
+
+  it('keeps at least one active Administrador', async () => {
+    const managerRole = await prisma.role.create({
+      data: { name: 'Gestor de usuarios', permissions: ['users.manage'] },
+    });
+    await createAdminUser(prisma, { ...USER_MANAGER, roleId: managerRole.id });
+    await signIn(userManager, USER_MANAGER);
+
+    const owner = await prisma.adminUser.findUniqueOrThrow({ where: { email: ADMIN.email } });
+    const second = await prisma.adminUser.findUniqueOrThrow({ where: { email: VICTIM.email } });
+    expect(
+      (await call('PATCH', `/admin/users/${second.id}`, { body: { active: false } })).statusCode,
+    ).toBe(200);
+
+    const lastDeactivate = await call('PATCH', `/admin/users/${owner.id}`, {
+      as: userManager,
+      body: { active: false },
+    });
+    expect(lastDeactivate.statusCode).toBe(409);
+    expect(lastDeactivate.json()).toMatchObject({
+      code: 'LAST_ADMINISTRATOR',
+      message: 'At least one active user must keep the Administrador role.',
+    });
+    const lastDemote = await call('PATCH', `/admin/users/${owner.id}`, {
+      as: userManager,
+      body: { roleId: managerRole.id },
+    });
+    expect(lastDemote.statusCode).toBe(409);
+    expect((await prisma.adminUser.findUniqueOrThrow({ where: { id: owner.id } })).active).toBe(
+      true,
+    );
+
+    expect(
+      (await call('PATCH', `/admin/users/${second.id}`, { body: { active: true } })).statusCode,
+    ).toBe(200);
+  });
+
+  it('revokes the sessions of a user on role change, deactivation and password reset', async () => {
+    const editorUser = await prisma.adminUser.findUniqueOrThrow({ where: { email: EDITOR.email } });
+    expect((await call('GET', '/auth/me', { as: editor })).statusCode).toBe(200);
+    const moved = await call('PATCH', `/admin/users/${editorUser.id}`, {
+      body: { roleId: DEFAULT_ROLES[2]!.id },
+    });
+    expect(moved.statusCode).toBe(200);
+    expect(moved.json().role.name).toBe('Recepción');
+    expect((await call('GET', '/auth/me', { as: editor })).statusCode).toBe(401);
+
+    const frontUser = await prisma.adminUser.findUniqueOrThrow({
+      where: { email: RECEPTION.email },
+    });
+    await prisma.adminUser.update({
+      where: { id: frontUser.id },
+      data: { failedAttempts: 3, lockedUntil: new Date(Date.now() + 600_000) },
+    });
+    const reset = await call('POST', `/admin/users/${frontUser.id}/reset-password`, {
+      body: { password: 'nueva clave de recepcion' },
+    });
+    expect(reset.statusCode).toBe(204);
+    expect((await call('GET', '/auth/me', { as: reception })).statusCode).toBe(401);
+    const relogin = await call('POST', '/auth/login', {
+      auth: false,
+      csrf: false,
+      body: { email: RECEPTION.email, password: 'nueva clave de recepcion' },
+    });
+    expect(relogin.statusCode).toBe(200);
+
+    const contentUser = await prisma.adminUser.findUniqueOrThrow({
+      where: { email: CONTENT_ONLY.email },
+    });
+    const disabled = await call('PATCH', `/admin/users/${contentUser.id}`, {
+      body: { active: false },
+    });
+    expect(disabled.statusCode).toBe(200);
+    expect(disabled.json().active).toBe(false);
+    expect((await call('GET', '/auth/me', { as: contentOnly })).statusCode).toBe(401);
+    expect(await prisma.session.count({ where: { adminUserId: contentUser.id } })).toBe(0);
+  });
+
+  it('applies role permission edits on the next request and audits users and roles', async () => {
+    const before = await call('GET', '/admin/rooms', { as: userManager });
+    expect(before.statusCode).toBe(403);
+    const managerRole = await prisma.role.findUniqueOrThrow({
+      where: { name: 'Gestor de usuarios' },
+    });
+    await call('PATCH', `/admin/roles/${managerRole.id}`, {
+      body: { permissions: ['users.manage', 'rooms.view'] },
+    });
+    expect((await call('GET', '/admin/rooms', { as: userManager })).statusCode).toBe(200);
+
+    expect((await call('DELETE', `/admin/roles/${cashierRoleId}`)).statusCode).toBe(409);
+    const ana = await prisma.adminUser.findUniqueOrThrow({ where: { email: 'ana@example.test' } });
+    await call('PATCH', `/admin/users/${ana.id}`, { body: { roleId: DEFAULT_ROLES[2]!.id } });
+    expect((await call('DELETE', `/admin/roles/${cashierRoleId}`)).statusCode).toBe(204);
+
+    const logs = await prisma.auditLog.findMany({
+      where: { entity: { in: ['AdminUser', 'Role'] }, action: { not: { startsWith: 'auth.' } } },
+    });
+    expect(new Set(logs.map((l) => l.action))).toEqual(
+      new Set([
+        'adminUser.create',
+        'adminUser.update',
+        'adminUser.resetPassword',
+        'role.create',
+        'role.update',
+        'role.delete',
+      ]),
+    );
+    expect(JSON.stringify(logs)).not.toMatch(/cuenta de caja segura|nueva clave|passwordHash/);
   });
 
   it('logs out and invalidates the session server-side', async () => {

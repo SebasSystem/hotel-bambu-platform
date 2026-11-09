@@ -5,6 +5,7 @@ import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { LoggerModule } from 'nestjs-pino';
 import { rateLimitOptions } from './common/rate-limit.config.js';
 import { envSchema, type Env } from './config/env.js';
+import { AdminUsersModule } from './modules/admin-users/admin-users.js';
 import { AmenitiesModule } from './modules/amenities/amenities.js';
 import { AuditModule } from './modules/audit/admin-changes.service.js';
 import { AuthModule } from './modules/auth/auth.module.js';
@@ -22,6 +23,7 @@ import { NearbyPlacesModule } from './modules/nearby-places/nearby-places.js';
 import { PoliciesModule } from './modules/policies/policies.js';
 import { PublicModule } from './modules/public/public.js';
 import { RoomTypesModule } from './modules/room-types/room-types.module.js';
+import { RolesModule } from './modules/roles/roles.js';
 import { RoomsModule } from './modules/rooms/rooms.js';
 import { SocialLinksModule } from './modules/social-links/social-links.js';
 import { PrismaModule } from './prisma/prisma.module.js';
@@ -86,6 +88,8 @@ import { PrismaModule } from './prisma/prisma.module.js';
     PoliciesModule,
     SocialLinksModule,
     DashboardModule,
+    AdminUsersModule,
+    RolesModule,
     PublicModule,
   ],
   providers: [

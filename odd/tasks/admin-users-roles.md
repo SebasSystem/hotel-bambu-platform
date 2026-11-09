@@ -30,7 +30,7 @@ Users, roles, permissions, admin UI gating, CLI role flag, docs. Out of scope: r
 ## Tasks
 - [x] U1 Shared permission catalog + Prisma `Role` model, migration (seed roles, map admins), `AdminUser.roleId`; session/`/auth/me` payload with role + permissions; CLI `--role`.
 - [x] U2 API `PermissionGuard` + `@RequirePermission` on every admin controller; media picker any-of rule; coverage test (no admin route without permission).
-- [ ] U3 API users and roles modules (CRUD, protections, session revocation, audit).
+- [x] U3 API users and roles modules (CRUD, protections, session revocation, audit).
 - [ ] U4 Admin web: nav/page gating, dashboard per permission, Usuarios and Roles pages (permission checklist grouped by area), account page shows role.
 - [ ] U5 Docs: ADR 0017, requirements 149 update, ADR 0008 note, security.md, admin-panel.md, api.md, README CLI.
 
@@ -47,10 +47,24 @@ Branch `feat/admin-users-roles` from `feat/owner-review-phase-a`. Forecast ~1,80
   - GREEN: shared 62/62, API 160/160 (23 files, real `hotel_test` DB), web 440/440; `pnpm typecheck`, `pnpm lint` green; `prisma migrate status` up to date; `prisma migrate diff` (dev DB → schema) empty.
   - Design: migration creates `Role`, inserts the three seeded roles with stable ids `00000000-0000-7000-8000-00000000000{1,2,3}`, maps every admin to Administrador, drops `AdminRole`; partial unique index `Role_single_system_key` keeps one system role. Session resolution loads the role per request; the system role always yields the full catalog (`toAuthenticatedAdmin`). `seedBase` ensures roles (match by name or stable id; system permissions reset; ordinary roles never overwritten).
 
+- U2 commit: `8f004c1` feat(auth): enforce role permissions on every admin route.
 - U2 (route: delegated writer; trigger: 15 controller files + guard + tests).
   - RED observed: `permission.guard.spec.ts` (module missing); integration: route-coverage test listed 64 uncovered handlers, editor got 200 on `/admin/audit-logs`, content-only role got 200 on media PATCH.
   - GREEN: guard unit 7/7; API 170/170 (24 files).
   - Design: global guard order Throttler → SessionAuthGuard (session + CSRF) → PermissionGuard. `@RequirePermission(...anyOf)` (handler overrides class; class = `<area>.view`, writes = `<area>.manage`); `@AuthenticatedOnly()` on `AuthController` (own session/account/password); `@Public()` skips. Missing metadata → 403 `{ message: 'You do not have permission to perform this action.', code: 'PERMISSION_DENIED' }`. Media: GET list/by id = `media.view` or any `hotel|rooms|content.manage`; POST upload = `media.manage` or those; PATCH/DELETE = `media.manage`. Coverage test walks `ModulesContainer` controllers + `MetadataScanner` handlers with `PATH_METADATA` inside the integration suite (real DI graph).
+- U3 (route: delegated writer; trigger: shared schemas + 2 API modules + integration tests).
+  - RED observed: `users.test.ts` (module missing); 7 new integration tests failing (routes absent).
+  - GREEN: shared 69/69, API 177/177 (24 files), web 440/440; `pnpm typecheck`, `pnpm lint`, web build green; Prettier clean on changed files; `prisma migrate status` up to date.
+  - Size: ~880 authored lines (≈290 integration tests, ≈200 shared schemas + tests, ≈390 modules). Users and roles share error codes, fixtures and the sequential integration state, so they stay one work unit.
+  - Design: `PATCH /admin/users/:id` runs in a transaction that locks the system role row (`SELECT ... FOR UPDATE`) before the last-Administrador count, so concurrent demotions cannot leave zero. Sessions are revoked after commit with `SessionService.revokeAllForUser` (deactivation and password reset are also rejected by session resolution). Role permission edits apply on the next request (role loaded per request). `users.manage` is effectively full control (it can create roles and users with any permission); grant it only to trusted roles.
+
+## API contract for the web writer (U4)
+- `GET /auth/me` / login / change-password: `user: { id, email, name, role: { id, name }, permissions: Permission[] }` (`AuthUser`; permissions already expanded, `manage` implies `view`). Helpers: `hasPermission`, `hasAnyPermission`, `PERMISSIONS`, `PERMISSION_AREAS`, `SYSTEM_ROLE_NAME` from `@hotel-bambu/shared`.
+- 403 for missing permission: `{ statusCode: 403, error: 'Forbidden', message: 'You do not have permission to perform this action.', code: 'PERMISSION_DENIED' }`.
+- Users (`users.view` for GET, `users.manage` for writes): `GET /admin/users` → `AdminUserSummary[]` `{ id, email, name, role: { id, name, isSystem }, active, lastLoginAt, createdAt }`; `POST /admin/users` body `adminUserCreateSchema` `{ email, name?, roleId, password }` → 201 summary; `PATCH /admin/users/:id` body `adminUserUpdateSchema` `{ name?, roleId?, active? }` → 200 summary; `POST /admin/users/:id/reset-password` body `{ password }` → 204.
+- Roles (`users.view` / `users.manage`): `GET /admin/roles` → `AdminRoleSummary[]` `{ id, name, description, permissions, isSystem, userCount, createdAt, updatedAt }` (system first, then by name); `POST /admin/roles` body `roleCreateSchema` `{ name, description?, permissions }` → 201; `PATCH /admin/roles/:id` body `roleUpdateSchema` (partial) → 200; `DELETE /admin/roles/:id` → 204.
+- Errors carry `code` + constant message (`ADMIN_USER_ERRORS` in shared): 422 `SELF_ROLE_CHANGE`, `SELF_DEACTIVATION`, `ROLE_NOT_FOUND`, `SYSTEM_ROLE_IMMUTABLE`; 409 `LAST_ADMINISTRATOR`, `EMAIL_TAKEN`, `ROLE_NAME_TAKEN`, `ROLE_IN_USE`; 422 `Password does not meet the policy.` with `details[{ path: 'password', code, message }]`; 400 validation as usual. Add the Spanish translations to `lib/forms/messages.ts`.
+- Area → permission map used by the API: dashboard `dashboard.view`; hotel profile, nearby places, social links `hotel.*`; room types, rooms, amenities `rooms.*`; content sections, hero slides, gallery, policies, FAQ `content.*`; media library `media.*` (picker GET and upload also for `hotel|rooms|content.manage`); audit log + analytics `activity.view`; users + roles `users.*`.
 
 ## Next step
-U1–U3 (API) with one delegated writer after A11/A13 finish (shared schema/migration conflicts otherwise).
+U4 (admin web: nav/page gating, users and roles pages) with a web writer, then U5 docs (ADR 0017, requirements 149, ADR 0008 note, security/admin-panel/api docs).

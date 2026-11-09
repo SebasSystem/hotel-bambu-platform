@@ -1,5 +1,6 @@
 export * from './admin/admin.js';
 export * from './admin/room-amenities.js';
+export * from './admin/users.js';
 export * from './auth/auth.js';
 export * from './auth/permissions.js';
 export * from './icons/icons.js';
