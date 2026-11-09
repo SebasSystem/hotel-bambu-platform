@@ -157,7 +157,7 @@ test.describe('admin', () => {
 
       // Grouped Spanish navigation.
       const nav = page.getByRole('navigation', { name: 'Panel' });
-      for (const group of ['Hotel', 'Habitaciones', 'Contenido', 'Cuenta']) {
+      for (const group of ['Hotel', 'Habitaciones', 'Contenido', 'Usuarios', 'Cuenta']) {
         await expect(nav.getByRole('list', { name: group })).toBeVisible();
       }
       await expect(
@@ -190,6 +190,40 @@ test.describe('admin', () => {
       await expect(page.getByRole('button', { name: /^Subir|^Bajar/ })).toHaveCount(0);
     } finally {
       await api.send('DELETE', `/admin/rooms/${room.id}`);
+      await api.dispose();
+    }
+  });
+
+  test('a content editor sees only its sections and is sent away from Usuarios', async ({
+    page,
+  }) => {
+    const api = await adminApi();
+    const roles = await api.get<{ id: string; name: string }[]>('/admin/roles');
+    const editorRole = roles.find((role) => role.name === 'Editor de contenido');
+    if (!editorRole) throw new Error('Seeded role "Editor de contenido" not found');
+    const email = `e2e-editor-${Date.now().toString(36)}@example.test`;
+    const password = 'Una frase de prueba bastante larga';
+    const created = await api.send<{ id: string }>('POST', '/admin/users', {
+      email,
+      name: 'Editora E2E',
+      roleId: editorRole.id,
+      password,
+    });
+    try {
+      await loginAsAdmin(page, { email, password });
+      const nav = page.getByRole('navigation', { name: 'Panel' });
+      await expect(nav.getByRole('link', { name: 'Datos del hotel' })).toBeVisible();
+      await expect(nav.getByRole('link', { name: 'Fotos y medios' })).toBeVisible();
+      await expect(nav.getByRole('link', { name: 'Usuarios' })).toHaveCount(0);
+      await expect(nav.getByRole('link', { name: 'Roles' })).toHaveCount(0);
+      await expect(page.getByText('Editor de contenido').first()).toBeVisible();
+
+      await page.goto('/admin/users');
+      await expect(page).toHaveURL(/\/admin\?acceso=denegado$/);
+      await expect(page.getByText(/No tiene permiso para abrir esa sección/)).toBeVisible();
+    } finally {
+      // Users are never deleted: deactivate the test user (this also ends its sessions).
+      await api.send('PATCH', `/admin/users/${created.id}`, { active: false });
       await api.dispose();
     }
   });

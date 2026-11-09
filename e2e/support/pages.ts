@@ -29,11 +29,20 @@ export async function jsonLd(page: Page): Promise<Record<string, unknown>[]> {
   });
 }
 
-/** Signs in through the login form and waits for the dashboard (counts against the login limit). */
-export async function loginAsAdmin(page: Page): Promise<void> {
+/**
+ * Signs in through the login form and waits for the dashboard (counts against the login limit).
+ * Defaults to the seeded administrator; pass other credentials to sign in with another role.
+ */
+export async function loginAsAdmin(
+  page: Page,
+  credentials: { email: string; password: string } = {
+    email: ADMIN_EMAIL,
+    password: ADMIN_PASSWORD,
+  },
+): Promise<void> {
   await page.goto('/admin/login');
-  await page.getByLabel('Correo electrónico').fill(ADMIN_EMAIL);
-  await page.getByLabel('Contraseña').fill(ADMIN_PASSWORD);
+  await page.getByLabel('Correo electrónico').fill(credentials.email);
+  await page.getByLabel('Contraseña').fill(credentials.password);
   await page.getByRole('button', { name: 'Ingresar' }).click();
   await expect(page).toHaveURL(/\/admin\/?$/);
 }
