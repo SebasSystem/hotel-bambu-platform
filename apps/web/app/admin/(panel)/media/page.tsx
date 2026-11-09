@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { PageHeader } from '@/components/admin/ui';
+import { requirePermission } from '@/lib/admin/session';
 import { serverApi } from '@/lib/api/server';
 import type { MediaAsset, Paginated } from '@/lib/api/types';
 import { MediaLibrary } from './media-library';
@@ -11,6 +12,7 @@ export default async function MediaPage({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
+  await requirePermission('media.view');
   const params = await searchParams;
   const page = Math.max(1, Number.parseInt(String(params.page ?? '1'), 10) || 1);
   const missingAlt = params.missingAlt === 'true';

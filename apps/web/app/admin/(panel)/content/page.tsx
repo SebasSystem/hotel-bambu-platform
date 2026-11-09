@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Card, CardHeader, Notice, PageHeader } from '@/components/admin/ui';
+import { requirePermission } from '@/lib/admin/session';
 import { serverApi } from '@/lib/api/server';
 import type { LandingSection } from '@/lib/api/types';
 import { SectionsManager } from './section-form';
@@ -8,6 +9,7 @@ import { SectionsManager } from './section-form';
 export const metadata: Metadata = { title: 'Secciones de la portada' };
 
 export default async function ContentPage() {
+  await requirePermission('content.view');
   const sections = await serverApi.get<LandingSection[]>('/admin/content');
   return (
     <>

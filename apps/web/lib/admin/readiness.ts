@@ -58,6 +58,22 @@ export interface ReadinessData {
   media: { total: number; missingAlt: number };
 }
 
+/** Hotel facts used when the role cannot read the hotel profile (those items are then hidden). */
+export const EMPTY_READINESS_HOTEL: ReadinessData['hotel'] = {
+  tagline: null,
+  description: null,
+  address: null,
+  municipality: null,
+  department: null,
+  latitude: null,
+  longitude: null,
+  phone: null,
+  whatsappNumber: null,
+  email: null,
+  checkInTime: null,
+  checkOutTime: null,
+};
+
 export type ChecklistId =
   | 'whatsapp'
   | 'rates'

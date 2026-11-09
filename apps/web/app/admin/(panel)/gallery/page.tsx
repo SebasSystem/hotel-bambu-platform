@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { PageHeader } from '@/components/admin/ui';
+import { requirePermission } from '@/lib/admin/session';
 import { serverApi } from '@/lib/api/server';
 import type { GalleryItem } from '@/lib/api/types';
 import { GalleryManager } from './gallery-manager';
@@ -7,6 +8,7 @@ import { GalleryManager } from './gallery-manager';
 export const metadata: Metadata = { title: 'Galería' };
 
 export default async function GalleryPage() {
+  await requirePermission('content.view');
   const items = await serverApi.get<GalleryItem[]>('/admin/gallery');
   return (
     <>

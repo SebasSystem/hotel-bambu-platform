@@ -1,6 +1,7 @@
 import { MapPin, Pencil } from 'lucide-react';
 import type { Metadata } from 'next';
 import { ButtonLink, Card, CardHeader, PageHeader, WarningBadge } from '@/components/admin/ui';
+import { requirePermission } from '@/lib/admin/session';
 import { serverApi } from '@/lib/api/server';
 import type { HotelProfile, NearbyPlace } from '@/lib/api/types';
 import { NearbyPlacesManager } from './nearby-places-manager';
@@ -8,6 +9,7 @@ import { NearbyPlacesManager } from './nearby-places-manager';
 export const metadata: Metadata = { title: 'Ubicación y lugares cercanos' };
 
 export default async function NearbyPlacesPage() {
+  await requirePermission('hotel.view');
   const [items, hotel] = await Promise.all([
     serverApi.get<NearbyPlace[]>('/admin/nearby-places'),
     serverApi.get<HotelProfile>('/admin/hotel'),

@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { PageHeader } from '@/components/admin/ui';
+import { requirePermission } from '@/lib/admin/session';
 import { serverApi } from '@/lib/api/server';
 import type { Amenity } from '@/lib/api/types';
 import { AmenitiesManager } from './amenities-manager';
@@ -7,6 +8,7 @@ import { AmenitiesManager } from './amenities-manager';
 export const metadata: Metadata = { title: 'Comodidades' };
 
 export default async function AmenitiesPage() {
+  await requirePermission('rooms.view');
   const items = await serverApi.get<Amenity[]>('/admin/amenities');
   return (
     <>

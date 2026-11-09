@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { PageHeader } from '@/components/admin/ui';
+import { requirePermission } from '@/lib/admin/session';
 import { serverApi } from '@/lib/api/server';
 import type { Amenity, Room, RoomType } from '@/lib/api/types';
 import { RoomsManager } from './rooms-manager';
@@ -8,6 +9,7 @@ import { RoomsManager } from './rooms-manager';
 export const metadata: Metadata = { title: 'Habitaciones' };
 
 export default async function RoomsPage() {
+  await requirePermission('rooms.view');
   const [rooms, types, amenities] = await Promise.all([
     serverApi.get<Room[]>('/admin/rooms'),
     serverApi.get<RoomType[]>('/admin/room-types'),

@@ -1,6 +1,7 @@
 import { Plus } from 'lucide-react';
 import type { Metadata } from 'next';
 import { ButtonLink, PageHeader } from '@/components/admin/ui';
+import { requirePermission } from '@/lib/admin/session';
 import { serverApi } from '@/lib/api/server';
 import type { RoomType } from '@/lib/api/types';
 import { RoomTypesTable } from './room-types-table';
@@ -8,6 +9,7 @@ import { RoomTypesTable } from './room-types-table';
 export const metadata: Metadata = { title: 'Tipos de habitación' };
 
 export default async function RoomTypesPage() {
+  await requirePermission('rooms.view');
   const types = await serverApi.get<RoomType[]>('/admin/room-types');
   return (
     <>

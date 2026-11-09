@@ -1,5 +1,5 @@
 import { isApiError } from '@/lib/api/client';
-import { translateDetail, translateMessage } from './messages';
+import { translateCode, translateDetail, translateMessage } from './messages';
 
 const STATUS_MESSAGES: Record<number, string> = {
   401: 'La sesión expiró. Inicie sesión de nuevo.',
@@ -17,6 +17,8 @@ const GENERIC = 'No se pudo completar la acción. Revise su conexión e intente 
 /** Spanish, user-facing description of any thrown value (never internals). */
 export function describeApiError(error: unknown): string {
   if (!isApiError(error)) return GENERIC;
+  const byCode = translateCode(error.body.code);
+  if (byCode) return byCode;
   if (error.details.length > 0) {
     return [...new Set(error.details.map((detail) => translateDetail(detail)))].join(' ');
   }

@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { PageHeader } from '@/components/admin/ui';
+import { requirePermission } from '@/lib/admin/session';
 import { serverApi } from '@/lib/api/server';
 import type { SocialLink } from '@/lib/api/types';
 import { SocialManager } from './social-manager';
@@ -7,6 +8,7 @@ import { SocialManager } from './social-manager';
 export const metadata: Metadata = { title: 'Redes sociales' };
 
 export default async function SocialPage() {
+  await requirePermission('hotel.view');
   const items = await serverApi.get<SocialLink[]>('/admin/social-links');
   return (
     <>

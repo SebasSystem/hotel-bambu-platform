@@ -2,6 +2,7 @@ import { ArrowLeft } from 'lucide-react';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { PageHeader } from '@/components/admin/ui';
+import { requirePermission } from '@/lib/admin/session';
 import { serverApi } from '@/lib/api/server';
 import type { Amenity } from '@/lib/api/types';
 import { RoomTypeForm } from '../room-type-form';
@@ -9,6 +10,7 @@ import { RoomTypeForm } from '../room-type-form';
 export const metadata: Metadata = { title: 'Nuevo tipo de habitación' };
 
 export default async function NewRoomPage() {
+  await requirePermission('rooms.manage');
   const amenities = await serverApi.get<Amenity[]>('/admin/amenities');
   return (
     <>

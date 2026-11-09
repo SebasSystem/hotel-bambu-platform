@@ -1,7 +1,6 @@
 import type { Metadata } from 'next';
 import { Card, PageHeader } from '@/components/admin/ui';
-import { serverApi } from '@/lib/api/server';
-import type { SessionInfo } from '@/lib/api/types';
+import { getSession } from '@/lib/admin/session';
 import { ChangePasswordForm } from './change-password-form';
 
 export const metadata: Metadata = { title: 'Mi cuenta' };
@@ -13,7 +12,8 @@ const dateFormat = new Intl.DateTimeFormat('es-CO', {
 });
 
 export default async function AccountPage() {
-  const session = await serverApi.get<SessionInfo>('/auth/me');
+  // Own profile and password: no permission needed (ADR 0017).
+  const session = await getSession();
   return (
     <>
       <PageHeader title="Mi cuenta" />
@@ -28,6 +28,8 @@ export default async function AccountPage() {
                 <dd>{session.user.name}</dd>
               </>
             ) : null}
+            <dt className="font-semibold">Rol</dt>
+            <dd>{session.user.role.name}</dd>
             <dt className="font-semibold">La sesión vence</dt>
             <dd>{dateFormat.format(new Date(session.expiresAt))}</dd>
           </dl>

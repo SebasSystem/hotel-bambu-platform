@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { PageHeader } from '@/components/admin/ui';
 import { isApiError } from '@/lib/api/client';
+import { requirePermission } from '@/lib/admin/session';
 import { serverApi } from '@/lib/api/server';
 import type { Amenity, RoomType } from '@/lib/api/types';
 import { RoomTypeActions } from '../room-type-actions';
@@ -15,6 +16,7 @@ export const metadata: Metadata = { title: 'Editar tipo de habitación' };
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export default async function EditRoomPage({ params }: { params: Promise<{ id: string }> }) {
+  await requirePermission('rooms.view');
   const { id } = await params;
   if (!UUID.test(id)) notFound();
   const [room, amenities] = await Promise.all([

@@ -28,7 +28,37 @@ const KNOWN_MESSAGES: Record<string, string> = {
   'Capacity must be at least 1.': 'La capacidad debe ser al menos 1.',
   'A processed cover image with alternative text is required.':
     'Se necesita una imagen principal procesada y con texto alternativo.',
+  // Password policy (API `PASSWORD_POLICY_MESSAGES`): admin users and change password.
+  'Password does not meet the policy.': 'La contraseña no cumple la política.',
+  'Password must have at least 12 characters.': 'Use al menos 12 caracteres.',
+  'Password must have at most 128 characters.': 'Use como máximo 128 caracteres.',
+  'Password must not be a single repeated character.':
+    'La contraseña no puede ser un solo carácter repetido.',
+  'Password must not contain the email name.':
+    'La contraseña no puede contener el nombre del correo.',
+  'New password must differ from the current one.':
+    'La nueva contraseña debe ser distinta de la actual.',
 };
+
+/**
+ * Spanish copy for the `code` some API errors carry (403 `PERMISSION_DENIED`, admin users and
+ * roles `ADMIN_USER_ERRORS`). A code wins over the English message.
+ */
+const CODE_MESSAGES: Record<string, string> = {
+  PERMISSION_DENIED: 'No tiene permiso para realizar esta acción.',
+  SELF_ROLE_CHANGE: 'No puede cambiar su propio rol.',
+  SELF_DEACTIVATION: 'No puede desactivar su propia cuenta.',
+  ROLE_NOT_FOUND: 'El rol elegido ya no existe. Recargue la página.',
+  SYSTEM_ROLE_IMMUTABLE: 'El rol Administrador no se puede modificar ni eliminar.',
+  LAST_ADMINISTRATOR: 'Debe quedar al menos un usuario activo con el rol Administrador.',
+  EMAIL_TAKEN: 'Ya existe un usuario con ese correo.',
+  ROLE_NAME_TAKEN: 'Ya existe un rol con ese nombre.',
+  ROLE_IN_USE: 'El rol todavía tiene usuarios. Asígneles otro rol antes de eliminarlo.',
+};
+
+export function translateCode(code: unknown): string | undefined {
+  return typeof code === 'string' ? CODE_MESSAGES[code] : undefined;
+}
 
 export function translateMessage(message: string): string {
   return KNOWN_MESSAGES[message] ?? message;

@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { PageHeader } from '@/components/admin/ui';
+import { requirePermission } from '@/lib/admin/session';
 import { serverApi } from '@/lib/api/server';
 import type { Faq, Policy } from '@/lib/api/types';
 import { FaqManager } from '../faq/faq-manager';
@@ -9,6 +10,7 @@ export const metadata: Metadata = { title: 'Políticas y preguntas' };
 
 /** One admin page for the one public page «Información para huéspedes» (C3, renamed 2026-11-08). */
 export default async function PoliciesPage() {
+  await requirePermission('content.view');
   const [policies, faqs] = await Promise.all([
     serverApi.get<Policy[]>('/admin/policies'),
     serverApi.get<Faq[]>('/admin/faq'),

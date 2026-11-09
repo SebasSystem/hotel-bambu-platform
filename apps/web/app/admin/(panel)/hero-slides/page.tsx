@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { Notice, PageHeader } from '@/components/admin/ui';
 import { HERO_MIN_SLIDES, HERO_MIN_WIDTH, heroPhotoIssues } from '@/lib/admin/readiness';
+import { requirePermission } from '@/lib/admin/session';
 import { serverApi } from '@/lib/api/server';
 import type { HeroSlide } from '@/lib/api/types';
 import { HeroSlidesManager } from './hero-slides-manager';
@@ -8,6 +9,7 @@ import { HeroSlidesManager } from './hero-slides-manager';
 export const metadata: Metadata = { title: 'Carrusel principal' };
 
 export default async function HeroSlidesPage() {
+  await requirePermission('content.view');
   const slides = await serverApi.get<HeroSlide[]>('/admin/hero-slides');
   // Same rule as the dashboard checklist: visible and landscape (small ones only get a warning).
   const ready = slides.filter((slide) => {

@@ -14,20 +14,23 @@ import {
   LogOut,
   MapPin,
   Share2,
+  ShieldCheck,
   Sparkles,
   UserRound,
+  Users,
   type LucideIcon,
 } from 'lucide-react';
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
-import { useEffect, useRef, useState, type ReactNode, type RefObject } from 'react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { Suspense, useEffect, useRef, useState, type ReactNode, type RefObject } from 'react';
 import { BrandLogo } from '@/components/brand/brand-logo';
+import { ACCESS_DENIED_PARAM, canAccess, isAccessDenied } from '@/lib/admin/access';
 import { browserApi, setCsrfToken } from '@/lib/api/browser';
 import { describeApiError } from '@/lib/forms/form-errors';
 import { useAdmin } from './admin-context';
 import { AdminDrawer } from './admin-drawer';
 import { useToast } from './feedback';
-import { buttonClasses, cx } from './ui';
+import { Notice, buttonClasses, cx } from './ui';
 
 export interface AdminNavItem {
   href: string;
@@ -41,7 +44,10 @@ export interface AdminNavGroup {
   items: readonly AdminNavItem[];
 }
 
-/** Grouped navigation in Spanish (docs/research/admin-ux.md §3.1, adapted to the C2/C3 routes). */
+/**
+ * Grouped navigation in Spanish (docs/research/admin-ux.md §3.1, adapted to the C2/C3 routes).
+ * Each item is shown only when the role may open it (`canAccess`, lib/admin/access.ts).
+ */
 export const ADMIN_NAV: readonly AdminNavGroup[] = [
   { label: null, items: [{ href: '/admin', label: 'Resumen', icon: LayoutDashboard }] },
   {
@@ -70,8 +76,28 @@ export const ADMIN_NAV: readonly AdminNavGroup[] = [
       { href: '/admin/social', label: 'Redes sociales', icon: Share2 },
     ],
   },
+  {
+    label: 'Usuarios',
+    items: [
+      { href: '/admin/users', label: 'Usuarios', icon: Users },
+      { href: '/admin/roles', label: 'Roles', icon: ShieldCheck },
+    ],
+  },
   { label: 'Cuenta', items: [{ href: '/admin/account', label: 'Mi cuenta', icon: UserRound }] },
 ];
+
+/** Navigation filtered by the role's permissions; groups left empty are dropped. */
+export function visibleNav(
+  nav: readonly AdminNavGroup[],
+  permissions: readonly string[],
+): AdminNavGroup[] {
+  return nav
+    .map((group) => ({
+      ...group,
+      items: group.items.filter((item) => canAccess(permissions, item.href)),
+    }))
+    .filter((group) => group.items.length > 0);
+}
 
 export function isActive(pathname: string, href: string): boolean {
   return href === '/admin'
@@ -89,9 +115,10 @@ export function activeNav(pathname: string): { group: string | null; item: Admin
 }
 
 function AdminNav({ pathname, idPrefix }: { pathname: string; idPrefix: string }) {
+  const { user } = useAdmin();
   return (
     <nav aria-label="Panel" className="mt-6 flex-1">
-      {ADMIN_NAV.map((group, index) => {
+      {visibleNav(ADMIN_NAV, user.permissions).map((group, index) => {
         const headingId = group.label ? `${idPrefix}-group-${index}` : undefined;
         return (
           <div key={group.label ?? 'root'} className={index > 0 ? 'mt-5' : undefined}>
@@ -158,6 +185,10 @@ function UserBlock({ onLogout, loggingOut }: { onLogout: () => void; loggingOut:
               {user.email}
             </p>
           ) : null}
+          <p className="truncate text-on-dark-muted" title={`Rol: ${user.role.name}`}>
+            <span className="sr-only">Rol: </span>
+            {user.role.name}
+          </p>
         </div>
       </div>
       <button
@@ -169,6 +200,23 @@ function UserBlock({ onLogout, loggingOut }: { onLogout: () => void; loggingOut:
       >
         <LogOut aria-hidden="true" className="size-[18px]" strokeWidth={1.5} /> Cerrar sesión
       </button>
+    </div>
+  );
+}
+
+/**
+ * Explains a redirect from a page the role may not open (`?acceso=denegado`, set by
+ * `requirePermission` in lib/admin/session.ts).
+ */
+function AccessDeniedNotice() {
+  const params = useSearchParams();
+  if (!isAccessDenied(params.get(ACCESS_DENIED_PARAM))) return null;
+  return (
+    <div role="status" className="mb-6">
+      <Notice tone="warning" title="Sección no disponible">
+        No tiene permiso para abrir esa sección. Le mostramos la primera sección disponible para su
+        rol; si necesita acceso, pídalo a un administrador.
+      </Notice>
     </div>
   );
 }
@@ -299,6 +347,9 @@ export function AdminShell({ children }: { children: ReactNode }) {
           tabIndex={-1}
           className="mx-auto w-full max-w-[1200px] flex-1 px-[clamp(16px,4vw,46px)] py-[clamp(22px,4vw,40px)] outline-none"
         >
+          <Suspense fallback={null}>
+            <AccessDeniedNotice />
+          </Suspense>
           {children}
         </main>
       </div>

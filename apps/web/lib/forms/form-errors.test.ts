@@ -80,3 +80,57 @@ describe('Spanish validation messages', () => {
     expect(translateMessage('Something else')).toBe('Something else');
   });
 });
+
+describe('describeApiError: permissions and admin users', () => {
+  it('explains a 403 PERMISSION_DENIED in Spanish', () => {
+    const error = new ApiError(403, {
+      statusCode: 403,
+      error: 'Forbidden',
+      message: 'You do not have permission to perform this action.',
+      code: 'PERMISSION_DENIED',
+    });
+    expect(describeApiError(error)).toBe('No tiene permiso para realizar esta acción.');
+  });
+
+  it('keeps the security message for a 403 without a code (CSRF/Origin)', () => {
+    expect(describeApiError(new ApiError(403, { message: 'Invalid CSRF token' }))).toBe(
+      'La solicitud fue rechazada por seguridad. Recargue la página e intente de nuevo.',
+    );
+  });
+
+  it.each([
+    ['SELF_ROLE_CHANGE', 422, 'No puede cambiar su propio rol.'],
+    ['SELF_DEACTIVATION', 422, 'No puede desactivar su propia cuenta.'],
+    ['ROLE_NOT_FOUND', 422, 'El rol elegido ya no existe. Recargue la página.'],
+    ['SYSTEM_ROLE_IMMUTABLE', 422, 'El rol Administrador no se puede modificar ni eliminar.'],
+    ['LAST_ADMINISTRATOR', 409, 'Debe quedar al menos un usuario activo con el rol Administrador.'],
+    ['EMAIL_TAKEN', 409, 'Ya existe un usuario con ese correo.'],
+    ['ROLE_NAME_TAKEN', 409, 'Ya existe un rol con ese nombre.'],
+    ['ROLE_IN_USE', 409, 'El rol todavía tiene usuarios. Asígneles otro rol antes de eliminarlo.'],
+  ])('translates %s', (code, status, expected) => {
+    expect(describeApiError(new ApiError(status, { message: 'English text', code }))).toBe(
+      expected,
+    );
+  });
+
+  it('translates the password policy details', () => {
+    const error = new ApiError(422, {
+      message: 'Password does not meet the policy.',
+      details: [
+        {
+          path: 'password',
+          message: 'Password must have at least 12 characters.',
+          code: 'too_short',
+        },
+        {
+          path: 'password',
+          message: 'Password must not contain the email name.',
+          code: 'contains_email',
+        },
+      ],
+    });
+    expect(describeApiError(error)).toBe(
+      'Use al menos 12 caracteres. La contraseña no puede contener el nombre del correo.',
+    );
+  });
+});
