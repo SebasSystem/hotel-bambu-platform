@@ -18,7 +18,7 @@ The browser only talks to the Next.js origin. Next.js serves the public site and
 | Endpoint abuse | Per-IP rate limits (default, login, public writes, uploads); body size limits; `429` | `rate-limit.config.ts` |
 | Malicious files | JPEG/PNG/WebP only, real signature check (`file-type`), size limits, re-encoded by sharp (EXIF stripped), random keys, no user SVG | media module |
 | Secret exposure | Secrets only in environment variables; `.env` ignored by git; production refuses weak/missing secrets; logs redact cookies, CSRF and revalidation headers | `config/env.ts`, logger |
-| Unauthorized access | Every `/admin/*` API route requires a session; `proxy.ts` redirects without a cookie (optimistic only); admin pages `private, no-store`, `noindex` | API guards, `proxy.ts` |
+| Unauthorized access | Every `/admin/*` API route requires a session and a role permission (`PermissionGuard`; a route without a declared permission is denied, 403 `PERMISSION_DENIED`; a test asserts every admin route declares one); users cannot change their own role or deactivate themselves, one active Administrador always remains, and role change, deactivation and password reset revoke sessions ([ADR 0017](adr/0017-admin-roles-permissions.md)); the panel hides and redirects away from sections the role cannot open (convenience only); `proxy.ts` redirects without a cookie (optimistic only); admin pages `private, no-store`, `noindex` | API guards, `apps/web/lib/admin/access.ts`, `proxy.ts` |
 | Insecure CORS | CORS disabled: same-origin proxy | `app.setup.ts` |
 | SSRF | The server never fetches user-supplied URLs; social links are validated https URLs on known hosts and only rendered | shared schemas |
 | Session theft | HttpOnly, `Secure` + `__Host-` prefix in production, absolute and idle expiry, rotation on login and password change, server-side invalidation | ADR 0008 |
@@ -75,6 +75,6 @@ curl -sI http://localhost:4000/api/v1/health | grep -iE 'content-security|x-fram
 
 ## Tests that cover these controls
 
-- API integration tests cover: session, CSRF (403), foreign origin, generic login error, upload validation, headers, and consent evidence without IP.
+- API integration tests cover: session, CSRF (403), foreign origin, permission denials (403 `PERMISSION_DENIED`), admin route permission coverage, the last-Administrador and self-protection rules, generic login error, upload validation, headers, and consent evidence without IP.
 - Web unit tests cover: CSP builder and proxy guard (`lib/proxy.test.ts`), consent cookie parsing and versioning, JSON-LD escaping.
 - E2E (`pnpm e2e`) covers: security headers, admin redirect, `no-store`/`noindex` on the admin, consent behavior, and no CSP violations on the home page.

@@ -146,7 +146,7 @@ Usuario autorizado para mantener el sitio. Puede:
 - Editar los textos e imágenes de las secciones definidas de la landing.
 - Consultar métricas agregadas, si están habilitadas.
 
-En la primera versión existe un único rol de administrador. No implementar un sistema de permisos complejo sin necesidad real.
+Los usuarios del panel tienen un rol, y cada rol concede permisos por sección del panel: «ver» o «gestionar» (gestionar incluye ver) en Resumen, Datos del hotel, Habitaciones, Contenido, Fotos y medios, Actividad y Usuarios y roles. El rol Administrador (del sistema) tiene todos los permisos y no se puede modificar ni eliminar; se incluyen además los roles Editor de contenido y Recepción, editables. Los usuarios con permiso se gestionan desde el panel (crear, editar nombre, rol y estado, restablecer contraseña; nunca se eliminan, se desactivan). Nadie puede cambiar su propio rol ni desactivarse, y siempre debe quedar al menos un Administrador activo. La API aplica los permisos en cada ruta y el panel oculta lo que el rol no puede abrir. Decisión: [ADR 0017](adr/0017-admin-roles-permissions.md) (antes existía un único rol de administrador).
 
 ---
 

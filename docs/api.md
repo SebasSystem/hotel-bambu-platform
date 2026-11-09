@@ -5,7 +5,7 @@ Base path `/api/v1`. JSON in and out. Input schemas live in `@hotel-bambu/shared
 ## Conventions
 
 - **Errors** (all statuses): `{ statusCode, error, message, details?, requestId }`. `details` is `[{ path, message, code }]` for 400 (schema) and 422 (business rules, e.g. publication). Never a stack trace.
-- **Statuses**: 400 invalid input, 401 no/expired session, 403 CSRF/origin rejected, 404, 409 conflict (unique slug, media in use, deleting a published room type or one that still has rooms, duplicate upload → `mediaAssetId`), 413 too large, 422 rule violation, 429 rate limited, 503 storage not configured.
+- **Statuses**: 400 invalid input, 401 no/expired session, 403 CSRF/origin rejected or missing role permission (`code: 'PERMISSION_DENIED'`, [ADR 0017](adr/0017-admin-roles-permissions.md)), 404, 409 conflict (unique slug, media in use, deleting a published room type or one that still has rooms, duplicate upload → `mediaAssetId`), 413 too large, 422 rule violation, 429 rate limited, 503 storage not configured.
 - **Caching**: `/public/*` GETs send `Cache-Control: public, max-age=60, stale-while-revalidate=300`; everything else `no-store`.
 - **Ids**: UUIDv7 strings. Dates: ISO 8601 UTC. Money: whole COP integers (`basePrice`).
 - **Media** in public responses: `{ id, altText, caption, width, height, blurDataUrl, dominantColor, variants: [{ width, height, format: 'avif'|'webp', url }] }` (variants sorted by width). Only `READY` assets with alt text are ever exposed.
@@ -15,7 +15,7 @@ Base path `/api/v1`. JSON in and out. Input schemas live in `@hotel-bambu/shared
 1. `POST /auth/login` `{ email, password }` → 200 `{ user, csrfToken, expiresAt }` + `Set-Cookie` session (`__Host-hb_session` in production, `hb_session` in dev; HttpOnly, SameSite=Lax, Path=/) and readable `hb_csrf`. Generic 401 on any failure; 429 when rate limited.
 2. Browser calls go through the Next.js origin (`/api/v1/*` rewrite) so cookies are first-party. Server Components/Actions calling `API_INTERNAL_URL` directly must forward the incoming `cookie` header.
 3. Every `POST/PUT/PATCH/DELETE` with a session must send `x-csrf-token: <csrfToken>` (from login, `GET /auth/me`, or the `hb_csrf` cookie). Browsers send `Origin`/`Sec-Fetch-Site` automatically; they must match `WEB_ORIGINS` / be same-origin, else 403.
-4. `GET /auth/me` → `{ user, csrfToken, expiresAt }` or 401 (redirect to login).
+4. `GET /auth/me` → `{ user, csrfToken, expiresAt }` or 401 (redirect to login). `user` is `{ id, email, name, role: { id, name }, permissions[] }` (permissions expanded: `manage` implies `view`; same shape after login and change password).
 5. `POST /auth/change-password` `{ currentPassword, newPassword }` → new session cookie + new `csrfToken` (all other sessions revoked). 422 with `details` on wrong current password or policy failure (12–128 chars, not one repeated char, not containing the email name, different from current).
 6. `POST /auth/logout` → 204, cookies cleared, session deleted.
 
@@ -35,16 +35,20 @@ Base path `/api/v1`. JSON in and out. Input schemas live in `@hotel-bambu/shared
 | POST | `/public/events` | `{ type: PAGE_VIEW|WHATSAPP_CLICK|ROOM_VIEW|MAP_CLICK|SOCIAL_CLICK, source?, entityId? }` → 204. Daily aggregate only. Send only with analytics consent |
 | POST | `/public/consents` | `{ consentId, policyVersion, categories: { functional, analytics, marketing } }` → 204. No IP stored |
 
+Room type amenities (`/public/room-types`, `/public/room-types/:slug`) carry `availability`: `ALL` when the amenity is in every published room of the type, `SOME` when only in some (room `amenityOverrides`); an amenity in no published room is omitted. Without published rooms the type amenities are `ALL`.
+
 Removed (404): `/public/rooms`, `/public/rooms/:slug`, `/public/promotions`, `/public/services`.
 
-## Admin (session + CSRF)
+## Admin (session + CSRF + permission)
+
+Each route needs a role permission (any of; [ADR 0017](adr/0017-admin-roles-permissions.md)): reads `<area>.view`, writes `<area>.manage`. Areas: dashboard (`GET /admin/dashboard`), activity (audit log, analytics summary), hotel (hotel, nearby places, social links), rooms (room types, rooms, amenities), content (landing, hero slides, gallery, FAQ, policies), media (media; `GET` and upload also with `hotel.manage`, `rooms.manage` or `content.manage` for the picker), users (users, roles). Missing permission → 403 `PERMISSION_DENIED`.
 
 | Resource | Endpoints |
 |---|---|
 | Dashboard | `GET /admin/dashboard`, `GET /admin/analytics/summary?days=30`, `GET /admin/audit-logs?page=&pageSize=` |
 | Hotel | `GET`, `PATCH /admin/hotel` (includes `tagline`, `country`, `whatsappNumber`, `whatsappGreeting`; the WhatsApp messages are code defaults in `@hotel-bambu/shared`) |
-| Room types | `GET`, `POST /admin/room-types`; `PUT /admin/room-types/order` `{ ids }`; `GET`, `PATCH`, `DELETE /admin/room-types/:id` (409 while published or with rooms); `PATCH /admin/room-types/:id/status` `{ status }`; `PUT /admin/room-types/:id/images` `{ images: [{ mediaAssetId, isCover }] }` (full ordered set). Responses add `roomCount` and `publishedRoomCount` |
-| Rooms | `GET`, `POST /admin/rooms` `{ name, roomTypeId, status? }`; `PUT /admin/rooms/order`; `PATCH`, `DELETE /admin/rooms/:id` (422 for an unknown `roomTypeId`) |
+| Room types | `GET`, `POST /admin/room-types` (optional `images: [{ mediaAssetId, isCover }]`, stored in the same request); `PUT /admin/room-types/order` `{ ids }`; `GET`, `PATCH`, `DELETE /admin/room-types/:id` (409 while published or with rooms); `PATCH /admin/room-types/:id/status` `{ status }`; `PUT /admin/room-types/:id/images` `{ images: [{ mediaAssetId, isCover }] }` (full ordered set). Responses add `roomCount` and `publishedRoomCount` |
+| Rooms | `GET`, `POST /admin/rooms` `{ name, roomTypeId, status?, amenityOverrides? }`; `PUT /admin/rooms/order`; `PATCH`, `DELETE /admin/rooms/:id` (422 for an unknown `roomTypeId`). `amenityOverrides: [{ amenityId, available }]` stores only the differences from the type's amenities (ROOM amenities) |
 | Amenities | `GET`, `POST /admin/amenities`; `PUT /admin/amenities/order`; `PATCH`, `DELETE /admin/amenities/:id` (409 while assigned to room types; a ROOM amenity still assigned cannot become HOTEL) |
 | Nearby places | `GET`, `POST /admin/nearby-places`; `PUT /admin/nearby-places/order`; `PATCH`, `DELETE /admin/nearby-places/:id` |
 | Hero slides | `GET`, `POST /admin/hero-slides`; `PUT /admin/hero-slides/order`; `PATCH`, `DELETE /admin/hero-slides/:id` (422 for an active slide without publishable media) |
@@ -54,6 +58,10 @@ Removed (404): `/public/rooms`, `/public/rooms/:slug`, `/public/promotions`, `/p
 | FAQ | `GET`, `POST /admin/faq`; `PUT /admin/faq/order`; `PATCH`, `DELETE /admin/faq/:id` |
 | Policies | `GET`, `POST /admin/policies`; `PUT /admin/policies/order`; `PATCH`, `DELETE /admin/policies/:id` |
 | Social links | `GET`, `POST /admin/social-links`; `PUT /admin/social-links/order`; `PATCH`, `DELETE /admin/social-links/:id` (https, host must match the platform) |
+| Users | `GET /admin/users` → `[{ id, email, name, role: { id, name, isSystem }, active, lastLoginAt, createdAt }]`; `POST /admin/users` `{ email, name?, roleId, password }` → 201; `PATCH /admin/users/:id` `{ name?, roleId?, active? }`; `POST /admin/users/:id/reset-password` `{ password }` → 204. No delete (deactivate). Role change, deactivation and reset revoke the user's sessions |
+| Roles | `GET /admin/roles` → `[{ id, name, description, permissions, isSystem, userCount, createdAt, updatedAt }]` (system role first); `POST /admin/roles` `{ name, description?, permissions }` → 201; `PATCH /admin/roles/:id` (partial); `DELETE /admin/roles/:id` → 204. Permission edits apply on the next request |
+
+Users and roles errors carry `code` and a constant English `message` (`ADMIN_USER_ERRORS` in `@hotel-bambu/shared`): 422 `SELF_ROLE_CHANGE`, `SELF_DEACTIVATION`, `ROLE_NOT_FOUND`, `SYSTEM_ROLE_IMMUTABLE`; 409 `LAST_ADMINISTRATOR`, `EMAIL_TAKEN`, `ROLE_NAME_TAKEN`, `ROLE_IN_USE`. A password outside the policy → 422 `Password does not meet the policy.` with `details[{ path: 'password', code: too_short | too_long | too_simple | contains_email }]`.
 
 Removed (404): `/admin/promotions`, `/admin/whatsapp-templates`, `/admin/services`.
 

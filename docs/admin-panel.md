@@ -4,7 +4,7 @@ Private, Spanish-language panel for hotel staff (requirements 9, 10, 18.2). Code
 
 ## Routes
 
-Navigation (`components/admin/admin-shell.tsx`, grouped, Spanish): Resumen · **Hotel** (Datos del hotel, Ubicación y lugares cercanos) · **Habitaciones** (Tipos de habitación, Habitaciones, Comodidades) · **Contenido** (Secciones de la portada, Carrusel principal, Galería, Fotos y medios, Políticas y preguntas, Redes sociales) · **Cuenta** (Mi cuenta).
+Navigation (`components/admin/admin-shell.tsx`, grouped, Spanish): Resumen · **Hotel** (Datos del hotel, Ubicación y lugares cercanos) · **Habitaciones** (Tipos de habitación, Habitaciones, Comodidades) · **Contenido** (Secciones de la portada, Carrusel principal, Galería, Fotos y medios, Políticas y preguntas, Redes sociales) · **Usuarios** (Usuarios, Roles) · **Cuenta** (Mi cuenta). Only the sections the role may open are listed; a group left empty is hidden. The user block shows the role name.
 
 | Route | Content |
 |---|---|
@@ -21,13 +21,29 @@ Navigation (`components/admin/admin-shell.tsx`, grouped, Spanish): Resumen · **
 | `/admin/gallery` | Add from media, category, publish, featured, order, remove (media is kept) |
 | `/admin/policies` | "Políticas y preguntas": policies and FAQ on one page (`#preguntas`; `/admin/faq` redirects here), `[DEMO]` texts flagged |
 | `/admin/social` | Social links (footer) |
-| `/admin/account` | Session info, change password (rotates the session and CSRF token) |
+| `/admin/users` | "Usuarios": table (name, email, role, status, last login); create (email, name, role, initial password with show/hide and the policy hint), edit (name, role, active), reset password after a confirmation. The current user's role and status are locked with an explanation (their own password changes in Mi cuenta). Notes that a role change or deactivation closes the user's sessions. Read-only without `users.manage` |
+| `/admin/roles` | "Roles": cards with description, user count and permission summary; the system role Administrador has a "Sistema" badge and is read-only. Create/edit with name, description and a permission checklist grouped by area ("Ver" / "Gestionar"; Gestionar checks and locks Ver; a warning when `users.manage` is granted). Delete only when unused (otherwise disabled with the reason) |
+| `/admin/account` | Session info and role, change password (rotates the session and CSRF token) |
+
+## Permissions
+
+Roles and permissions: [ADR 0017](adr/0017-admin-roles-permissions.md). `lib/admin/access.ts` maps every route to the permission (any of) its API reads need; the same map filters the navigation, picks the first allowed section and filters the dashboard links. Every `(panel)` page starts with `requirePermission(...)` (`lib/admin/session.ts`): without the permission the user is redirected to the first section the role may open with `?acceso=denegado`, and the shell shows "Sección no disponible". `/admin` redirects quietly (it is the landing page after login). The session (`GET /auth/me`) is read once per request with React `cache`. The API stays the authority.
+
+| Route | Permission |
+|---|---|
+| `/admin` | `dashboard.view`; readiness items and KPIs per area, recent activity and metrics with `activity.view` |
+| `/admin/hotel`, `/admin/nearby-places`, `/admin/social` | `hotel.view` |
+| `/admin/room-types`, `/[id]`, `/admin/rooms`, `/admin/amenities` | `rooms.view` (`/admin/room-types/new`: `rooms.manage`) |
+| `/admin/content`, `/admin/hero-slides`, `/admin/gallery`, `/admin/policies` (`/admin/faq`) | `content.view` |
+| `/admin/media` | `media.view` (the picker inside other forms also works with `hotel.manage`, `rooms.manage` or `content.manage`) |
+| `/admin/users`, `/admin/roles` | `users.view` (changes: `users.manage`) |
+| `/admin/account` | none |
 
 ## Data flow
 
 - **Reads**: Server Components call `serverApi` (`lib/api/server.ts`) → `API_INTERNAL_URL/api/v1`, forwarding the incoming `cookie` header. A 401 redirects to `/admin/login`. Admin pages are `force-dynamic`; nothing private is cached.
 - **Writes**: Client Components call `browserApi` (`lib/api/browser.ts`) → same-origin `/api/v1/*` (Next.js rewrite), so the browser sends `Origin`/`Sec-Fetch-Site` and the first-party cookie. Every unsafe method adds `x-csrf-token`: the token from `GET /auth/me` (set by `AdminProvider` in the panel layout), falling back to the readable `hb_csrf` cookie. A 401 sends the browser to `/admin/login?next=…`. After a mutation the page calls `router.refresh()` to re-render from the API.
-- **Errors**: `ApiError { status, details[] }` (`lib/api/client.ts`). `applyApiError` maps 400/422 `details[].path` (e.g. `beds.0.count`) to react-hook-form fields and returns the rest as a Spanish message; `describeApiError` covers toasts (403 CSRF, 409 conflicts, 422 publication rules, 429).
+- **Errors**: `ApiError { status, details[] }` (`lib/api/client.ts`). `applyApiError` maps 400/422 `details[].path` (e.g. `beds.0.count`) to react-hook-form fields and returns the rest as a Spanish message; `describeApiError` covers toasts (403 CSRF, 409 conflicts, 422 publication rules, 429). An error `code` wins over the message: 403 `PERMISSION_DENIED` → "No tiene permiso para realizar esta acción.", and the users and roles codes (`SELF_ROLE_CHANGE`, `LAST_ADMINISTRATOR`, `EMAIL_TAKEN`, `ROLE_IN_USE`…) have Spanish texts in `lib/forms/messages.ts`.
 - **Guard**: `proxy.ts` (Next.js 16 name for middleware) only checks the presence of `hb_session` / `__Host-hb_session` for `/admin/*` (except the login page) and adds `X-Robots-Tag: noindex, nofollow` and `Cache-Control: private, no-store`. Real authorization stays in the API.
 
 ## Forms
@@ -46,7 +62,7 @@ Embedded media (room types, gallery, hero slides, hotel logo) carries stored var
 
 ## Tests
 
-`pnpm --filter @hotel-bambu/web test` (Vitest; component tests opt into jsdom with `// @vitest-environment jsdom`): API client (CSRF only on unsafe methods, 401 hook, error details, FormData), error-to-field mapping and Spanish messages, proxy guard, login form, `ResourceManager` server-error mapping, readiness checklist and KPIs, activity wording, the navigation drawer (focus trap, Escape), the publish switch (API call, optimistic state, revert), the upload helpers and picker (upload tab, alt text required, single vs multiple, auto-selection) and the room-type creation with images, and the room amenity overrides field. The e2e suite covers the dashboard, grouped navigation, inline publish, section switches, the phone drawer and axe on every admin page.
+`pnpm --filter @hotel-bambu/web test` (Vitest; component tests opt into jsdom with `// @vitest-environment jsdom`): API client (CSRF only on unsafe methods, 401 hook, error details, FormData), error-to-field mapping and Spanish messages, proxy guard, login form, `ResourceManager` server-error mapping, readiness checklist and KPIs, activity wording, the navigation drawer (focus trap, Escape), the publish switch (API call, optimistic state, revert), the upload helpers and picker (upload tab, alt text required, single vs multiple, auto-selection) and the room-type creation with images, the room amenity overrides field, navigation filtering by permissions, the page gate, the dashboard with partial permissions, the permission checklist (Gestionar implies Ver) and the users and roles managers (self-protection, error codes, delete rules). The e2e suite covers the dashboard, grouped navigation, inline publish, section switches, the phone drawer, an Editor user who sees only its sections, and axe on every admin page.
 
 ## Local development
 

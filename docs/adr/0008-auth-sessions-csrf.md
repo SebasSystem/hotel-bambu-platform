@@ -32,7 +32,7 @@ The token is returned in the JSON body of `POST /auth/login`, `POST /auth/change
 
 Alternatives rejected: `@fastify/csrf-protection` (needs its own secret cookie or session store and adds nothing over the HMAC token here); Origin-only (12.4 asks for a token as well, and some privacy tools strip `Origin`); `SameSite=Strict` (breaks the first navigation from an external link into `/admin`; Lax plus the token covers CSRF).
 
-**Authorization**: one global `SessionAuthGuard` (APP_GUARD) denies every route by default and runs the CSRF policy right after resolving the session, so the order between the two checks cannot drift. Public routes opt out of the session part with `@Public()` (health, `/public/*`, login). Roles (`ADMIN`/`EDITOR`) are carried on `request.admin`; v1 grants both full admin access.
+**Authorization**: one global `SessionAuthGuard` (APP_GUARD) denies every route by default and runs the CSRF policy right after resolving the session, so the order between the two checks cannot drift. Public routes opt out of the session part with `@Public()` (health, `/public/*`, login). The admin and its role are carried on `request.admin`. Since 2026-11-09 a `PermissionGuard` runs after this guard and checks per-route role permissions; roles are database rows instead of the `ADMIN`/`EDITOR` enum (see [ADR 0017](0017-admin-roles-permissions.md)).
 
 **Rate limiting**: `@nestjs/throttler` as a global guard, in-memory storage (single API instance, ADR 0001), tracker = client IP. Limits per minute per IP, all env-configurable: default 300 (every route), login 10, public writes (events, consents) 60, uploads 30. Answers 429.
 
