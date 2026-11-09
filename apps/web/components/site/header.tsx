@@ -1,4 +1,4 @@
-import { MessageCircle, Phone } from 'lucide-react';
+import { Phone } from 'lucide-react';
 import Link from 'next/link';
 import { BRAND_NAME, BRAND_SUBLINE, BrandLogo } from '@/components/brand/brand-logo';
 import { buttonClass, iconButtonClass } from '@/components/ui/button';
@@ -8,6 +8,7 @@ import { NavLink } from './header-client';
 import { MobileMenu } from './mobile-menu';
 import type { ContactCta, PhoneContact } from '@/lib/public/cta';
 import { ContactCtaLink } from './contact-cta';
+import { WhatsAppIcon } from './whatsapp-icon';
 import { WhatsAppLink } from './whatsapp-link';
 
 interface HeaderProps {
@@ -107,7 +108,7 @@ export function Header({ cta, phone }: HeaderProps) {
                   : mobileCta.label
               }
               className={`${iconButtonClass()} desk:hidden`}
-              whatsappLabel={<MessageCircle aria-hidden="true" strokeWidth={1.5} />}
+              whatsappLabel={<WhatsAppIcon />}
               phoneLabel={<Phone aria-hidden="true" strokeWidth={1.5} />}
             />
           ) : null}

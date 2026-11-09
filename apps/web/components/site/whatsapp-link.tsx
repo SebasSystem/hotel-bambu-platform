@@ -1,10 +1,10 @@
 'use client';
 
 import type { AnalyticsSource } from '@hotel-bambu/shared';
-import { MessageCircle } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { trackEvent } from '@/lib/analytics/track';
 import { ui } from '@/lib/i18n/es';
+import { WhatsAppIcon } from './whatsapp-icon';
 
 interface WhatsAppLinkProps {
   href: string;
@@ -19,7 +19,8 @@ interface WhatsAppLinkProps {
 
 /**
  * Every WhatsApp entry point (requirement 5): new tab, `noopener noreferrer`, and a
- * `WHATSAPP_CLICK` event only when analytics consent exists (`trackEvent`).
+ * `WHATSAPP_CLICK` event only when analytics consent exists (`trackEvent`). The icon is the
+ * WhatsApp brand glyph (`WhatsAppIcon`).
  */
 export function WhatsAppLink({
   href,
@@ -39,9 +40,7 @@ export function WhatsAppLink({
       aria-label={ariaLabel}
       onClick={() => trackEvent({ type: 'WHATSAPP_CLICK', source, entityId })}
     >
-      {icon ? (
-        <MessageCircle aria-hidden="true" strokeWidth={1.75} className="size-5 shrink-0" />
-      ) : null}
+      {icon ? <WhatsAppIcon /> : null}
       {children ?? ui.whatsapp.cta}
       {ariaLabel ? null : <span className="sr-only"> {ui.whatsapp.newTab}</span>}
     </a>
