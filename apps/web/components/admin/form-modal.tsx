@@ -43,9 +43,9 @@ export interface FormModalProps {
 }
 
 const SIZES: Record<FormModalSize, string> = {
-  sm: 'tab:w-[min(30rem,calc(100%-2rem))]',
-  md: 'tab:w-[min(42rem,calc(100%-2rem))]',
-  lg: 'tab:w-[min(56rem,calc(100%-2rem))]',
+  sm: 'tab:w-[min(30rem,calc(100%-2rem))] tab:max-h-[min(32rem,calc(100dvh-6rem))]',
+  md: 'tab:w-[min(42rem,calc(100%-2rem))] tab:max-h-[min(38rem,calc(100dvh-6rem))]',
+  lg: 'tab:w-[min(56rem,calc(100%-2rem))] tab:max-h-[min(44rem,calc(100dvh-6rem))]',
 };
 
 const FIELD_SELECTOR = [
@@ -210,7 +210,7 @@ export function FormModal({
       onClick={onClick}
       className={cx(
         'admin-modal m-0 h-dvh max-h-none w-full max-w-none bg-white p-0 text-foreground backdrop:bg-charcoal/50',
-        'tab:m-auto tab:h-auto tab:max-h-[calc(100dvh-4rem)] tab:rounded-2xl tab:border tab:border-line tab:shadow-lg',
+        'tab:m-auto tab:h-auto tab:rounded-2xl tab:border tab:border-line tab:shadow-lg',
         SIZES[size],
       )}
     >
