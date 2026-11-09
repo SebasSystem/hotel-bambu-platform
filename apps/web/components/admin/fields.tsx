@@ -1,7 +1,7 @@
 'use client';
 
-import { CircleAlert } from 'lucide-react';
-import { useId, type ReactNode } from 'react';
+import { CircleAlert, Eye, EyeOff } from 'lucide-react';
+import { useId, useState, type ReactNode } from 'react';
 import type { FieldError, UseFormRegisterReturn } from 'react-hook-form';
 import { cx } from './ui';
 
@@ -102,6 +102,40 @@ export function TextField({
           inputMode={inputMode}
           className={inputClasses}
         />
+      )}
+    </Field>
+  );
+}
+
+/** Password input with a show/hide toggle (keeps the value, only switches the input type). */
+export function PasswordField({
+  registration,
+  autoComplete = 'current-password',
+  ...field
+}: BaseProps & { autoComplete?: 'current-password' | 'new-password' }) {
+  const [visible, setVisible] = useState(false);
+  const Icon = visible ? EyeOff : Eye;
+  return (
+    <Field {...field}>
+      {(control) => (
+        <div className="relative">
+          <input
+            {...control}
+            {...registration}
+            type={visible ? 'text' : 'password'}
+            autoComplete={autoComplete}
+            className={cx(inputClasses, 'pr-12')}
+          />
+          <button
+            type="button"
+            onClick={() => setVisible((value) => !value)}
+            aria-label={visible ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+            aria-pressed={visible}
+            className="absolute inset-y-0 right-0 grid w-12 place-items-center rounded-r-sm text-ink-muted transition-colors hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-green"
+          >
+            <Icon aria-hidden="true" className="size-5" />
+          </button>
+        </div>
       )}
     </Field>
   );

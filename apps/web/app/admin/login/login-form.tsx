@@ -3,7 +3,7 @@
 import { loginSchema, type LoginInput } from '@hotel-bambu/shared';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { FormAlert, TextField } from '@/components/admin/fields';
+import { FormAlert, PasswordField, TextField } from '@/components/admin/fields';
 import { Button } from '@/components/admin/ui';
 import { anonymousBrowserApi, setCsrfToken } from '@/lib/api/browser';
 import { isApiError } from '@/lib/api/client';
@@ -65,9 +65,8 @@ export function LoginForm({
         error={errors.email}
         registration={register('email')}
       />
-      <TextField
+      <PasswordField
         label="Contraseña"
-        type="password"
         autoComplete="current-password"
         required
         error={errors.password}

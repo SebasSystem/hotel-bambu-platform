@@ -4,7 +4,7 @@ import { changePasswordSchema, type ChangePasswordInput } from '@hotel-bambu/sha
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useToast } from '@/components/admin/feedback';
-import { FormAlert, TextField } from '@/components/admin/fields';
+import { FormAlert, PasswordField } from '@/components/admin/fields';
 import { Button, Card } from '@/components/admin/ui';
 import { browserApi, setCsrfToken } from '@/lib/api/browser';
 import type { SessionInfo } from '@/lib/api/types';
@@ -51,17 +51,15 @@ export function ChangePasswordForm() {
           Cambiar contraseña
         </h2>
         <FormAlert message={formError} />
-        <TextField
+        <PasswordField
           label="Contraseña actual"
-          type="password"
           autoComplete="current-password"
           required
           error={errors.currentPassword}
           registration={register('currentPassword')}
         />
-        <TextField
+        <PasswordField
           label="Nueva contraseña"
-          type="password"
           autoComplete="new-password"
           required
           hint="Entre 12 y 128 caracteres. Use una frase larga; no repita un solo carácter ni incluya su correo."

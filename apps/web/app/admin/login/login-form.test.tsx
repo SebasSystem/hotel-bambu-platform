@@ -36,6 +36,24 @@ describe('LoginForm', () => {
     expect(post).not.toHaveBeenCalled();
   });
 
+  it('lets the user show and hide the password', async () => {
+    const user = userEvent.setup();
+    render(<LoginForm next="/admin" onAuthenticated={vi.fn()} />);
+
+    const password = screen.getByLabelText(/Contraseña/);
+    expect(password.getAttribute('type')).toBe('password');
+
+    const toggle = screen.getByRole('button', { name: 'Mostrar contraseña' });
+    expect(toggle.getAttribute('aria-pressed')).toBe('false');
+    await user.click(toggle);
+    expect(password.getAttribute('type')).toBe('text');
+    expect(toggle.getAttribute('aria-pressed')).toBe('true');
+    expect(toggle.getAttribute('aria-label')).toBe('Ocultar contraseña');
+
+    await user.click(toggle);
+    expect(password.getAttribute('type')).toBe('password');
+  });
+
   it('shows a generic message on 401 and focuses the password', async () => {
     post.mockRejectedValue(new ApiError(401, { message: 'Invalid email or password.' }));
     const user = userEvent.setup();
