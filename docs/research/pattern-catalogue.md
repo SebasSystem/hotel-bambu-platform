@@ -97,7 +97,7 @@ Status: research deliverable R1. Patterns observed in the references ([`design-r
 |---|---|---|---|---|
 | **Quiet centred typographic footer**: "Get in touch", email and phone in serif italic, small caps links | Ett Hem | **High** | Big serif closing line ("Te esperamos en Mocoa"), contact in display italic, legal row small. | — |
 | **Giant wordmark footer** (logo across the full width at the bottom) | Common on 2024–26 award sites | **High** | Inline SVG wordmark scaled to 100 % width, `bamboo-900` on sand or `sand-50` on `bamboo-900`. | SVG only, no font cost. |
-| **Certification badges row** | Ett Hem (SLH, Condé Nast) | Med | Show the RNT number (and the ESCNNA notice as required) as a tidy badge line, a legal trust signal. | Real data only (RNT 232175 pending confirmation). |
+| **Certification badges row** | Ett Hem (SLH, Condé Nast) | Med | Show the RNT number as a tidy badge line, a legal trust signal. | Real data only (RNT 232175 pending confirmation). |
 
 ## 9. Component sources (inspiration only, adapt to tokens)
 

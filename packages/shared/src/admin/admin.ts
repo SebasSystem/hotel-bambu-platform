@@ -66,7 +66,6 @@ export const hotelProfileUpdateSchema = z
     name: requiredText(120),
     legalName: nullableText(200),
     rntNumber: nullableText(30),
-    escnnaNotice: nullableText(2000),
     tagline: nullableText(160),
     /** Meta description of the hotel (home page). */
     shortDescription: nullableText(300),

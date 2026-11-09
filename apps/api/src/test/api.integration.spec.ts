@@ -10,7 +10,7 @@ import { OBJECT_STORAGE } from '../modules/media/media.service.js';
 import type { ObjectStorage } from '../modules/media/object-storage.js';
 import { RevalidationService } from '../modules/revalidation/revalidation.service.js';
 import { PrismaService } from '../prisma/prisma.service.js';
-import { DEFAULT_POLICIES, escnnaNoticeFor } from '../seeds/default-content.js';
+import { DEFAULT_POLICIES } from '../seeds/default-content.js';
 import { seedBase } from '../seeds/seed-base.js';
 
 /**
@@ -149,14 +149,15 @@ describe.skipIf(!databaseUrl)('API integration (hotel_test database)', () => {
     expect(site.sections[0]).toEqual({ key: 'HERO', sortOrder: 0 });
   });
 
-  it('serves the default guest policies, FAQ, ESCNNA notice and stay times from the base seed', async () => {
+  it('serves the default guest policies, FAQ and stay times from the base seed, without a child-protection notice', async () => {
     const policies = (await call('GET', '/public/policies')).json() as { title: string }[];
     expect(policies.map((p) => p.title)).toEqual(DEFAULT_POLICIES.map((p) => p.title));
     const faqs = (await call('GET', '/public/faq')).json() as { question: string }[];
     expect(faqs).toHaveLength(8);
     expect(faqs[0]!.question).toBe('¿A qué hora es el check-in y el check-out?');
     const { hotel } = (await call('GET', '/public/site')).json();
-    expect(hotel.escnnaNotice).toBe(escnnaNoticeFor('Hotel Bambú Plaza'));
+    // Owner decision 2026-11-09: the notice is posted at reception, not on the website.
+    expect(Object.keys(hotel).some((key) => /notice/i.test(key))).toBe(false);
     expect(hotel).toMatchObject({ checkInTime: '15:00', checkOutTime: '12:00' });
   });
 
@@ -170,7 +171,7 @@ describe.skipIf(!databaseUrl)('API integration (hotel_test database)', () => {
     });
     await prisma.hotelProfile.update({
       where: { id: 1 },
-      data: { escnnaNotice: 'Aviso editado.', checkInTime: '14:00' },
+      data: { checkInTime: '14:00' },
     });
     await prisma.hotelPolicy.create({
       data: { title: '[DEMO] Mascotas', content: 'x', published: true },
@@ -187,12 +188,12 @@ describe.skipIf(!databaseUrl)('API integration (hotel_test database)', () => {
       (await prisma.hotelPolicy.findUniqueOrThrow({ where: { id: firstPolicy.id } })).content,
     ).toBe('Texto editado por el hotel.');
     const profile = await prisma.hotelProfile.findUniqueOrThrow({ where: { id: 1 } });
-    expect(profile).toMatchObject({ escnnaNotice: 'Aviso editado.', checkInTime: '14:00' });
+    expect(profile).toMatchObject({ checkInTime: '14:00' });
 
     // Restore the seeded profile values for the remaining tests.
     await prisma.hotelProfile.update({
       where: { id: 1 },
-      data: { escnnaNotice: escnnaNoticeFor('Hotel Bambú Plaza'), checkInTime: '15:00' },
+      data: { checkInTime: '15:00' },
     });
   });
 

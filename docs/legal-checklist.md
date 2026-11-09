@@ -39,7 +39,8 @@
 - [ ] Reviewed whether RNBD registration applies (assets > 100,000 UVT, etc., 17.4).
 - [ ] Cookies, maps and third-party tools are reviewed and inventoried. In production, confirm cookies set by Cloudflare (e.g. `__cf_bm`) and add them to the inventory if present.
 - [ ] Provider contracts and terms reviewed (data-processing terms of the hosting, CDN and storage providers; international transfers if servers are outside Colombia).
-- [ ] The hotel decided whether to publish the RNT number and the ESCNNA notice (recommended if it is registered; Ley 1558 de 2012 art. 30, Ley 1336 de 2009).
+- [ ] The hotel decided whether to publish the RNT number (recommended if it is registered; Ley 1558 de 2012 art. 30).
+- Removed 2026-11-09 (owner decision): the ESCNNA code of conduct (Ley 1336 de 2009) is the physical notice posted at reception, so neither the site nor the admin carries a notice field.
 - [ ] Rates are published with taxes included, or the conditions are approved (Ley 1480 de 2011).
 - [ ] Status of the reforms to Ley 1581 verified (bills filed in 2025–2026).
 - [ ] The analytics decision is confirmed: by default the aggregated counter runs only with analytics consent (11.2). Measuring without consent requires the adviser's approval and a change to the cookie policy.

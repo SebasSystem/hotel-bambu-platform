@@ -1,8 +1,7 @@
 /**
  * Default guest content for the base seed (owner review 2026-11-08): guest policies, frequent
- * questions, the ESCNNA notice and default check-in/out times. They are realistic starting texts
- * that the hotel edits in /admin; the seed writes them only into empty data and never overwrites
- * an edit.
+ * questions and default check-in/out times. They are realistic starting texts that the hotel edits
+ * in /admin; the seed writes them only into empty data and never overwrites an edit.
  *
  * IMPORTANT: these texts are general information, not legal advice. The hotel must review them
  * with its legal adviser before relying on them (references checked 2026-11-08: Ley 2068 de 2020,
@@ -170,16 +169,4 @@ export function buildDefaultFaqs(context: FaqContext): DefaultFaq[] {
       showOnHome: false,
     },
   ];
-}
-
-/** The footer prints the first sentence; the guest-info page prints the whole notice. */
-export const ESCNNA_NOTICE_MAX_LENGTH = 450;
-
-/** ESCNNA prevention notice (Ley 679 de 2001, Ley 1336 de 2009) for an empty profile. */
-export function escnnaNoticeFor(hotelName: string): string {
-  return [
-    `${hotelName} rechaza la explotación sexual comercial de niñas, niños y adolescentes (ESCNNA) y cumple la Ley 679 de 2001 y la Ley 1336 de 2009.`,
-    'En Colombia, la explotación y el abuso sexual de menores de edad son delitos castigados con prisión.',
-    'Si conoces un caso, denúncialo a la Línea 141 del ICBF o a la Línea 123 de la Policía Nacional.',
-  ].join(' ');
 }

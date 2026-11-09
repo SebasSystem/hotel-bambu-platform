@@ -21,7 +21,7 @@ export function mapUrlFor(latitude: number, longitude: number): string {
  * meta description are written from the framed mission only. The phone is not confirmed as
  * WhatsApp, so `whatsappNumber` stays empty.
  *
- * The ESCNNA notice and the check-in/out times are editable default content (`default-content.ts`).
+ * The check-in/out times are editable default content (`default-content.ts`).
  *
  * TODO(hotel): legalName, email, openingHours, whatsappNumber, directions.
  */

@@ -20,7 +20,6 @@ export interface PublicHotel {
   name: string;
   legalName: string | null;
   rntNumber: string | null;
-  escnnaNotice: string | null;
   tagline: string | null;
   /** Meta description of the hotel (home page). */
   shortDescription: string | null;

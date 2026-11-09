@@ -485,7 +485,7 @@ and `packages/shared/src/icons/icons.ts` (Lucide `ICON_KEYS`).
 | Footer blurb | `HotelProfile.shortDescription` |
 | Footer "Contacto" column | `address`, `municipality`, `department`, `whatsappNumber`, `phone`, `email`, `openingHours` (skip nulls) |
 | Footer "Información" | links to `/politicas` (HotelPolicy), `/preguntas-frecuentes` (Faq), privacy/legal pages |
-| Footer bottom | © year + `HotelProfile.legalName` + `rntNumber` (Colombian RNT) + `escnnaNotice` |
+| Footer bottom | © year + `HotelProfile.legalName` + `rntNumber` (Colombian RNT) |
 | (not in mockup) social links | `SocialLink` (active, sortOrder) as a Lucide/brand icon row in the footer brand column |
 
 ### Home

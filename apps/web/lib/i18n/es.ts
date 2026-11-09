@@ -20,9 +20,6 @@ export const ui = {
     location: 'Ubicación y cómo llegar',
     policies: 'Información para huéspedes',
     policiesIntro: 'Normas de la estadía y preguntas frecuentes, para que llegues sin sorpresas.',
-    /** Accessible name of the ESCNNA notice on the guest-info page. */
-    escnnaLabel:
-      'Aviso de prevención de la explotación sexual comercial de niñas, niños y adolescentes',
     gallery: 'Galería de fotos',
   },
   phone: { call: 'Llamar', callTo: 'Llamar al' },
@@ -118,8 +115,6 @@ export const ui = {
       })[platform] ?? 'Sitio web',
     socialName: (label: string, hotel: string) => `${label} de ${hotel}`,
     rnt: 'Registro Nacional de Turismo (RNT)',
-    /** Link from the short ESCNNA notice to the full text on the guest-info page. */
-    escnnaMore: 'Leer el aviso completo y cómo denunciar',
     cookies: 'Configurar cookies',
     rights: (year: number, name: string) => `© ${year} ${name}. Todos los derechos reservados.`,
   },

@@ -11,7 +11,6 @@ import {
   DEFAULT_STAY_TIMES,
   DEMO_MARKER,
   buildDefaultFaqs,
-  escnnaNoticeFor,
 } from './default-content.js';
 
 export interface SeedBaseResult {
@@ -34,8 +33,8 @@ const isEmpty = (value: string | null | undefined) => !value?.trim();
  * Idempotent base seed. Creates missing rows only (`update: {}`) and fills only empty hotel profile
  * fields: content edited in /admin is never overwritten by a re-run. Safe in every environment.
  *
- * Default guest content (owner review 2026-11-08, `default-content.ts`): the ESCNNA notice and the
- * check-in/out times go into empty profile fields; the policies and the FAQ are created, published,
+ * Default guest content (owner review 2026-11-08, `default-content.ts`): the check-in/out times go
+ * into empty profile fields; the policies and the FAQ are created, published,
  * only when the hotel has none of them. One-off convergence: policies and FAQ whose title/question
  * starts with "[DEMO]" (created by earlier demo seeds) are deleted first, so a database that only
  * had demo rows receives the defaults. No other table is touched by that cleanup.
@@ -51,9 +50,6 @@ export async function seedBase(prisma: PrismaClient): Promise<SeedBaseResult> {
           latitude: existingHotel.latitude === null ? null : Number(existingHotel.latitude),
           longitude: existingHotel.longitude === null ? null : Number(existingHotel.longitude),
         }),
-        ...(isEmpty(existingHotel.escnnaNotice)
-          ? { escnnaNotice: escnnaNoticeFor(existingHotel.name) }
-          : {}),
         ...(isEmpty(existingHotel.checkInTime)
           ? { checkInTime: DEFAULT_STAY_TIMES.checkInTime }
           : {}),
@@ -68,7 +64,6 @@ export async function seedBase(prisma: PrismaClient): Promise<SeedBaseResult> {
         id: 1,
         name: HOTEL_NAME,
         ...HOTEL_FACTS,
-        escnnaNotice: escnnaNoticeFor(HOTEL_NAME),
         ...DEFAULT_STAY_TIMES,
       };
       await tx.hotelProfile.create({ data });

@@ -94,7 +94,6 @@ export interface HotelProfile extends Timestamps {
   name: string;
   legalName: string | null;
   rntNumber: string | null;
-  escnnaNotice: string | null;
   tagline: string | null;
   shortDescription: string | null;
   description: string | null;

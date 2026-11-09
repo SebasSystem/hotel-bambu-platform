@@ -23,7 +23,6 @@ const TEXT_FIELDS = [
   'name',
   'legalName',
   'rntNumber',
-  'escnnaNotice',
   'tagline',
   'shortDescription',
   'description',
@@ -122,14 +121,6 @@ export function HotelForm({ profile }: { profile: HotelProfile }) {
           hint="Registro Nacional de Turismo. Opcional; se muestra en el pie de página."
           error={err('rntNumber')}
           registration={register('rntNumber')}
-        />
-        <TextAreaField
-          className="md:col-span-2"
-          label="Aviso ESCNNA"
-          hint="Texto de prevención de explotación sexual de niños, niñas y adolescentes (Ley 679 de 2001). Opcional."
-          rows={3}
-          error={err('escnnaNotice')}
-          registration={register('escnnaNotice')}
         />
         <TextField
           className="md:col-span-2"

@@ -24,7 +24,6 @@ const hotel: PublicHotel = {
   name: 'Hotel Bambú Plaza',
   legalName: null,
   rntNumber: null,
-  escnnaNotice: null,
   tagline: null,
   shortDescription: 'Hotel en el centro',
   description: null,

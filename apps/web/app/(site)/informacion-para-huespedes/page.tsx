@@ -29,7 +29,7 @@ export async function generateMetadata(): Promise<Metadata> {
 /**
  * "Información para huéspedes" (owner review 2026-11-08; formerly `/politicas-del-hotel`, and C3
  * merged `/preguntas-frecuentes` here; both answer a 301): check-in/out figures, each published policy as a mockup detail block inside a paper card,
- * the ESCNNA notice, then the visible FAQ (no FAQPage markup: the rich result is retired) and the
+ * then the visible FAQ (no FAQPage markup: the rich result is retired) and the
  * contact card.
  */
 export default async function GuestInfoPage() {
@@ -86,16 +86,6 @@ export default async function GuestInfoPage() {
                 </section>
               ))}
             </div>
-          ) : null}
-
-          {hotel.escnnaNotice ? (
-            <aside
-              id="aviso-escnna"
-              aria-label={ui.pages.escnnaLabel}
-              className="scroll-mt-28 rounded-lg border border-line bg-notice-bg p-7 text-sm text-notice-fg"
-            >
-              <TextBlock text={hotel.escnnaNotice} />
-            </aside>
           ) : null}
 
           {!hasTimes && policies.length === 0 && faqs.length === 0 ? (

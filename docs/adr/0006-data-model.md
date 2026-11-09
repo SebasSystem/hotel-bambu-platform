@@ -14,7 +14,7 @@ Requirement 14 lists the initial entities; 12.6–12.7 ask for integrity in the 
 | Area | Models |
 |---|---|
 | Admin & security | `AdminUser` (lowercase unique email, Argon2id `passwordHash`, `role`, `active`, `failedAttempts`, `lockedUntil`, `lastLoginAt`, `passwordChangedAt`), `Session` (SHA-256 `tokenHash` only, absolute `expiresAt`, `lastSeenAt` for idle expiry, optional keyed `ipHash`/`userAgentHash`), `AuditLog` |
-| Hotel | `HotelProfile` singleton (contact, location, check-in/out, optional `rntNumber` and `escnnaNotice`, logo/hero media), `WhatsAppTemplate` (enum key, `{{variable}}` whitelist), `SocialLink` |
+| Hotel | `HotelProfile` singleton (contact, location, check-in/out, optional `rntNumber`, logo/hero media; a former optional child-protection notice field was dropped on 2026-11-09), `WhatsAppTemplate` (enum key, `{{variable}}` whitelist), `SocialLink` |
 | Rooms | `Room` (`slug`, `RoomType`, `PublicationStatus`, capacity, `beds` JSON, `basePrice`, `priceUnit`, `taxesIncluded`, SEO), `RoomSlugRedirect`, `RoomImage` (one cover), `Amenity` + `RoomAmenity`, `Promotion` |
 | Hotel services | ~~`Service`~~ removed by ADR 0015: hotel-wide features are `Amenity` rows with scope `HOTEL`. |
 | Media | `MediaAsset` (random `storageKey`, magic-byte `mimeType`, SHA-256 `checksum` unique, dimensions, `variants` JSON, `blurDataUrl`, `dominantColor`, `altText`, `status`), `GalleryItem`, `PendingStorageDeletion` |

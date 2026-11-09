@@ -29,7 +29,7 @@ Este documento es la **fuente de verdad** del proyecto. Está escrito para el eq
 
 - Nuevas secciones: **identidad visual y sistema de diseño** (6), **investigación de diseño** con hallazgos iniciales y protocolo (7), **sistema de movimiento y animación** (8), **imágenes del hotel, medios y seeds** (15), **presupuestos de rendimiento** (20).
 - Nueva **Fase 0** (investigación y dirección de arte) antes de construir la interfaz pública.
-- **Normativa turística colombiana** agregada como referencia: campo **opcional** para número RNT y aviso ESCNNA (se muestran solo si el hotel los configura) y precios con impuestos incluidos (17.6).
+- **Normativa turística colombiana** agregada como referencia: campo **opcional** para número RNT (se muestra solo si el hotel lo configura) y precios con impuestos incluidos (17.6).
 - **Elementos opcionales claramente marcados** (2.3): video en el hero, narrativa con video, scroll suave y 3D son opciones a investigar en la Fase 0, no requisitos.
 - Arquitectura de información: la home sigue siendo una landing narrativa, pero las **habitaciones, ubicación y políticas tienen páginas propias indexables** (mejor SEO).
 - Nuevos contenidos: **políticas del hotel, preguntas frecuentes, cómo llegar y alrededores**, horarios de check-in/check-out.
@@ -91,7 +91,7 @@ Construir una presencia digital profesional, memorable y administrable que permi
 - Autenticación y protección del administrador.
 - Métricas básicas agregadas, si se habilitan.
 - Política de tratamiento de datos, aviso de privacidad, política de cookies y gestor de consentimiento.
-- Campos opcionales para número de Registro Nacional de Turismo (RNT) y aviso contra la ESCNNA; se muestran en el footer solo si el hotel los configura (ver 17.6).
+- Campo opcional para el número de Registro Nacional de Turismo (RNT); se muestra en el footer solo si el hotel lo configura (ver 17.6).
 - Identidad visual base (logo, paleta, tipografía, tokens).
 - SEO, accesibilidad, rendimiento, registro de errores y despliegue.
 
@@ -186,7 +186,7 @@ Las rutas pueden ajustarse tras la investigación (sección 7), pero las habitac
 7. **Ubicación** — dirección, mapa bajo demanda, botón "Cómo llegar", atractivos cercanos.
 8. **Preguntas frecuentes** — selección de las más útiles.
 9. **Contacto** — teléfono, WhatsApp, correo, dirección, horarios.
-10. **Footer** — datos del hotel, navegación, redes, número RNT y aviso ESCNNA (si están configurados), enlaces legales, "Configurar cookies", derechos de autor.
+10. **Footer** — datos del hotel, navegación, redes, número RNT (si está configurado), enlaces legales, "Configurar cookies", derechos de autor.
 
 La estructura puede reordenarse según la investigación y el contenido real. No mostrar secciones vacías.
 
@@ -926,7 +926,7 @@ No hay obligación general de contratar abogado para redactar la política, pero
 ### 17.6 Normativa turística y de consumo (nuevo)
 
 - **Registro Nacional de Turismo (RNT) — campo opcional en el sistema:** el campo puede quedar vacío; si está vacío, el sitio no muestra nada ni deja espacios vacíos. Contexto para el hotel: la ley exige que los prestadores de servicios turísticos estén inscritos y que el número de RNT aparezca en toda su publicidad (Ley 1558 de 2012, art. 30). Un sitio web público cuenta como publicidad. Por eso, publicarlo o no es decisión y responsabilidad del hotel, no un requisito de desarrollo. Recomendación: configurarlo antes de publicar si el hotel está inscrito. Hay un proyecto de decreto de 2026 que refuerza su exhibición en sitios web; verificar su estado.
-- **Prevención de la ESCNNA — campo opcional en el sistema:** los prestadores de servicios turísticos deben adoptar y publicar el Código de Conducta (Ley 1336 de 2009, Resolución 3840 de 2009). El panel permite configurar el aviso con el texto aprobado por el hotel; se muestra en el footer o en las políticas solo si está configurado.
+- **Código de conducta contra la explotación sexual de menores (Ley 1336 de 2009, Resolución 3840 de 2009):** el hotel lo exhibe físicamente en la recepción. Decisión del propietario (2026-11-09): no se muestra en el sitio ni se configura en el panel.
 - **Precios (Estatuto del Consumidor, Ley 1480 de 2011):** el precio debe informarse en pesos colombianos incluyendo impuestos y costos adicionales. Publicar tarifas como precio total con impuestos ("desde $ X por noche, impuestos incluidos") o, si el hotel decide otra cosa, revisarlo con su asesor. Si aplican condiciones especiales (por ejemplo, tratamiento tributario para extranjeros no residentes), explicarlas en las notas de tarifa con el texto aprobado por el hotel.
 - **Publicidad veraz:** fotos reales y actuales, servicios confirmados, promociones con condiciones y vigencia visibles.
 
@@ -945,7 +945,7 @@ Informar que el contacto ocurre en WhatsApp (servicio externo con sus propias po
 - [ ] Revisado si aplica inscripción en RNBD.
 - [ ] Cookies, mapas y herramientas de terceros revisados e inventariados.
 - [ ] Contratos y condiciones de proveedores revisados.
-- [ ] El hotel decidió si publica el número RNT y el aviso ESCNNA (recomendado si aplica).
+- [ ] El hotel decidió si publica el número RNT (recomendado si aplica).
 - [ ] Tarifas con impuestos incluidos o condiciones aprobadas.
 - [ ] Estado de reformas a la Ley 1581 verificado.
 - [ ] Documentos aprobados por el hotel.
@@ -1152,7 +1152,7 @@ Modelo de datos y migraciones, seeds (`base`, `demo`), `admin:create`, autentica
 
 ### Fase 3 — Sitio público
 
-Layout, header, hero (imagen/video), sobre nosotros, habitaciones y detalle, servicios, galería, ubicación y cómo llegar, FAQ, políticas, contacto, WhatsApp, footer (RNT, ESCNNA, legal). Animaciones según la especificación aprobada, con movimiento reducido.
+Layout, header, hero (imagen/video), sobre nosotros, habitaciones y detalle, servicios, galería, ubicación y cómo llegar, FAQ, políticas, contacto, WhatsApp, footer (RNT, legal). Animaciones según la especificación aprobada, con movimiento reducido.
 
 ### Fase 4 — Calidad y cumplimiento
 
@@ -1193,7 +1193,7 @@ Estadísticas ampliadas, versión en inglés, 2FA, más secciones administrables
 **Legal y cumplimiento**
 - [ ] Políticas y avisos corresponden al tratamiento real y están aprobados por el hotel.
 - [ ] Gestor de cookies con aceptar, rechazar y configurar; no esenciales bloqueadas hasta consentimiento; modificable desde el footer; evidencia guardada.
-- [ ] Si se configuran el RNT y el aviso ESCNNA, aparecen en el footer; si no, no quedan bloques vacíos.
+- [ ] Si se configura el RNT, aparece en el footer; si no, no quedan bloques vacíos.
 
 **SEO y rendimiento**
 - [ ] Metadatos, sitemap, robots, canonical y datos estructurados válidos.
@@ -1218,7 +1218,7 @@ Confirmar con el hotel y el equipo antes o durante la Fase 0:
 10. Preguntas frecuentes reales.
 11. Redes sociales oficiales.
 12. Fotografías autorizadas, personas que aparecen y **fotos faltantes** (incluido video corto para el hero, si se quiere).
-13. Texto del código de conducta ESCNNA suscrito por el hotel.
+13. (Retirado 2026-11-09: el código de conducta contra la explotación sexual de menores se exhibe en la recepción, no en el sitio.)
 14. Responsable del tratamiento de datos y correo para consultas de privacidad.
 15. Proveedores de hosting, base de datos y almacenamiento.
 16. Si se necesitan métricas, cuáles y si se miden solo con consentimiento.
@@ -1238,7 +1238,7 @@ Confirmar con el hotel y el equipo antes o durante la Fase 0:
 - [SIC — Obligación de registro en el RNBD](https://sedeelectronica.sic.gov.co/publicaciones/boletin-juridico/concepto/cuales-personas-estan-obligadas-realizar-el-registro-de-bases-de-datos-personales-en-el-rnbd)
 - [SIC — Documentación de cookies](https://sedeelectronica.sic.gov.co/transparencia/normativa/politicas-lineamientos-y-manuales/documentacion-de-cookies)
 - [Ley 1336 de 2009 — Función Pública](https://www1.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=36877)
-- [Resolución 3840 de 2009 — Código de conducta ESCNNA](https://www1.funcionpublica.gov.co/eva/gestornormativo/norma_pdf.php?i=38492)
+- [Resolución 3840 de 2009 — Código de conducta contra la explotación sexual de menores](https://www1.funcionpublica.gov.co/eva/gestornormativo/norma_pdf.php?i=38492)
 - [Registro Nacional de Turismo — Confecámaras](https://rnt.confecamaras.co/home)
 - MinCIT — proyectos de decreto 2026 sobre el RNT (verificar estado en mincit.gov.co)
 

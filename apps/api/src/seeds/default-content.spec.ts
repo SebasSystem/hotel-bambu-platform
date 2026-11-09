@@ -3,9 +3,7 @@ import {
   DEFAULT_POLICIES,
   DEFAULT_STAY_TIMES,
   DEMO_MARKER,
-  ESCNNA_NOTICE_MAX_LENGTH,
   buildDefaultFaqs,
-  escnnaNoticeFor,
   formatStayTime,
 } from './default-content.js';
 
@@ -82,24 +80,5 @@ describe('default guest content (owner review 2026-11-08)', () => {
     expect(faqs.find((faq) => faq.question === '¿Cómo llego al hotel?')?.answer).not.toMatch(
       /Estamos en/,
     );
-  });
-
-  it('writes a short ESCNNA notice with the laws and the reporting lines', () => {
-    const notice = escnnaNoticeFor('Hotel Bambú Plaza');
-    expect(notice.length).toBeLessThanOrEqual(ESCNNA_NOTICE_MAX_LENGTH);
-    expect(notice.startsWith('Hotel Bambú Plaza rechaza la explotación sexual comercial')).toBe(
-      true,
-    );
-    for (const part of [
-      'Ley 679 de 2001',
-      'Ley 1336 de 2009',
-      'prisión',
-      'Línea 141',
-      'ICBF',
-      'Línea 123',
-      'Policía Nacional',
-    ]) {
-      expect(notice).toContain(part);
-    }
   });
 });

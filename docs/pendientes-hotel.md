@@ -30,7 +30,6 @@ These appear on framed prints / the RNT certificate in the photo set (`docs/asse
 - [ ] Policies: check-in / check-out times, pets, minors, cancellation, payment methods, deposits, ID requirements
 - [ ] Real FAQ (top questions guests ask)
 - [ ] Official social media accounts (URLs)
-- [ ] ESCNNA code of conduct text signed by the hotel (Ley 1336/2009) — optional display
 - [ ] Privacy contact: e-mail for data-protection requests (Ley 1581)
 - [ ] Hosting, database and storage providers (or approve the VPS + Cloudflare plan)
 - [ ] Analytics: wanted? which metrics? only with consent?

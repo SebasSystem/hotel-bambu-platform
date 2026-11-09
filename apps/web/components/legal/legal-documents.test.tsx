@@ -8,7 +8,6 @@ const hotel: PublicHotel = {
   name: 'Hotel Bambú Plaza',
   legalName: 'Hotel Bambú Plaza S.A.S., NIT 900.000.000-1',
   rntNumber: '232175',
-  escnnaNotice: null,
   tagline: null,
   shortDescription: null,
   description: null,

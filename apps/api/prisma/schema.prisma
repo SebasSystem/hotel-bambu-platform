@@ -158,8 +158,6 @@ model HotelProfile {
   legalName         String?
   /// Registro Nacional de Turismo (req. 17.6). Optional: hidden on the site when empty.
   rntNumber         String?
-  /// ESCNNA prevention notice text approved by the hotel (req. 17.6). Optional.
-  escnnaNotice      String?
   /// Short brand line, e.g. "Hotel Bambú Plaza: descanso, comodidad y confianza en el corazón de Mocoa".
   tagline           String?
   /// Meta description of the hotel (home page). Single description source (ADR 0016).

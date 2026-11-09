@@ -107,7 +107,7 @@ They are always plates (3:4) at ≤ 720 px rendered width on desktop. Staggered 
 | 6 | 04 — Láminas | A selected 6-plate gallery with captions, a horizontal scroll-snap strip on mobile, and a "Ver galería completa" link. |
 | 7 | 05 — Cómo llegar | Typographic address block, a consent-gated map button, and a simple SVG "route" line drawing to a pin. Nearby places only when confirmed. |
 | 8 | 06 — Preguntas | 3–5 FAQ in an accessible accordion, two-column on desktop. |
-| 9 | Contacto / Colofón | Big closing statement + WhatsApp CTA, then the footer (contact in serif italic, nav, legal, RNT/ESCNNA, outlined wordmark). |
+| 9 | Contacto / Colofón | Big closing statement + WhatsApp CTA, then the footer (contact in serif italic, nav, legal, RNT, outlined wordmark). |
 
 ### Moodboard (captured screenshots)
 
@@ -210,7 +210,7 @@ Always framed, never full-bleed: tall plates with a 1 px cane hairline frame, or
 | 6 | Galería | Pinned horizontal strip (desktop) or scroll-snap (mobile). |
 | 7 | Ubicación | A stacked "CALLE 8 / # 7-10" address block in display type (once confirmed) + consent-gated map + "Cómo llegar". |
 | 8 | FAQ | Paper, a condensed caps question list. |
-| 9 | Footer | Night, a giant full-width wordmark, Sello CTA, nav, legal, RNT/ESCNNA. |
+| 9 | Footer | Night, a giant full-width wordmark, Sello CTA, nav, legal, RNT. |
 
 ### Moodboard (captured screenshots)
 
