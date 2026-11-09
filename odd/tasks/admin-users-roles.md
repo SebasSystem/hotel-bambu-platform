@@ -34,6 +34,8 @@ Users, roles, permissions, admin UI gating, CLI role flag, docs. Out of scope: r
 - [x] U4 Admin web: nav/page gating, dashboard per permission, Usuarios and Roles pages (permission checklist grouped by area), account page shows role.
 - [x] U5 Docs: ADR 0017, requirements 149 update, ADR 0008 note, security.md, admin-panel.md, api.md, README CLI.
 
+- [x] U6 Admin create/edit in a reusable `FormModal` (native dialog, sticky header/footer, scrollable body, full-screen on phones, unsaved-changes guard) instead of inline panels: ResourceManager (hero slides, policies, FAQ, amenities, nearby places, social links, rooms), Usuarios (create, edit, reset password), Roles (create, edit), media library (edit; the gallery has no inline form, only the picker). Hotel data and room types stay as pages. Owner feedback 2026-11-09: inline panels are bad UX.
+
 ## Acceptance criteria
 API returns 403 for routes outside the role; nav shows only allowed modules; last-admin and self-demotion protections tested; sessions revoked on role change/disable; `pnpm typecheck`, `pnpm lint`, `pnpm test`, web build green; e2e admin login still passes.
 
@@ -68,6 +70,12 @@ Branch `feat/admin-users-roles` from `feat/owner-review-phase-a`. Forecast ~1,80
   - Pending: e2e not run (the web on :3000 is a stale Docker container); new e2e "a content editor sees only its sections…" creates and then deactivates a user (users are never deleted, so inactive e2e users accumulate in the dev DB).
 - U5 commit: `65c5722` docs(admin): document roles, permissions and the users and roles panel.
 - U5 (route: delegated writer, docs only): ADR 0017, requirements §3 roles paragraph, ADR 0008 note, security.md (unauthorized access row, tests), admin-panel.md (routes, permission table, errors, tests), api.md (permission conventions, `/auth/me` shape, users/roles endpoints and codes, room-type create `images`, rooms `amenityOverrides`, public amenity `availability`), README (`--role` in the scripts table). Structural readback + Prettier check only (passive docs).
+- U6 commits: `7117425` feat(admin): add a reusable form modal for list create and edit; `d62f4f2` feat(admin): open list create and edit forms in a modal.
+- U6 (route: delegated writer; trigger: new component + 4 managers + tests + e2e + docs).
+  - RED observed: `form-modal.test.tsx` (module missing); after updating to the modal flow, 9 failing in `resource-manager.test.tsx` (3), `roles-manager.test.tsx` (2), `users-manager.test.tsx` (4).
+  - GREEN: FormModal 6/6; web 508/508 (55 files); `pnpm typecheck`, `pnpm lint`, web build green; Prettier clean on changed files.
+  - Design: `FormModal` (`components/admin/form-modal.tsx`) on native `<dialog>` + `showModal()`; with `onSubmit` the content is a `<form>` labelled by the title so the footer submit drives `handleSubmit`; `dirty` asks «¿Descartar cambios?» (confirm got an optional `cancelLabel`: "Seguir editando") and replaces `useUnsavedChangesWarning` in the forms; callers mount the form only while open (`key` per item). Cancel/close/click handlers ignore events from nested dialogs (media picker); a native close without a cancelable `cancel` is resynced. Styles (thin body scrollbar, enter animation, reduced motion) in `styles/admin.css`. e2e selectors moved from `form` names ("Nuevo: habitación"…) to `dialog` names ("Agregar habitación", "Agregar lugar", "Editar pregunta").
+  - Pending: e2e not run (stale web container on :3000); no visual screenshot taken (visual polish has no RED; layout verified by code review only).
 
 ## API contract for the web writer (U4)
 - `GET /auth/me` / login / change-password: `user: { id, email, name, role: { id, name }, permissions: Permission[] }` (`AuthUser`; permissions already expanded, `manage` implies `view`). Helpers: `hasPermission`, `hasAnyPermission`, `PERMISSIONS`, `PERMISSION_AREAS`, `SYSTEM_ROLE_NAME` from `@hotel-bambu/shared`.
