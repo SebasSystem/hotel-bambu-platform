@@ -108,7 +108,7 @@ describe('UsersManager', () => {
     renderManager();
 
     await user.click(screen.getByRole('button', { name: 'Editar Dueña' }));
-    const form = screen.getByRole('form', { name: 'Editar usuario' });
+    const form = screen.getByRole('dialog', { name: 'Editar usuario' });
     expect((within(form).getByLabelText(/^Rol/) as HTMLSelectElement).disabled).toBe(true);
     expect((within(form).getByLabelText('Usuario activo') as HTMLInputElement).disabled).toBe(true);
     expect(
@@ -123,6 +123,7 @@ describe('UsersManager', () => {
 
     expect(patch).toHaveBeenCalledWith(`/admin/users/${SELF_ID}`, { name: 'Dueña del hotel' });
     expect(refresh).toHaveBeenCalled();
+    expect(screen.queryByRole('dialog', { name: 'Editar usuario' })).toBeNull();
   });
 
   it('changes another user role and explains a refused change in Spanish', async () => {
@@ -131,7 +132,7 @@ describe('UsersManager', () => {
     renderManager();
 
     await user.click(screen.getByRole('button', { name: 'Editar Editor' }));
-    const form = screen.getByRole('form', { name: 'Editar usuario' });
+    const form = screen.getByRole('dialog', { name: 'Editar usuario' });
     expect(within(form).getByText(/cierra sus sesiones abiertas/)).toBeTruthy();
     await user.selectOptions(within(form).getByLabelText(/^Rol/), ADMIN_ROLE);
     await user.click(within(form).getByRole('button', { name: 'Guardar cambios' }));
@@ -153,7 +154,7 @@ describe('UsersManager', () => {
     renderManager();
 
     await user.click(screen.getByRole('button', { name: 'Agregar usuario' }));
-    const form = screen.getByRole('form', { name: 'Nuevo usuario' });
+    const form = screen.getByRole('dialog', { name: 'Agregar usuario' });
     await user.type(within(form).getByLabelText(/^Correo/), 'editor@example.test');
     await user.selectOptions(within(form).getByLabelText(/^Rol/), EDITOR_ROLE);
     await user.type(within(form).getByLabelText(/^Contraseña inicial/), 'una frase larga y segura');
@@ -169,6 +170,8 @@ describe('UsersManager', () => {
     const email = within(form).getByLabelText(/^Correo/);
     expect(await within(form).findByText('Ya existe un usuario con ese correo.')).toBeTruthy();
     expect(email.getAttribute('aria-invalid')).toBe('true');
+    // A failed save keeps the modal open with the typed values.
+    expect(screen.getByRole('dialog', { name: 'Agregar usuario' })).toBeTruthy();
   });
 
   it('resets a password after confirmation', async () => {
@@ -177,7 +180,7 @@ describe('UsersManager', () => {
     renderManager();
 
     await user.click(screen.getByRole('button', { name: 'Restablecer contraseña de Editor' }));
-    const form = screen.getByRole('form', { name: 'Restablecer contraseña' });
+    const form = screen.getByRole('dialog', { name: 'Restablecer contraseña' });
     await user.type(within(form).getByLabelText(/^Nueva contraseña/), 'otra frase larga segura');
     await user.click(within(form).getByRole('button', { name: 'Restablecer contraseña' }));
     await user.click(await screen.findByRole('button', { name: 'Restablecer' }));
@@ -185,6 +188,7 @@ describe('UsersManager', () => {
     expect(post).toHaveBeenCalledWith(`/admin/users/${OTHER_ID}/reset-password`, {
       password: 'otra frase larga segura',
     });
+    expect(screen.queryByRole('dialog', { name: 'Restablecer contraseña' })).toBeNull();
   });
 
   it('is read-only without users.manage', () => {

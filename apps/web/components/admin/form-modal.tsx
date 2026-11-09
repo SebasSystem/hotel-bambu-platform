@@ -176,7 +176,7 @@ export function FormModal({
       </header>
       <div
         ref={bodyRef}
-        className="admin-modal-body min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-5 tab:px-6"
+        className="admin-modal-body min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain px-5 py-5 tab:px-6"
       >
         {children}
       </div>

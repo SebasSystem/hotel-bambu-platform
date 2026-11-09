@@ -109,7 +109,7 @@ describe('RolesManager', () => {
     const user = userEvent.setup();
     renderManager();
     await user.click(screen.getByRole('button', { name: 'Agregar rol' }));
-    const form = screen.getByRole('form', { name: 'Nuevo rol' });
+    const form = screen.getByRole('dialog', { name: 'Agregar rol' });
     await user.type(within(form).getByLabelText(/^Nombre/), 'Fotografía');
     await user.click(
       within(within(form).getByRole('group', { name: 'Fotos y medios' })).getByRole('checkbox', {
@@ -122,6 +122,23 @@ describe('RolesManager', () => {
       description: null,
       permissions: ['media.view', 'media.manage'],
     });
+    expect(screen.queryByRole('dialog', { name: 'Agregar rol' })).toBeNull();
+  });
+
+  it('edits a role in a modal and asks before discarding changes', async () => {
+    const user = userEvent.setup();
+    renderManager();
+    await user.click(screen.getByRole('button', { name: 'Editar Recepción' }));
+    const dialog = screen.getByRole('dialog', { name: 'Editar rol' });
+    // The list does not reflow: the role card stays in place under the modal.
+    expect(card('Recepción')).toBeTruthy();
+    const name = within(dialog).getByLabelText(/^Nombre/);
+    expect((name as HTMLInputElement).value).toBe('Recepción');
+    await user.type(name, ' y reservas');
+    await user.click(within(dialog).getByRole('button', { name: 'Cancelar' }));
+    const ask = await screen.findByRole('dialog', { name: '¿Descartar cambios?' });
+    await user.click(within(ask).getByRole('button', { name: 'Descartar' }));
+    expect(screen.queryByRole('dialog', { name: 'Editar rol' })).toBeNull();
   });
 
   it('is read-only without users.manage', () => {

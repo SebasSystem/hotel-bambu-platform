@@ -57,7 +57,7 @@ test.describe('admin', () => {
 
       await page.goto('/admin/rooms');
       await page.getByRole('button', { name: 'Agregar habitación' }).click();
-      const roomForm = page.getByRole('form', { name: 'Nuevo: habitación' });
+      const roomForm = page.getByRole('dialog', { name: 'Agregar habitación' });
       for (const label of [/^Número o nombre/, /^Tipo de habitación/, /^Estado/]) {
         await expect(roomForm.getByLabel(label)).toBeVisible();
       }
@@ -66,7 +66,7 @@ test.describe('admin', () => {
 
       await page.goto('/admin/nearby-places');
       await page.getByRole('button', { name: 'Agregar lugar' }).click();
-      const form = page.getByRole('form', { name: 'Nuevo: lugar' });
+      const form = page.getByRole('dialog', { name: 'Agregar lugar' });
       await form.getByLabel(/^Nombre/).fill(name);
       await form.getByLabel(/^Distancia/).fill('300 m');
       await form.getByRole('button', { name: 'Agregar' }).click();
@@ -103,7 +103,7 @@ test.describe('admin', () => {
       await page.goto('/admin/faq');
       await expect(page).toHaveURL(/\/admin\/policies#preguntas$/);
       await page.getByRole('button', { name: `Editar ${question}` }).click();
-      const form = page.getByRole('form', { name: 'Editar pregunta' });
+      const form = page.getByRole('dialog', { name: 'Editar pregunta' });
       await form.getByRole('textbox', { name: /^Pregunta/ }).fill(edited);
       await form.getByRole('button', { name: 'Guardar cambios' }).click();
       await expect(page.getByText(edited)).toBeVisible();

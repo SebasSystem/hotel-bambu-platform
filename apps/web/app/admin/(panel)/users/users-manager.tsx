@@ -23,13 +23,13 @@ import {
   SelectField,
   TextField,
 } from '@/components/admin/fields';
+import { FormModal } from '@/components/admin/form-modal';
 import {
   Badge,
   BooleanBadge,
   Button,
   Notice,
   buttonClasses,
-  cx,
   panelClasses,
 } from '@/components/admin/ui';
 import { browserApi } from '@/lib/api/browser';
@@ -91,7 +91,7 @@ type Panel =
 
 /**
  * Admin users (feature admin-users-roles): table, create, edit (name, role, active) and password
- * reset. Users are never deleted, only deactivated. The current user cannot change their own role
+ * reset, each in a `FormModal`. Users are never deleted, only deactivated. The current user cannot change their own role
  * or deactivate themselves (the API refuses it too: SELF_ROLE_CHANGE, SELF_DEACTIVATION).
  */
 export function UsersManager({
@@ -113,7 +113,7 @@ export function UsersManager({
     <div className="flex flex-col gap-4">
       {canManage ? (
         <div>
-          <Button onClick={() => setPanel({ kind: 'create' })} disabled={panel?.kind === 'create'}>
+          <Button onClick={() => setPanel({ kind: 'create' })}>
             <Plus aria-hidden="true" className="size-4" /> Agregar usuario
           </Button>
         </div>
@@ -121,22 +121,20 @@ export function UsersManager({
         <Notice>Su rol permite ver los usuarios, no modificarlos.</Notice>
       )}
 
-      {panel ? (
-        <div className={cx(panelClasses, 'p-5 tab:p-6')}>
-          {panel.kind === 'create' ? (
-            <CreateUserForm roleOptions={roleOptions} onDone={close} />
-          ) : panel.kind === 'edit' ? (
-            <EditUserForm
-              key={panel.user.id}
-              user={panel.user}
-              isSelf={panel.user.id === currentUserId}
-              roleOptions={roleOptions}
-              onDone={close}
-            />
-          ) : (
-            <ResetPasswordForm key={panel.user.id} user={panel.user} onDone={close} />
-          )}
-        </div>
+      {panel?.kind === 'create' ? (
+        <CreateUserForm roleOptions={roleOptions} onDone={close} />
+      ) : null}
+      {panel?.kind === 'edit' ? (
+        <EditUserForm
+          key={panel.user.id}
+          user={panel.user}
+          isSelf={panel.user.id === currentUserId}
+          roleOptions={roleOptions}
+          onDone={close}
+        />
+      ) : null}
+      {panel?.kind === 'reset' ? (
+        <ResetPasswordForm key={panel.user.id} user={panel.user} onDone={close} />
       ) : null}
 
       <div className={`${panelClasses} p-2 tab:px-[22px] tab:py-3`}>
@@ -250,27 +248,6 @@ export function UsersManager({
   );
 }
 
-function FormButtons({
-  submitLabel,
-  loading,
-  onCancel,
-}: {
-  submitLabel: string;
-  loading: boolean;
-  onCancel: () => void;
-}) {
-  return (
-    <div className="flex flex-wrap gap-2 border-t border-line pt-4">
-      <Button type="submit" loading={loading}>
-        {submitLabel}
-      </Button>
-      <Button variant="secondary" onClick={onCancel}>
-        Cancelar
-      </Button>
-    </div>
-  );
-}
-
 type RoleOptions = readonly { value: string; label: string }[];
 
 function CreateUserForm({ roleOptions, onDone }: { roleOptions: RoleOptions; onDone: () => void }) {
@@ -281,7 +258,7 @@ function CreateUserForm({ roleOptions, onDone }: { roleOptions: RoleOptions; onD
     register,
     handleSubmit,
     setError,
-    formState: { errors, isSubmitting },
+    formState: { errors, isSubmitting, isDirty },
   } = useForm({
     resolver: formResolver(adminUserCreateSchema),
     defaultValues: { email: '', name: '', roleId: '', password: '' },
@@ -301,8 +278,16 @@ function CreateUserForm({ roleOptions, onDone }: { roleOptions: RoleOptions; onD
   });
 
   return (
-    <form onSubmit={onSubmit} noValidate aria-label="Nuevo usuario" className="flex flex-col gap-4">
-      <h2 className="font-sans text-base font-bold tracking-normal">Nuevo usuario</h2>
+    <FormModal
+      open
+      onClose={onDone}
+      title="Agregar usuario"
+      description="Comparta la contraseña inicial por un medio seguro."
+      dirty={isDirty}
+      onSubmit={onSubmit}
+      submitting={isSubmitting}
+      submitLabel="Crear usuario"
+    >
       <FormAlert message={formError} />
       <div className="grid gap-5 md:grid-cols-2">
         <TextField
@@ -332,8 +317,7 @@ function CreateUserForm({ roleOptions, onDone }: { roleOptions: RoleOptions; onD
           registration={register('password')}
         />
       </div>
-      <FormButtons submitLabel="Crear usuario" loading={isSubmitting} onCancel={onDone} />
-    </form>
+    </FormModal>
   );
 }
 
@@ -355,7 +339,7 @@ function EditUserForm({
     register,
     handleSubmit,
     setError,
-    formState: { errors, isSubmitting },
+    formState: { errors, isSubmitting, isDirty },
   } = useForm({
     resolver: formResolver(adminUserUpdateSchema),
     defaultValues: { name: user.name ?? '', roleId: user.role.id, active: user.active },
@@ -386,16 +370,16 @@ function EditUserForm({
   });
 
   return (
-    <form
+    <FormModal
+      open
+      onClose={onDone}
+      title="Editar usuario"
+      description={<span className="break-all">{user.email}</span>}
+      dirty={isDirty}
       onSubmit={onSubmit}
-      noValidate
-      aria-label="Editar usuario"
-      className="flex flex-col gap-4"
+      submitting={isSubmitting}
+      submitLabel="Guardar cambios"
     >
-      <div>
-        <h2 className="font-sans text-base font-bold tracking-normal">Editar usuario</h2>
-        <p className="mt-1 text-sm break-all text-muted-foreground">{user.email}</p>
-      </div>
       <FormAlert message={formError} />
       {isSelf ? <Notice>{SELF_NOTE}</Notice> : <Notice tone="warning">{SESSIONS_NOTE}</Notice>}
       <div className="grid gap-5 md:grid-cols-2">
@@ -416,8 +400,7 @@ function EditUserForm({
           />
         </div>
       </div>
-      <FormButtons submitLabel="Guardar cambios" loading={isSubmitting} onCancel={onDone} />
-    </form>
+    </FormModal>
   );
 }
 
@@ -429,7 +412,7 @@ function ResetPasswordForm({ user, onDone }: { user: AdminUserSummary; onDone: (
     register,
     handleSubmit,
     setError,
-    formState: { errors, isSubmitting },
+    formState: { errors, isSubmitting, isDirty },
   } = useForm({
     resolver: formResolver(adminUserPasswordResetSchema),
     defaultValues: { password: '' },
@@ -456,20 +439,23 @@ function ResetPasswordForm({ user, onDone }: { user: AdminUserSummary; onDone: (
   });
 
   return (
-    <form
-      onSubmit={onSubmit}
-      noValidate
-      aria-label="Restablecer contraseña"
-      className="flex flex-col gap-4"
-    >
-      <div>
-        <h2 className="font-sans text-base font-bold tracking-normal">Restablecer contraseña</h2>
-        <p className="mt-1 text-sm break-all text-muted-foreground">
+    <FormModal
+      open
+      onClose={onDone}
+      title="Restablecer contraseña"
+      description={
+        <span className="break-all">
           {label(user)} · {user.email}
-        </p>
-      </div>
+        </span>
+      }
+      size="sm"
+      dirty={isDirty}
+      onSubmit={onSubmit}
+      submitting={isSubmitting}
+      submitLabel="Restablecer contraseña"
+    >
       <FormAlert message={formError} />
-      <div className="grid gap-5 md:grid-cols-2">
+      <div className="grid gap-5">
         <PasswordField
           label="Nueva contraseña"
           autoComplete="new-password"
@@ -479,7 +465,6 @@ function ResetPasswordForm({ user, onDone }: { user: AdminUserSummary; onDone: (
           registration={register('password')}
         />
       </div>
-      <FormButtons submitLabel="Restablecer contraseña" loading={isSubmitting} onCancel={onDone} />
-    </form>
+    </FormModal>
   );
 }

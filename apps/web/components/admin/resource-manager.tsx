@@ -10,7 +10,8 @@ import { applyApiError } from '@/lib/forms/form-errors';
 import { asNullableString, formResolver } from '@/lib/forms/resolver';
 import { useConfirm, useToast } from './feedback';
 import { CheckboxField, FormAlert, SelectField, TextAreaField, TextField } from './fields';
-import { useAction, useUnsavedChangesWarning } from './hooks';
+import { FormModal } from './form-modal';
+import { useAction } from './hooks';
 import { MediaField, type MediaPreview } from './media-picker';
 import { ReorderButtons, moveItem } from './reorder-buttons';
 import { Button, EmptyState, cx, panelClasses } from './ui';
@@ -65,8 +66,10 @@ export interface ResourceManagerProps<T extends { id: string }> {
 }
 
 /**
- * Generic list + inline form for simple admin resources (FAQ, policies, social links, amenities,
- * rooms, nearby places). Validation reuses the shared Zod schemas; the API stays the authority.
+ * Generic list + create/edit modal for simple admin resources (hero slides, FAQ, policies, social
+ * links, amenities, rooms, nearby places). Rows keep toggles, reorder and delete; Agregar and Editar
+ * open a `FormModal`, so the list never reflows. Validation reuses the shared Zod schemas; the API
+ * stays the authority.
  */
 export function ResourceManager<T extends { id: string }>(props: ResourceManagerProps<T>) {
   const { items, noun, endpoint, reorderable, toggles = [] } = props;
@@ -94,15 +97,18 @@ export function ResourceManager<T extends { id: string }>(props: ResourceManager
   return (
     <div className="flex flex-col gap-4">
       <div>
-        <Button onClick={() => setEditing('new')} disabled={editing === 'new'}>
+        <Button onClick={() => setEditing('new')}>
           <Plus aria-hidden="true" className="size-4" /> {props.addLabel ?? `Agregar ${noun}`}
         </Button>
       </div>
 
-      {editing === 'new' ? (
-        <div className={cx(panelClasses, 'p-5 tab:p-6')}>
-          <ResourceForm {...props} item={null} onDone={() => setEditing(null)} />
-        </div>
+      {editing ? (
+        <ResourceForm
+          key={editing === 'new' ? 'new' : editing.id}
+          {...props}
+          item={editing === 'new' ? null : editing}
+          onDone={() => setEditing(null)}
+        />
       ) : null}
 
       {items.length === 0 ? (
@@ -112,64 +118,60 @@ export function ResourceManager<T extends { id: string }>(props: ResourceManager
       <ul className="flex flex-col gap-2.5">
         {items.map((item, index) => (
           <li key={item.id} className={cx(panelClasses, 'p-4 tab:px-5')}>
-            {editing !== 'new' && editing?.id === item.id ? (
-              <ResourceForm {...props} item={item} onDone={() => setEditing(null)} />
-            ) : (
-              <div className="flex flex-wrap items-start justify-between gap-3">
-                <div className="min-w-0 flex-1">{props.renderSummary(item)}</div>
-                <div className="flex flex-wrap items-center gap-2">
-                  {props.renderActions?.(item)}
-                  {toggles.map((toggle) => {
-                    const value = Boolean(item[toggle.name]);
-                    return (
-                      <Button
-                        key={toggle.name}
-                        variant="secondary"
-                        size="sm"
-                        aria-pressed={value}
-                        loading={busy === `${toggle.name}:${item.id}`}
-                        onClick={() =>
-                          void run(
-                            `${toggle.name}:${item.id}`,
-                            () =>
-                              browserApi.patch(`${endpoint}/${item.id}`, { [toggle.name]: !value }),
-                            'Cambios guardados.',
-                          )
-                        }
-                      >
-                        {value ? toggle.on : toggle.off}
-                      </Button>
-                    );
-                  })}
-                  {reorderable ? (
-                    <ReorderButtons
-                      index={index}
-                      count={items.length}
-                      label={props.itemLabel(item)}
-                      onMove={move}
-                      disabled={busy !== null}
-                    />
-                  ) : null}
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    onClick={() => setEditing(item)}
-                    aria-label={`Editar ${props.itemLabel(item)}`}
-                  >
-                    <Pencil aria-hidden="true" className="size-4" /> Editar
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => void remove(item)}
-                    loading={busy === `delete:${item.id}`}
-                    aria-label={`Eliminar ${props.itemLabel(item)}`}
-                  >
-                    <Trash2 aria-hidden="true" className="size-4" />
-                  </Button>
-                </div>
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div className="min-w-0 flex-1">{props.renderSummary(item)}</div>
+              <div className="flex flex-wrap items-center gap-2">
+                {props.renderActions?.(item)}
+                {toggles.map((toggle) => {
+                  const value = Boolean(item[toggle.name]);
+                  return (
+                    <Button
+                      key={toggle.name}
+                      variant="secondary"
+                      size="sm"
+                      aria-pressed={value}
+                      loading={busy === `${toggle.name}:${item.id}`}
+                      onClick={() =>
+                        void run(
+                          `${toggle.name}:${item.id}`,
+                          () =>
+                            browserApi.patch(`${endpoint}/${item.id}`, { [toggle.name]: !value }),
+                          'Cambios guardados.',
+                        )
+                      }
+                    >
+                      {value ? toggle.on : toggle.off}
+                    </Button>
+                  );
+                })}
+                {reorderable ? (
+                  <ReorderButtons
+                    index={index}
+                    count={items.length}
+                    label={props.itemLabel(item)}
+                    onMove={move}
+                    disabled={busy !== null}
+                  />
+                ) : null}
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => setEditing(item)}
+                  aria-label={`Editar ${props.itemLabel(item)}`}
+                >
+                  <Pencil aria-hidden="true" className="size-4" /> Editar
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => void remove(item)}
+                  loading={busy === `delete:${item.id}`}
+                  aria-label={`Eliminar ${props.itemLabel(item)}`}
+                >
+                  <Trash2 aria-hidden="true" className="size-4" />
+                </Button>
               </div>
-            )}
+            </div>
           </li>
         ))}
       </ul>
@@ -188,6 +190,8 @@ function ResourceForm<T extends { id: string }>({
   emptyValues,
   toFormValues,
   mediaPreview,
+  itemLabel,
+  addLabel,
 }: ResourceManagerProps<T> & { item: T | null; onDone: () => void }) {
   const toast = useToast();
   const router = useRouter();
@@ -204,7 +208,6 @@ function ResourceForm<T extends { id: string }>({
     setError,
     formState: { errors, isSubmitting, isDirty },
   } = form;
-  useUnsavedChangesWarning(isDirty);
   // Custom fields may depend on other fields (e.g. room amenities on the chosen type).
   const watchedValues = useWatch({ control });
 
@@ -230,11 +233,16 @@ function ResourceForm<T extends { id: string }>({
   const errorOf = (name: string) => errors[name] as { message?: string } | undefined;
 
   return (
-    <form
+    <FormModal
+      open
+      onClose={onDone}
+      title={item ? `Editar ${noun}` : (addLabel ?? `Agregar ${noun}`)}
+      description={item ? itemLabel(item) : undefined}
+      size={fields.some((f) => f.kind === 'media' || f.kind === 'custom') ? 'lg' : 'md'}
+      dirty={isDirty}
       onSubmit={onSubmit}
-      noValidate
-      className="flex flex-col gap-4"
-      aria-label={item ? `Editar ${noun}` : `Nuevo: ${noun}`}
+      submitting={isSubmitting}
+      submitLabel={item ? 'Guardar cambios' : 'Agregar'}
     >
       <FormAlert message={formError} />
       <div className="grid gap-5 md:grid-cols-2">
@@ -354,14 +362,6 @@ function ResourceForm<T extends { id: string }>({
           }
         })}
       </div>
-      <div className="flex flex-wrap gap-2 border-t border-line pt-4">
-        <Button type="submit" loading={isSubmitting}>
-          {item ? 'Guardar cambios' : 'Agregar'}
-        </Button>
-        <Button variant="secondary" onClick={onDone}>
-          Cancelar
-        </Button>
-      </div>
-    </form>
+    </FormModal>
   );
 }

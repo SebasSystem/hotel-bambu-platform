@@ -13,7 +13,8 @@ import { useId, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { useConfirm, useToast } from '@/components/admin/feedback';
 import { FormAlert, TextAreaField, TextField } from '@/components/admin/fields';
-import { useAction, useUnsavedChangesWarning } from '@/components/admin/hooks';
+import { FormModal } from '@/components/admin/form-modal';
+import { useAction } from '@/components/admin/hooks';
 import { Badge, Button, Notice, cx, panelClasses } from '@/components/admin/ui';
 import { describePermissions } from '@/lib/admin/permission-checklist';
 import { browserApi } from '@/lib/api/browser';
@@ -26,7 +27,8 @@ const users = (count: number) => (count === 1 ? '1 usuario' : `${count} usuarios
 /**
  * Roles (feature admin-users-roles): each grants permissions per admin area. The system role
  * (Administrador) has every permission and cannot be edited or deleted; a role still assigned to
- * users cannot be deleted. Permission changes apply on the user's next request.
+ * users cannot be deleted. Permission changes apply on the user's next request. Create and edit
+ * open a large `FormModal` whose body scrolls through the permission checklist.
  */
 export function RolesManager({
   roles,
@@ -58,7 +60,7 @@ export function RolesManager({
     <div className="flex flex-col gap-4">
       {canManage ? (
         <div>
-          <Button onClick={() => setEditing('new')} disabled={editing === 'new'}>
+          <Button onClick={() => setEditing('new')}>
             <Plus aria-hidden="true" className="size-4" /> Agregar rol
           </Button>
         </div>
@@ -66,30 +68,26 @@ export function RolesManager({
         <Notice>Su rol permite ver los roles, no modificarlos.</Notice>
       )}
 
-      {editing === 'new' ? (
-        <div className={cx(panelClasses, 'p-5 tab:p-6')}>
-          <RoleForm role={null} onDone={() => setEditing(null)} />
-        </div>
+      {editing ? (
+        <RoleForm
+          key={editing === 'new' ? 'new' : editing.id}
+          role={editing === 'new' ? null : editing}
+          onDone={() => setEditing(null)}
+        />
       ) : null}
 
       <ul className="flex flex-col gap-2.5">
-        {roles.map((role) =>
-          editing !== 'new' && editing?.id === role.id ? (
-            <li key={role.id} className={cx(panelClasses, 'p-5 tab:p-6')}>
-              <RoleForm role={role} onDone={() => setEditing(null)} />
-            </li>
-          ) : (
-            <li key={role.id}>
-              <RoleCard
-                role={role}
-                canManage={canManage}
-                deleting={busy === `delete:${role.id}`}
-                onEdit={() => setEditing(role)}
-                onDelete={() => void remove(role)}
-              />
-            </li>
-          ),
-        )}
+        {roles.map((role) => (
+          <li key={role.id}>
+            <RoleCard
+              role={role}
+              canManage={canManage}
+              deleting={busy === `delete:${role.id}`}
+              onEdit={() => setEditing(role)}
+              onDelete={() => void remove(role)}
+            />
+          </li>
+        ))}
       </ul>
     </div>
   );
@@ -209,8 +207,6 @@ function RoleForm({ role, onDone }: { role: AdminRoleSummary | null; onDone: () 
       permissions: (role?.permissions ?? []) as Permission[],
     },
   });
-  useUnsavedChangesWarning(isDirty);
-  const title = role ? 'Editar rol' : 'Nuevo rol';
 
   const onSubmit = handleSubmit(async (values: Partial<RoleCreateInput>) => {
     setFormError(null);
@@ -228,8 +224,17 @@ function RoleForm({ role, onDone }: { role: AdminRoleSummary | null; onDone: () 
   });
 
   return (
-    <form onSubmit={onSubmit} noValidate aria-label={title} className="flex flex-col gap-4">
-      <h2 className="font-sans text-base font-bold tracking-normal">{title}</h2>
+    <FormModal
+      open
+      onClose={onDone}
+      title={role ? 'Editar rol' : 'Agregar rol'}
+      description={role ? role.name : 'Elija qué puede ver y gestionar este rol en el panel.'}
+      size="lg"
+      dirty={isDirty}
+      onSubmit={onSubmit}
+      submitting={isSubmitting}
+      submitLabel={role ? 'Guardar cambios' : 'Crear rol'}
+    >
       <FormAlert message={formError} />
       <div className="grid gap-5 md:grid-cols-2">
         <TextField label="Nombre" required error={errors.name} registration={register('name')} />
@@ -255,14 +260,6 @@ function RoleForm({ role, onDone }: { role: AdminRoleSummary | null; onDone: () 
           />
         </div>
       </div>
-      <div className="flex flex-wrap gap-2 border-t border-line pt-4">
-        <Button type="submit" loading={isSubmitting}>
-          {role ? 'Guardar cambios' : 'Crear rol'}
-        </Button>
-        <Button variant="secondary" onClick={onDone}>
-          Cancelar
-        </Button>
-      </div>
-    </form>
+    </FormModal>
   );
 }

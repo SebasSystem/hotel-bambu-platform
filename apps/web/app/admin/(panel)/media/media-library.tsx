@@ -8,6 +8,7 @@ import { useState } from 'react';
 import { useForm, type FieldValues } from 'react-hook-form';
 import { useConfirm, useToast } from '@/components/admin/feedback';
 import { FormAlert, TextAreaField, TextField } from '@/components/admin/fields';
+import { FormModal } from '@/components/admin/form-modal';
 import { MediaThumb } from '@/components/admin/media-thumb';
 import { MediaUploader } from '@/components/admin/media-uploader';
 import { Badge, Button, Card, EmptyState } from '@/components/admin/ui';
@@ -47,7 +48,7 @@ function EditMediaForm({ item, onDone }: { item: MediaAsset; onDone: () => void 
     register,
     handleSubmit,
     setError,
-    formState: { errors, isSubmitting },
+    formState: { errors, isSubmitting, isDirty },
   } = useForm<FieldValues, unknown, FieldValues>({
     resolver: formResolver(mediaUpdateSchema) as never,
     defaultValues: { altText: item.altText ?? '', caption: item.caption ?? '' },
@@ -64,7 +65,22 @@ function EditMediaForm({ item, onDone }: { item: MediaAsset; onDone: () => void 
     }
   });
   return (
-    <form onSubmit={onSubmit} noValidate className="flex flex-col gap-3" aria-label="Editar imagen">
+    <FormModal
+      open
+      onClose={onDone}
+      title="Editar imagen"
+      size="sm"
+      dirty={isDirty}
+      onSubmit={onSubmit}
+      submitting={isSubmitting}
+      submitLabel="Guardar cambios"
+    >
+      <MediaThumb
+        variants={item.variants}
+        alt=""
+        className="aspect-4/3 w-full rounded-sm"
+        minWidth={480}
+      />
       <FormAlert message={formError} />
       <TextField
         label="Texto alternativo"
@@ -78,15 +94,7 @@ function EditMediaForm({ item, onDone }: { item: MediaAsset; onDone: () => void 
         error={errors.caption as { message?: string } | undefined}
         registration={register('caption')}
       />
-      <div className="flex gap-2">
-        <Button type="submit" size="sm" loading={isSubmitting}>
-          Guardar
-        </Button>
-        <Button variant="secondary" size="sm" onClick={onDone}>
-          Cancelar
-        </Button>
-      </div>
-    </form>
+    </FormModal>
   );
 }
 
