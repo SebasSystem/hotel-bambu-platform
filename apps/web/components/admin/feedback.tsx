@@ -40,6 +40,8 @@ export interface ConfirmOptions {
   title: string;
   description?: string;
   confirmLabel?: string;
+  /** Label of the dismiss button; defaults to "Cancelar". */
+  cancelLabel?: string;
   destructive?: boolean;
 }
 
@@ -127,7 +129,7 @@ export function FeedbackProvider({ children }: { children: ReactNode }) {
               ) : null}
               <div className="mt-6 flex justify-end gap-2">
                 <Button variant="secondary" autoFocus onClick={() => close(false)}>
-                  Cancelar
+                  {pending.cancelLabel ?? 'Cancelar'}
                 </Button>
                 <Button
                   variant={pending.destructive ? 'danger' : 'primary'}

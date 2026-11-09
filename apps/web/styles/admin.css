@@ -78,3 +78,78 @@ html:has([data-admin-shell])[data-scrolling]::-webkit-scrollbar-thumb,
     scrollbar-width: auto;
   }
 }
+
+/*
+ * Form modal (components/admin/form-modal.tsx): thin scrollbar on the scrollable body and a short
+ * enter animation (a rise on desktop, a slide-up sheet on phones), off with reduced motion.
+ */
+.admin-modal-body {
+  --admin-thumb-rest: rgb(38 49 43 / 0.16);
+  --admin-thumb-active: rgb(38 49 43 / 0.42);
+  scrollbar-width: thin;
+  scrollbar-color: var(--admin-thumb-rest) transparent;
+}
+
+.admin-modal-body:hover,
+.admin-modal-body:focus-within {
+  scrollbar-color: var(--admin-thumb-active) transparent;
+}
+
+.admin-modal-body::-webkit-scrollbar {
+  width: 8px;
+  background: transparent;
+}
+
+.admin-modal-body::-webkit-scrollbar-thumb {
+  border: 2px solid transparent;
+  border-radius: 999px;
+  background-clip: padding-box;
+  background-color: var(--admin-thumb-rest);
+}
+
+.admin-modal-body:hover::-webkit-scrollbar-thumb {
+  background-color: var(--admin-thumb-active);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .admin-modal[open] {
+    animation: admin-modal-sheet-in var(--duration-base, 250ms) var(--ease-out-soft, ease-out);
+  }
+
+  .admin-modal[open]::backdrop {
+    animation: admin-modal-backdrop-in var(--duration-base, 250ms) ease-out;
+  }
+
+  @media (width >= 47.5rem) {
+    .admin-modal[open] {
+      animation-name: admin-modal-in;
+    }
+  }
+}
+
+@keyframes admin-modal-in {
+  from {
+    opacity: 0;
+    transform: translateY(0.75rem) scale(0.98);
+  }
+}
+
+@keyframes admin-modal-sheet-in {
+  from {
+    transform: translateY(1.5rem);
+    opacity: 0;
+  }
+}
+
+@keyframes admin-modal-backdrop-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@media (forced-colors: active) {
+  .admin-modal-body {
+    scrollbar-color: auto;
+    scrollbar-width: auto;
+  }
+}
