@@ -19,7 +19,13 @@ import {
 } from '@hotel-bambu/shared';
 import type { FastifyRequest } from 'fastify';
 import { z } from 'zod';
-import { type AuthenticatedAdmin, CurrentAdmin, RateLimit } from '../../common/request-context.js';
+import type { Permission } from '@hotel-bambu/shared';
+import {
+  type AuthenticatedAdmin,
+  CurrentAdmin,
+  RateLimit,
+  RequirePermission,
+} from '../../common/request-context.js';
 import { toValidationIssues, zod } from '../../common/zod-validation.pipe.js';
 import { MediaService } from './media.service.js';
 
@@ -32,15 +38,24 @@ export const paginationSchema = z.object({
     .transform((value) => value === 'true'),
 });
 
+/**
+ * Editors of hotel, rooms and content pick and upload images through the media picker (hotel logo,
+ * room-type images, hero slides, gallery) without managing the library itself.
+ */
+const MEDIA_PICKER_USERS: Permission[] = ['hotel.manage', 'rooms.manage', 'content.manage'];
+
+@RequirePermission('media.manage')
 @Controller('admin/media')
 export class MediaController {
   constructor(private readonly media: MediaService) {}
 
+  @RequirePermission('media.view', ...MEDIA_PICKER_USERS)
   @Get()
   list(@Query(zod(paginationSchema)) query: z.output<typeof paginationSchema>) {
     return this.media.list(query);
   }
 
+  @RequirePermission('media.view', ...MEDIA_PICKER_USERS)
   @Get(':id')
   get(@Param('id', ParseUUIDPipe) id: string) {
     return this.media.get(id);
@@ -50,6 +65,7 @@ export class MediaController {
    * multipart/form-data: text fields `altText` (required), `caption`, `galleryCategory` FIRST, then
    * one `file` part (JPEG/PNG/WebP, max UPLOAD_MAX_BYTES).
    */
+  @RequirePermission('media.manage', ...MEDIA_PICKER_USERS)
   @Post()
   @RateLimit('upload')
   async upload(@CurrentAdmin() admin: AuthenticatedAdmin, @Req() request: FastifyRequest) {

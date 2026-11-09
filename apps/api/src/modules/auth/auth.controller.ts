@@ -12,6 +12,7 @@ import { isCookieSecure, type Env } from '../../config/env.js';
 import {
   type AuthenticatedAdmin,
   type AuthenticatedSession,
+  AuthenticatedOnly,
   CurrentAdmin,
   Public,
   RateLimit,
@@ -24,6 +25,8 @@ import { AuthService } from './auth.service.js';
 import { csrfTokenFor } from './session-token.js';
 import { SessionService, type ClientMeta } from './session.service.js';
 
+/** Own session, account and password: every signed-in admin, whatever the role. */
+@AuthenticatedOnly()
 @Controller('auth')
 export class AuthController {
   private readonly secure: boolean;

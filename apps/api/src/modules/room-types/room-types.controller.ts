@@ -22,10 +22,15 @@ import {
   type RoomTypeUpdateInput,
 } from '@hotel-bambu/shared';
 import type { z } from 'zod';
-import { type AuthenticatedAdmin, CurrentAdmin } from '../../common/request-context.js';
+import {
+  type AuthenticatedAdmin,
+  CurrentAdmin,
+  RequirePermission,
+} from '../../common/request-context.js';
 import { zod } from '../../common/zod-validation.pipe.js';
 import { RoomTypesService } from './room-types.service.js';
 
+@RequirePermission('rooms.view')
 @Controller('admin/room-types')
 export class RoomTypesController {
   constructor(private readonly roomTypes: RoomTypesService) {}
@@ -35,6 +40,7 @@ export class RoomTypesController {
     return this.roomTypes.list();
   }
 
+  @RequirePermission('rooms.manage')
   @Post()
   create(
     @CurrentAdmin() admin: AuthenticatedAdmin,
@@ -44,6 +50,7 @@ export class RoomTypesController {
   }
 
   /** Declared before `:id` routes so "order" is never parsed as an id. */
+  @RequirePermission('rooms.manage')
   @Put('order')
   reorder(@CurrentAdmin() admin: AuthenticatedAdmin, @Body(zod(reorderSchema)) body: ReorderInput) {
     return this.roomTypes.reorder(admin.id, body.ids);
@@ -54,6 +61,7 @@ export class RoomTypesController {
     return this.roomTypes.get(id);
   }
 
+  @RequirePermission('rooms.manage')
   @Patch(':id')
   update(
     @CurrentAdmin() admin: AuthenticatedAdmin,
@@ -63,6 +71,7 @@ export class RoomTypesController {
     return this.roomTypes.update(admin.id, id, body);
   }
 
+  @RequirePermission('rooms.manage')
   @Patch(':id/status')
   setStatus(
     @CurrentAdmin() admin: AuthenticatedAdmin,
@@ -72,6 +81,7 @@ export class RoomTypesController {
     return this.roomTypes.setStatus(admin.id, id, body.status);
   }
 
+  @RequirePermission('rooms.manage')
   @Put(':id/images')
   setImages(
     @CurrentAdmin() admin: AuthenticatedAdmin,
@@ -81,6 +91,7 @@ export class RoomTypesController {
     return this.roomTypes.setImages(admin.id, id, body);
   }
 
+  @RequirePermission('rooms.manage')
   @Delete(':id')
   @HttpCode(204)
   async remove(@CurrentAdmin() admin: AuthenticatedAdmin, @Param('id', ParseUUIDPipe) id: string) {

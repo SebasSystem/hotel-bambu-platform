@@ -1,5 +1,6 @@
 import { Controller, Get, Injectable, Module, Query } from '@nestjs/common';
 import { z } from 'zod';
+import { RequirePermission } from '../../common/request-context.js';
 import { zod } from '../../common/zod-validation.pipe.js';
 import { PrismaService } from '../../prisma/prisma.service.js';
 import { AnalyticsModule, AnalyticsService } from '../analytics/analytics.js';
@@ -73,16 +74,19 @@ export class DashboardController {
     private readonly analytics: AnalyticsService,
   ) {}
 
+  @RequirePermission('dashboard.view')
   @Get('dashboard')
   summary() {
     return this.dashboard.summary();
   }
 
+  @RequirePermission('activity.view')
   @Get('analytics/summary')
   analyticsSummary(@Query(zod(daysSchema)) query: z.output<typeof daysSchema>) {
     return this.analytics.summary(query.days);
   }
 
+  @RequirePermission('activity.view')
   @Get('audit-logs')
   auditLogs(@Query(zod(pageSchema)) query: z.output<typeof pageSchema>) {
     return this.audit.list(query.page, query.pageSize);

@@ -13,7 +13,11 @@ import {
   hotelProfileUpdateSchema,
   type HotelProfileUpdateInput,
 } from '@hotel-bambu/shared';
-import { type AuthenticatedAdmin, CurrentAdmin } from '../../common/request-context.js';
+import {
+  type AuthenticatedAdmin,
+  CurrentAdmin,
+  RequirePermission,
+} from '../../common/request-context.js';
 import { zod } from '../../common/zod-validation.pipe.js';
 import { PrismaService } from '../../prisma/prisma.service.js';
 import { AdminChangesService } from '../audit/admin-changes.service.js';
@@ -85,6 +89,7 @@ export class HotelService {
   }
 }
 
+@RequirePermission('hotel.view')
 @Controller('admin')
 export class HotelController {
   constructor(private readonly hotel: HotelService) {}
@@ -94,6 +99,7 @@ export class HotelController {
     return this.hotel.getProfile();
   }
 
+  @RequirePermission('hotel.manage')
   @Patch('hotel')
   updateProfile(
     @CurrentAdmin() admin: AuthenticatedAdmin,

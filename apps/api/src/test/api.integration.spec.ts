@@ -1,11 +1,18 @@
 import 'reflect-metadata';
 import { PERMISSIONS } from '@hotel-bambu/shared';
 import type { NestFastifyApplication } from '@nestjs/platform-fastify';
+import { PATH_METADATA } from '@nestjs/common/constants.js';
+import { MetadataScanner, ModulesContainer, Reflector } from '@nestjs/core';
 import { Test } from '@nestjs/testing';
 import sharp from 'sharp';
 import { afterAll, beforeAll, describe, expect, inject, it, vi } from 'vitest';
 import { AppModule } from '../app.module.js';
 import { configureApp, createFastifyAdapter } from '../app.setup.js';
+import {
+  AUTHENTICATED_ONLY_KEY,
+  IS_PUBLIC_KEY,
+  PERMISSIONS_KEY,
+} from '../common/request-context.js';
 import { createAdminUser } from '../modules/admin-users/create-admin.js';
 import { OBJECT_STORAGE } from '../modules/media/media.service.js';
 import type { ObjectStorage } from '../modules/media/object-storage.js';
@@ -23,6 +30,15 @@ import { seedBase } from '../seeds/seed-base.js';
 const ORIGIN = 'http://localhost:3000';
 const ADMIN = { email: 'it-admin@example.test', password: 'integration-pass-2026' };
 const VICTIM = { email: 'it-locked@example.test', password: 'integration-lock-2026' };
+const EDITOR = { email: 'it-editor@example.test', password: 'integration-editor-2026' };
+const RECEPTION = { email: 'it-reception@example.test', password: 'integration-front-2026' };
+const CONTENT_ONLY = { email: 'it-content@example.test', password: 'integration-content-2026' };
+
+/** Cookie + CSRF token of one signed-in admin (the default jar is the Administrador). */
+interface Jar {
+  cookie: string;
+  csrf: string;
+}
 
 class MemoryStorage implements ObjectStorage {
   readonly objects = new Map<string, number>();
@@ -69,6 +85,9 @@ describe.skipIf(!databaseUrl)('API integration (hotel_test database)', () => {
   const revalidate = vi.fn();
   let cookie = '';
   let csrf = '';
+  const editor: Jar = { cookie: '', csrf: '' };
+  const reception: Jar = { cookie: '', csrf: '' };
+  const contentOnly: Jar = { cookie: '', csrf: '' };
 
   async function call(
     method: 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE',
@@ -78,17 +97,29 @@ describe.skipIf(!databaseUrl)('API integration (hotel_test database)', () => {
       auth?: boolean;
       csrf?: boolean;
       headers?: Record<string, string>;
+      /** Act as another signed-in admin instead of the default Administrador. */
+      as?: Jar;
     } = {},
   ) {
+    const jar = options.as ?? { cookie, csrf };
     const headers: Record<string, string> = { origin: ORIGIN, ...options.headers };
-    if (options.auth !== false && cookie) headers['cookie'] = cookie;
-    if (options.csrf !== false && csrf && method !== 'GET') headers['x-csrf-token'] ??= csrf;
+    if (options.auth !== false && jar.cookie) headers['cookie'] = jar.cookie;
+    if (options.csrf !== false && jar.csrf && method !== 'GET')
+      headers['x-csrf-token'] ??= jar.csrf;
     return app.inject({
       method,
       url: `/api/v1${url}`,
       headers,
       ...(options.body !== undefined ? { payload: options.body as object } : {}),
     });
+  }
+
+  async function signIn(jar: Jar, credentials: { email: string; password: string }) {
+    const res = await call('POST', '/auth/login', { auth: false, csrf: false, body: credentials });
+    expect(res.statusCode).toBe(200);
+    const setCookie = ([] as string[]).concat(res.headers['set-cookie'] ?? []);
+    jar.cookie = setCookie.find((c) => c.startsWith('hb_session='))!.split(';')[0]!;
+    jar.csrf = res.json().csrfToken;
   }
 
   beforeAll(async () => {
@@ -112,6 +143,12 @@ describe.skipIf(!databaseUrl)('API integration (hotel_test database)', () => {
     await seedBase(prisma);
     await createAdminUser(prisma, ADMIN);
     await createAdminUser(prisma, VICTIM);
+    await createAdminUser(prisma, { ...EDITOR, role: 'Editor de contenido' });
+    await createAdminUser(prisma, { ...RECEPTION, role: 'Recepción' });
+    const contentRole = await prisma.role.create({
+      data: { name: 'Solo contenido', permissions: ['content.view', 'content.manage'] },
+    });
+    await createAdminUser(prisma, { ...CONTENT_ONLY, roleId: contentRole.id });
   });
 
   afterAll(async () => {
@@ -210,8 +247,12 @@ describe.skipIf(!databaseUrl)('API integration (hotel_test database)', () => {
     await prisma.role.update({ where: { id: reception!.id }, data: { name: 'Front desk' } });
 
     const result = await seedBase(prisma);
-    expect(result.roles).toBe(3);
-    const roles = await prisma.role.findMany({ orderBy: { id: 'asc' } });
+    // Three seeded roles plus the custom role created in beforeAll.
+    expect(result.roles).toBe(4);
+    const roles = await prisma.role.findMany({
+      where: { id: { in: DEFAULT_ROLES.map((r) => r.id) } },
+      orderBy: { id: 'asc' },
+    });
     expect(roles.map((r) => [r.name, r.permissions, r.isSystem])).toEqual([
       ['Administrador', [...PERMISSIONS], true],
       ['Editor de contenido', ['rooms.view'], false],
@@ -855,6 +896,103 @@ describe.skipIf(!databaseUrl)('API integration (hotel_test database)', () => {
     });
     expect(consent.statusCode).toBe(204);
     expect(await prisma.consentRecord.count()).toBe(1);
+  });
+
+  it('declares a permission (or public/authenticated-only access) on every route', () => {
+    const reflector = app.get(Reflector);
+    const scanner = new MetadataScanner();
+    const uncovered: string[] = [];
+    let routes = 0;
+    for (const moduleRef of app.get(ModulesContainer).values()) {
+      for (const wrapper of moduleRef.controllers.values()) {
+        const controller = wrapper.metatype as (new (...args: never[]) => object) | null;
+        if (!controller) continue;
+        for (const name of scanner.getAllMethodNames(controller.prototype)) {
+          const handler = (controller.prototype as Record<string, unknown>)[name] as object;
+          if (Reflect.getMetadata(PATH_METADATA, handler) === undefined) continue;
+          routes += 1;
+          const targets = [handler, controller] as never[];
+          const covered =
+            reflector.getAllAndOverride(IS_PUBLIC_KEY, targets) ||
+            reflector.getAllAndOverride(AUTHENTICATED_ONLY_KEY, targets) ||
+            (reflector.getAllAndOverride<string[]>(PERMISSIONS_KEY, targets)?.length ?? 0) > 0;
+          if (!covered) uncovered.push(`${controller.name}.${name}`);
+        }
+      }
+    }
+    expect(routes).toBeGreaterThan(50);
+    expect(uncovered).toEqual([]);
+  });
+
+  it('enforces role permissions on admin routes (403 with the error shape)', async () => {
+    await signIn(editor, EDITOR);
+    await signIn(reception, RECEPTION);
+    await signIn(contentOnly, CONTENT_ONLY);
+
+    // Editor de contenido: hotel, rooms, content and media; no activity.
+    expect((await call('GET', '/admin/rooms', { as: editor })).statusCode).toBe(200);
+    expect((await call('GET', '/admin/dashboard', { as: editor })).statusCode).toBe(200);
+    const denied = await call('GET', '/admin/audit-logs', { as: editor });
+    expect(denied.statusCode).toBe(403);
+    expect(denied.json()).toMatchObject({
+      statusCode: 403,
+      error: 'Forbidden',
+      message: 'You do not have permission to perform this action.',
+      code: 'PERMISSION_DENIED',
+    });
+    expect((await call('GET', '/admin/analytics/summary', { as: editor })).statusCode).toBe(403);
+    const created = await call('POST', '/admin/faq', {
+      as: editor,
+      body: { question: '¿Pregunta del editor?', answer: 'Sí.' },
+    });
+    expect(created.statusCode).toBe(201);
+    const removed = await call('DELETE', `/admin/faq/${created.json().id}`, { as: editor });
+    expect(removed.statusCode).toBe(204);
+
+    // Recepción: dashboard only; account routes stay available.
+    expect((await call('GET', '/admin/dashboard', { as: reception })).statusCode).toBe(200);
+    expect((await call('GET', '/admin/rooms', { as: reception })).statusCode).toBe(403);
+    const write = await call('POST', '/admin/room-types', {
+      as: reception,
+      body: { name: 'Intento', type: 'COUPLE', capacity: 2 },
+    });
+    expect(write.statusCode).toBe(403);
+    expect((await call('GET', '/admin/media', { as: reception })).statusCode).toBe(403);
+    const me = await call('GET', '/auth/me', { as: reception });
+    expect(me.json().user).toMatchObject({
+      role: { name: 'Recepción' },
+      permissions: ['dashboard.view'],
+    });
+  });
+
+  it('lets content, hotel and room managers use the media picker without media.manage', async () => {
+    const list = await call('GET', '/admin/media', { as: contentOnly });
+    expect(list.statusCode).toBe(200);
+    const [first] = list.json().items as { id: string }[];
+    const one = await call('GET', `/admin/media/${first!.id}`, { as: contentOnly });
+    expect(one.statusCode).toBe(200);
+    const jpeg = await sharp({
+      create: { width: 640, height: 480, channels: 3, background: '#2b5d8a' },
+    })
+      .jpeg()
+      .toBuffer();
+    const form = multipart({ altText: 'Foto subida desde el selector' }, jpeg);
+    const upload = await call('POST', '/admin/media', {
+      as: contentOnly,
+      body: form.payload,
+      headers: { 'content-type': form.contentType },
+    });
+    expect(upload.statusCode).toBe(201);
+    const uploadedId = upload.json().id as string;
+    // Editing and deleting library items still need media.manage.
+    const edit = await call('PATCH', `/admin/media/${uploadedId}`, {
+      as: contentOnly,
+      body: { altText: 'Otro texto' },
+    });
+    expect(edit.statusCode).toBe(403);
+    const remove = await call('DELETE', `/admin/media/${uploadedId}`, { as: contentOnly });
+    expect(remove.statusCode).toBe(403);
+    expect((await call('DELETE', `/admin/media/${uploadedId}`)).statusCode).toBe(204);
   });
 
   it('logs out and invalidates the session server-side', async () => {

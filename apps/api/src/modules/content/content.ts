@@ -15,7 +15,11 @@ import {
   type LandingSectionUpdateInput,
 } from '@hotel-bambu/shared';
 import type { z } from 'zod';
-import { type AuthenticatedAdmin, CurrentAdmin } from '../../common/request-context.js';
+import {
+  type AuthenticatedAdmin,
+  CurrentAdmin,
+  RequirePermission,
+} from '../../common/request-context.js';
 import { zod } from '../../common/zod-validation.pipe.js';
 import { PrismaService } from '../../prisma/prisma.service.js';
 import { AdminChangesService } from '../audit/admin-changes.service.js';
@@ -69,6 +73,7 @@ export class ContentService {
   }
 }
 
+@RequirePermission('content.view')
 @Controller('admin/content')
 export class ContentController {
   constructor(private readonly content: ContentService) {}
@@ -83,6 +88,7 @@ export class ContentController {
     return this.content.get(key);
   }
 
+  @RequirePermission('content.manage')
   @Put(':key')
   update(
     @CurrentAdmin() admin: AuthenticatedAdmin,

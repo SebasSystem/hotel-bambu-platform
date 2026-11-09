@@ -29,7 +29,7 @@ Users, roles, permissions, admin UI gating, CLI role flag, docs. Out of scope: r
 
 ## Tasks
 - [x] U1 Shared permission catalog + Prisma `Role` model, migration (seed roles, map admins), `AdminUser.roleId`; session/`/auth/me` payload with role + permissions; CLI `--role`.
-- [ ] U2 API `PermissionGuard` + `@RequirePermission` on every admin controller; media picker any-of rule; coverage test (no admin route without permission).
+- [x] U2 API `PermissionGuard` + `@RequirePermission` on every admin controller; media picker any-of rule; coverage test (no admin route without permission).
 - [ ] U3 API users and roles modules (CRUD, protections, session revocation, audit).
 - [ ] U4 Admin web: nav/page gating, dashboard per permission, Usuarios and Roles pages (permission checklist grouped by area), account page shows role.
 - [ ] U5 Docs: ADR 0017, requirements 149 update, ADR 0008 note, security.md, admin-panel.md, api.md, README CLI.
@@ -41,10 +41,16 @@ API returns 403 for routes outside the role; nav shows only allowed modules; las
 Branch `feat/admin-users-roles` from `feat/owner-review-phase-a`. Forecast ~1,800 authored lines (5 work-unit commits). PR/merge decisions are the owner's.
 
 ## Progress / evidence
+- U1 commit: `7243085` feat(auth): add role-based permission catalog and admin roles data model.
 - U1 (route: delegated writer; trigger: 2+ non-trivial files across shared, schema, migration, auth, seed, CLI).
   - RED observed: `permissions.test.ts` (module missing), `admin-roles-migration.integration.spec.ts` (ENOENT migration.sql), `auth.service.spec.ts` + `authenticated-admin.spec.ts` (old payload), `create-admin.spec.ts` (3 failing: no role), integration suite (`Role "Administrador" does not exist` after TRUNCATE + seed).
   - GREEN: shared 62/62, API 160/160 (23 files, real `hotel_test` DB), web 440/440; `pnpm typecheck`, `pnpm lint` green; `prisma migrate status` up to date; `prisma migrate diff` (dev DB → schema) empty.
   - Design: migration creates `Role`, inserts the three seeded roles with stable ids `00000000-0000-7000-8000-00000000000{1,2,3}`, maps every admin to Administrador, drops `AdminRole`; partial unique index `Role_single_system_key` keeps one system role. Session resolution loads the role per request; the system role always yields the full catalog (`toAuthenticatedAdmin`). `seedBase` ensures roles (match by name or stable id; system permissions reset; ordinary roles never overwritten).
+
+- U2 (route: delegated writer; trigger: 15 controller files + guard + tests).
+  - RED observed: `permission.guard.spec.ts` (module missing); integration: route-coverage test listed 64 uncovered handlers, editor got 200 on `/admin/audit-logs`, content-only role got 200 on media PATCH.
+  - GREEN: guard unit 7/7; API 170/170 (24 files).
+  - Design: global guard order Throttler → SessionAuthGuard (session + CSRF) → PermissionGuard. `@RequirePermission(...anyOf)` (handler overrides class; class = `<area>.view`, writes = `<area>.manage`); `@AuthenticatedOnly()` on `AuthController` (own session/account/password); `@Public()` skips. Missing metadata → 403 `{ message: 'You do not have permission to perform this action.', code: 'PERMISSION_DENIED' }`. Media: GET list/by id = `media.view` or any `hotel|rooms|content.manage`; POST upload = `media.manage` or those; PATCH/DELETE = `media.manage`. Coverage test walks `ModulesContainer` controllers + `MetadataScanner` handlers with `PATH_METADATA` inside the integration suite (real DI graph).
 
 ## Next step
 U1–U3 (API) with one delegated writer after A11/A13 finish (shared schema/migration conflicts otherwise).

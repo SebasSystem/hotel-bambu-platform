@@ -22,7 +22,11 @@ import {
   type ReorderInput,
 } from '@hotel-bambu/shared';
 import { assertAllFound, nextSortOrder } from '../../common/ordering.js';
-import { type AuthenticatedAdmin, CurrentAdmin } from '../../common/request-context.js';
+import {
+  type AuthenticatedAdmin,
+  CurrentAdmin,
+  RequirePermission,
+} from '../../common/request-context.js';
 import { zod } from '../../common/zod-validation.pipe.js';
 import { PrismaService } from '../../prisma/prisma.service.js';
 import { AdminChangesService } from '../audit/admin-changes.service.js';
@@ -105,6 +109,7 @@ export class NearbyPlacesService {
   }
 }
 
+@RequirePermission('hotel.view')
 @Controller('admin/nearby-places')
 export class NearbyPlacesController {
   constructor(private readonly places: NearbyPlacesService) {}
@@ -114,6 +119,7 @@ export class NearbyPlacesController {
     return this.places.list();
   }
 
+  @RequirePermission('hotel.manage')
   @Post()
   create(
     @CurrentAdmin() admin: AuthenticatedAdmin,
@@ -122,11 +128,13 @@ export class NearbyPlacesController {
     return this.places.create(admin.id, body);
   }
 
+  @RequirePermission('hotel.manage')
   @Put('order')
   reorder(@CurrentAdmin() admin: AuthenticatedAdmin, @Body(zod(reorderSchema)) body: ReorderInput) {
     return this.places.reorder(admin.id, body.ids);
   }
 
+  @RequirePermission('hotel.manage')
   @Patch(':id')
   update(
     @CurrentAdmin() admin: AuthenticatedAdmin,
@@ -136,6 +144,7 @@ export class NearbyPlacesController {
     return this.places.update(admin.id, id, body);
   }
 
+  @RequirePermission('hotel.manage')
   @Delete(':id')
   @HttpCode(204)
   async remove(@CurrentAdmin() admin: AuthenticatedAdmin, @Param('id', ParseUUIDPipe) id: string) {

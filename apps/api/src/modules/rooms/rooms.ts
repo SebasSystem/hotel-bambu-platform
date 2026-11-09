@@ -26,7 +26,11 @@ import {
   type RoomUpdateInput,
 } from '@hotel-bambu/shared';
 import { assertAllFound, nextSortOrder } from '../../common/ordering.js';
-import { type AuthenticatedAdmin, CurrentAdmin } from '../../common/request-context.js';
+import {
+  type AuthenticatedAdmin,
+  CurrentAdmin,
+  RequirePermission,
+} from '../../common/request-context.js';
 import { zod } from '../../common/zod-validation.pipe.js';
 import { PrismaService } from '../../prisma/prisma.service.js';
 import { AdminChangesService } from '../audit/admin-changes.service.js';
@@ -192,6 +196,7 @@ export class RoomsService {
   }
 }
 
+@RequirePermission('rooms.view')
 @Controller('admin/rooms')
 export class RoomsController {
   constructor(private readonly rooms: RoomsService) {}
@@ -201,6 +206,7 @@ export class RoomsController {
     return this.rooms.list();
   }
 
+  @RequirePermission('rooms.manage')
   @Post()
   create(
     @CurrentAdmin() admin: AuthenticatedAdmin,
@@ -209,11 +215,13 @@ export class RoomsController {
     return this.rooms.create(admin.id, body);
   }
 
+  @RequirePermission('rooms.manage')
   @Put('order')
   reorder(@CurrentAdmin() admin: AuthenticatedAdmin, @Body(zod(reorderSchema)) body: ReorderInput) {
     return this.rooms.reorder(admin.id, body.ids);
   }
 
+  @RequirePermission('rooms.manage')
   @Patch(':id')
   update(
     @CurrentAdmin() admin: AuthenticatedAdmin,
@@ -223,6 +231,7 @@ export class RoomsController {
     return this.rooms.update(admin.id, id, body);
   }
 
+  @RequirePermission('rooms.manage')
   @Delete(':id')
   @HttpCode(204)
   async remove(@CurrentAdmin() admin: AuthenticatedAdmin, @Param('id', ParseUUIDPipe) id: string) {

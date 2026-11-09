@@ -1,5 +1,5 @@
 import { createParamDecorator, type ExecutionContext, SetMetadata } from '@nestjs/common';
-import type { AuthUser } from '@hotel-bambu/shared';
+import type { AuthUser, Permission } from '@hotel-bambu/shared';
 import type { FastifyRequest } from 'fastify';
 
 /** Signed-in admin with role and effective permissions (shared `AuthUser`, `GET /auth/me`). */
@@ -25,6 +25,24 @@ export const IS_PUBLIC_KEY = 'auth:isPublic';
  * authenticated admin (deny by default, SessionAuthGuard).
  */
 export const Public = (): ClassDecorator & MethodDecorator => SetMetadata(IS_PUBLIC_KEY, true);
+
+export const PERMISSIONS_KEY = 'auth:permissions';
+export const AUTHENTICATED_ONLY_KEY = 'auth:authenticatedOnly';
+
+/**
+ * Permissions a route needs, any of them (PermissionGuard). Handler metadata overrides class
+ * metadata. Non-public routes without it are denied (fail closed).
+ */
+export const RequirePermission = (
+  ...anyOf: [Permission, ...Permission[]]
+): ClassDecorator & MethodDecorator => SetMetadata(PERMISSIONS_KEY, anyOf);
+
+/**
+ * Routes every signed-in admin may use whatever the role (own session, account and password).
+ * Still requires a session; only the permission check is skipped.
+ */
+export const AuthenticatedOnly = (): ClassDecorator & MethodDecorator =>
+  SetMetadata(AUTHENTICATED_ONLY_KEY, true);
 
 /** The authenticated admin of the current request (only on non-public routes). */
 export const CurrentAdmin = createParamDecorator(

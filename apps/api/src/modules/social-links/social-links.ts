@@ -24,7 +24,11 @@ import {
   type ReorderInput,
 } from '@hotel-bambu/shared';
 import { assertAllFound, nextSortOrder } from '../../common/ordering.js';
-import { type AuthenticatedAdmin, CurrentAdmin } from '../../common/request-context.js';
+import {
+  type AuthenticatedAdmin,
+  CurrentAdmin,
+  RequirePermission,
+} from '../../common/request-context.js';
 import { zod } from '../../common/zod-validation.pipe.js';
 import { PrismaService } from '../../prisma/prisma.service.js';
 import { AdminChangesService } from '../audit/admin-changes.service.js';
@@ -118,6 +122,7 @@ export class SocialLinksService {
   }
 }
 
+@RequirePermission('hotel.view')
 @Controller('admin/social-links')
 export class SocialLinksController {
   constructor(private readonly items: SocialLinksService) {}
@@ -127,6 +132,7 @@ export class SocialLinksController {
     return this.items.list();
   }
 
+  @RequirePermission('hotel.manage')
   @Post()
   create(
     @CurrentAdmin() admin: AuthenticatedAdmin,
@@ -135,11 +141,13 @@ export class SocialLinksController {
     return this.items.create(admin.id, body);
   }
 
+  @RequirePermission('hotel.manage')
   @Put('order')
   reorder(@CurrentAdmin() admin: AuthenticatedAdmin, @Body(zod(reorderSchema)) body: ReorderInput) {
     return this.items.reorder(admin.id, body.ids);
   }
 
+  @RequirePermission('hotel.manage')
   @Patch(':id')
   update(
     @CurrentAdmin() admin: AuthenticatedAdmin,
@@ -149,6 +157,7 @@ export class SocialLinksController {
     return this.items.update(admin.id, id, body);
   }
 
+  @RequirePermission('hotel.manage')
   @Delete(':id')
   @HttpCode(204)
   async remove(@CurrentAdmin() admin: AuthenticatedAdmin, @Param('id', ParseUUIDPipe) id: string) {

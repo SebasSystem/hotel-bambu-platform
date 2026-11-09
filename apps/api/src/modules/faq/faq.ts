@@ -22,7 +22,11 @@ import {
   type ReorderInput,
 } from '@hotel-bambu/shared';
 import { assertAllFound, nextSortOrder } from '../../common/ordering.js';
-import { type AuthenticatedAdmin, CurrentAdmin } from '../../common/request-context.js';
+import {
+  type AuthenticatedAdmin,
+  CurrentAdmin,
+  RequirePermission,
+} from '../../common/request-context.js';
 import { zod } from '../../common/zod-validation.pipe.js';
 import { PrismaService } from '../../prisma/prisma.service.js';
 import { AdminChangesService } from '../audit/admin-changes.service.js';
@@ -95,6 +99,7 @@ export class FaqsService {
   }
 }
 
+@RequirePermission('content.view')
 @Controller('admin/faq')
 export class FaqsController {
   constructor(private readonly items: FaqsService) {}
@@ -104,6 +109,7 @@ export class FaqsController {
     return this.items.list();
   }
 
+  @RequirePermission('content.manage')
   @Post()
   create(
     @CurrentAdmin() admin: AuthenticatedAdmin,
@@ -112,11 +118,13 @@ export class FaqsController {
     return this.items.create(admin.id, body);
   }
 
+  @RequirePermission('content.manage')
   @Put('order')
   reorder(@CurrentAdmin() admin: AuthenticatedAdmin, @Body(zod(reorderSchema)) body: ReorderInput) {
     return this.items.reorder(admin.id, body.ids);
   }
 
+  @RequirePermission('content.manage')
   @Patch(':id')
   update(
     @CurrentAdmin() admin: AuthenticatedAdmin,
@@ -126,6 +134,7 @@ export class FaqsController {
     return this.items.update(admin.id, id, body);
   }
 
+  @RequirePermission('content.manage')
   @Delete(':id')
   @HttpCode(204)
   async remove(@CurrentAdmin() admin: AuthenticatedAdmin, @Param('id', ParseUUIDPipe) id: string) {

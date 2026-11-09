@@ -8,6 +8,7 @@ import { envSchema, type Env } from './config/env.js';
 import { AmenitiesModule } from './modules/amenities/amenities.js';
 import { AuditModule } from './modules/audit/admin-changes.service.js';
 import { AuthModule } from './modules/auth/auth.module.js';
+import { PermissionGuard } from './modules/auth/permission.guard.js';
 import { SessionAuthGuard } from './modules/auth/session-auth.guard.js';
 import { ContentModule } from './modules/content/content.js';
 import { DashboardModule } from './modules/dashboard/dashboard.js';
@@ -88,9 +89,11 @@ import { PrismaModule } from './prisma/prisma.module.js';
     PublicModule,
   ],
   providers: [
-    // Global guards: rate limit, then session (deny by default) + CSRF in a single guard.
+    // Global guards, in this order: rate limit; session (deny by default) + CSRF in a single
+    // guard; then role permissions (@RequirePermission, fail closed), which need request.admin.
     { provide: APP_GUARD, useClass: ThrottlerGuard },
     { provide: APP_GUARD, useExisting: SessionAuthGuard },
+    { provide: APP_GUARD, useClass: PermissionGuard },
   ],
 })
 export class AppModule {}
