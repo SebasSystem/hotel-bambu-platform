@@ -42,7 +42,7 @@ export async function loginAsAdmin(
 ): Promise<void> {
   await page.goto('/admin/login');
   await page.getByLabel('Correo electrónico').fill(credentials.email);
-  await page.getByLabel('Contraseña').fill(credentials.password);
+  await page.locator('input[name="password"]').fill(credentials.password);
   await page.getByRole('button', { name: 'Ingresar' }).click();
   await expect(page).toHaveURL(/\/admin\/?$/);
 }

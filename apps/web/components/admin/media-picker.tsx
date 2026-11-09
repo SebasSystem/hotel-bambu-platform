@@ -428,7 +428,7 @@ export function MediaField({
               variant="ghost"
               size="sm"
               onClick={() => setPickerTab('library')}
-              aria-label={`Elegir ${name} de la galería`}
+              aria-label={`Elegir de la galería: ${name}`}
             >
               Elegir de la galería
             </Button>

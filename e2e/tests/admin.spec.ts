@@ -14,7 +14,7 @@ test.describe('admin', () => {
   }) => {
     await page.goto('/admin/login');
     await page.getByLabel('Correo electrónico').fill(ADMIN_EMAIL);
-    await page.getByLabel('Contraseña').fill(ADMIN_PASSWORD);
+    await page.locator('input[name="password"]').fill(ADMIN_PASSWORD);
     await page.getByRole('button', { name: 'Ingresar' }).click();
     await expect(page).toHaveURL(/\/admin\/?$/);
 
@@ -38,7 +38,7 @@ test.describe('admin', () => {
     try {
       await page.goto('/admin/login');
       await page.getByLabel('Correo electrónico').fill(ADMIN_EMAIL);
-      await page.getByLabel('Contraseña').fill(ADMIN_PASSWORD);
+      await page.locator('input[name="password"]').fill(ADMIN_PASSWORD);
       await page.getByRole('button', { name: 'Ingresar' }).click();
       await expect(page).toHaveURL(/\/admin\/?$/);
 
@@ -95,7 +95,7 @@ test.describe('admin', () => {
     try {
       await page.goto('/admin/login');
       await page.getByLabel('Correo electrónico').fill(ADMIN_EMAIL);
-      await page.getByLabel('Contraseña').fill(ADMIN_PASSWORD);
+      await page.locator('input[name="password"]').fill(ADMIN_PASSWORD);
       await page.getByRole('button', { name: 'Ingresar' }).click();
       await expect(page).toHaveURL(/\/admin\/?$/);
 

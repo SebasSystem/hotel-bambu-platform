@@ -164,7 +164,7 @@ describe('MediaField', () => {
     );
     await userEvent.click(screen.getByRole('button', { name: 'Subir imagen para logo' }));
     expect(uploadTab().getAttribute('aria-selected')).toBe('true');
-    expect(screen.getByRole('button', { name: 'Elegir logo de la galería' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Elegir de la galería: logo' })).toBeTruthy();
   });
 
   it('shows the preview with replace and remove, plus image warnings', async () => {

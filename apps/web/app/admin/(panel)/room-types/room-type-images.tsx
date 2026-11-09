@@ -104,7 +104,7 @@ export function RoomTypeImageList({
               <Button
                 variant="ghost"
                 size="sm"
-                aria-label={`Usar imagen ${index + 1} como portada`}
+                aria-label={`Usar como portada (imagen ${index + 1})`}
                 onClick={() => onChange(setCoverRow(rows, row.mediaAssetId))}
               >
                 Usar como portada

@@ -85,7 +85,7 @@ describe('RoomTypeForm (new)', () => {
     await userEvent.click(within(dialog).getByRole('button', { name: 'Agregar (2)' }));
 
     // Make the second image the cover explicitly.
-    await userEvent.click(screen.getByRole('button', { name: 'Usar imagen 2 como portada' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Usar como portada (imagen 2)' }));
     await userEvent.click(screen.getByRole('button', { name: 'Crear tipo de habitación' }));
 
     expect(post).toHaveBeenCalledTimes(1);
