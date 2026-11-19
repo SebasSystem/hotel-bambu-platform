@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { ContactCtaLink } from '@/components/site/contact-cta';
 import { hasLocation } from '@/components/site/blocks';
 import { Hero } from '@/components/site/hero';
+import { HotelTours } from '@/components/site/hotel-tours';
 import {
   AboutSection,
   CtaPanel,
@@ -56,12 +57,10 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 /**
- * Home in the approved order (docs/research/seo-content-strategy.md §3, C3): hero (location
- * kicker, tagline, "desde" rate, contact CTA), trust strip, room type cards, location, about,
- * reviews slot (hidden until real reviews exist), policies summary, gallery strip and the final CTA
- * panel; the layout adds the NAP footer. The HERO toggle only removes the carousel photos: the
- * hero band with the H1 always renders. The order is fixed by the strategy; admin › Contenido
- * only switches sections on or off. Headings are code (ADR 0016), facts come from the API.
+ * The home introduces the real hotel photograph and optional tours before the room catalogue,
+ * verified hotel facts, gallery, location, about, policies, and final contact panel. The layout
+ * adds the NAP footer. Admin › Contenido switches sections on or off; headings are code (ADR 0016)
+ * and hotel facts come from the API.
  */
 export default async function HomePage() {
   const [site, rooms, gallery, nearby, policies, faqs, images] = await Promise.all([
@@ -104,6 +103,7 @@ export default async function HomePage() {
         images={homeHeroSlides(site, images)}
         cta={cta}
       />
+      {isSectionEnabled(site, 'GALLERY') ? <HotelTours /> : null}
       {isSectionEnabled(site, 'ROOMS') ? (
         <RoomTypesSection
           rooms={rooms}
@@ -112,6 +112,7 @@ export default async function HomePage() {
         />
       ) : null}
       <TrustStrip items={trust} />
+      {isSectionEnabled(site, 'GALLERY') ? <GalleryStripSection items={gallery} /> : null}
       {isSectionEnabled(site, 'LOCATION') && hasLocation(hotel) ? (
         <LocationSection hotel={hotel} nearby={nearby} cta={cta} />
       ) : null}
@@ -127,7 +128,6 @@ export default async function HomePage() {
       {isSectionEnabled(site, 'FAQ') ? (
         <PoliciesSummary hotel={hotel} policies={policies} faqCount={faqs.length} />
       ) : null}
-      {isSectionEnabled(site, 'GALLERY') ? <GalleryStripSection items={gallery} /> : null}
       {isSectionEnabled(site, 'CONTACT') ? (
         <CtaPanel
           eyebrow={ui.closing.kicker}

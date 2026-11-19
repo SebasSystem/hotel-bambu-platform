@@ -74,7 +74,7 @@ export default async function RoomsPage({ searchParams }: PageProps<'/habitacion
       <section aria-label={ui.nav.rooms} className={`${container} pt-12 pb-[110px]`}>
         {visible.length > 0 ? (
           <ul
-            className={`grid gap-6 tab:grid-cols-2 ${visible.length >= 3 ? 'desk:grid-cols-3' : ''}`}
+            className={`grid gap-6 ${visible.length > 1 ? 'tab:grid-cols-2' : ''} ${visible.length >= 3 ? 'desk:grid-cols-3' : ''}`}
           >
             {visible.map((room, index) => (
               <li key={room.slug} className="flex">
@@ -83,7 +83,9 @@ export default async function RoomsPage({ searchParams }: PageProps<'/habitacion
                   index={index}
                   priority={index === 0}
                   headingLevel="h2"
-                  frame={visible.length < 3 ? 'wide' : 'square'}
+                  frame={
+                    visible.length === 1 ? 'editorial' : visible.length === 2 ? 'wide' : 'square'
+                  }
                   cta={contactCta(site, { kind: 'roomType', name: room.name })}
                 />
               </li>

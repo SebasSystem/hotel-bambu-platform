@@ -21,7 +21,7 @@ interface RoomCardProps {
   index?: number;
   headingLevel?: 'h2' | 'h3';
   /** Photo frame: square in the catalogue grid, 4:3 when only two cards share a row. */
-  frame?: 'square' | 'wide';
+  frame?: 'square' | 'wide' | 'editorial';
   /** First card of a page whose LCP is this photo (rooms catalogue): eager + preloaded. */
   priority?: boolean;
 }
@@ -47,10 +47,10 @@ export function RoomCard({
     <article
       data-reveal
       style={{ '--i': index % 6 } as CSSProperties}
-      className={`${cardClass('room')} group relative flex w-full flex-col text-charcoal`}
+      className={`${cardClass('room')} group relative w-full text-charcoal ${frame === 'editorial' ? 'room-editorial' : 'flex flex-col'}`}
     >
       <div
-        className={`${frame === 'wide' ? 'aspect-[4/3]' : 'aspect-square'} overflow-hidden bg-sand`}
+        className={`${frame === 'editorial' ? 'room-editorial-photo' : frame === 'wide' ? 'aspect-[4/3]' : 'aspect-square'} overflow-hidden bg-sand`}
       >
         {room.cover ? (
           <Picture
@@ -63,7 +63,7 @@ export function RoomCard({
           />
         ) : null}
       </div>
-      <div className="flex flex-1 flex-col p-[22px] tab:p-7">
+      <div className={`flex flex-1 flex-col ${frame === 'editorial' ? 'room-editorial-content' : 'p-[22px] tab:p-7'}`}>
         <p
           data-room-kind=""
           className="text-[0.78rem] font-bold tracking-[0.15em] text-green uppercase"

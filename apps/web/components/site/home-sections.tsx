@@ -33,7 +33,7 @@ import { container } from './styles';
  * renders only with real content (requirement 4.4); headings are code, facts come from the API.
  */
 
-const section = 'py-[clamp(78px,10vw,150px)]';
+const section = 'py-[clamp(56px,7vw,100px)]';
 
 /**
  * Verifiable facts after the room types: address, rooms and the hotel amenities. A paper band
@@ -77,7 +77,6 @@ export function TrustStrip({ items }: { items: TrustItem[] }) {
 /** Deep-green band with one card per published room type (replaces the old amenity grid). */
 export function RoomTypesSection({
   rooms,
-  roomCount,
   ctaFor,
 }: {
   rooms: PublicRoomTypeSummary[];
@@ -85,7 +84,12 @@ export function RoomTypesSection({
   ctaFor: (room: PublicRoomTypeSummary) => ContactCta | null;
 }) {
   if (rooms.length === 0) return null;
-  const columns = rooms.length >= 3 ? 'desk:grid-cols-3' : 'desk:grid-cols-2';
+  const columns =
+    rooms.length === 1
+      ? ''
+      : rooms.length >= 3
+        ? 'tab:grid-cols-2 desk:grid-cols-3'
+        : 'tab:grid-cols-2';
   return (
     <section
       aria-labelledby="habitaciones-title"
@@ -94,12 +98,7 @@ export function RoomTypesSection({
     >
       <div className={container}>
         <div className="mb-12 flex flex-col gap-6 tab:flex-row tab:items-end tab:justify-between">
-          <SectionHeading
-            id="habitaciones-title"
-            surface="dark"
-            eyebrow={roomCount > 0 ? ui.home.roomsKicker(roomCount) : ui.nav.rooms}
-            title={ui.home.roomsTitle}
-          />
+          <SectionHeading id="habitaciones-title" surface="dark" title={ui.home.roomsTitle} />
           <Link
             href={routes.rooms}
             className={`${buttonClass('light')} shrink-0 self-start tab:self-auto`}
@@ -107,14 +106,14 @@ export function RoomTypesSection({
             {ui.rooms.seeAll}
           </Link>
         </div>
-        <ul className={`grid gap-6 tab:grid-cols-2 ${columns}`}>
+        <ul className={`grid gap-6 ${columns}`}>
           {rooms.map((room, index) => (
             <li key={room.slug} className="flex">
               <RoomCard
                 room={room}
                 index={index}
                 cta={ctaFor(room)}
-                frame={rooms.length <= 2 ? 'wide' : 'square'}
+                frame={rooms.length === 1 ? 'editorial' : rooms.length === 2 ? 'wide' : 'square'}
               />
             </li>
           ))}
@@ -144,7 +143,6 @@ export function LocationSection({
         <SectionHeading
           id="ubicacion-title"
           surface="sand"
-          eyebrow={ui.location.kicker}
           title={
             hotel.municipality ? ui.location.title(hotel.municipality) : ui.location.titleFallback
           }
@@ -207,7 +205,7 @@ export function AboutSection({
         className={`${container} grid items-center gap-[clamp(40px,7vw,110px)] ${media ? 'desk:grid-cols-[1.1fr_0.9fr]' : ''}`}
       >
         <div data-reveal>
-          <SectionHeading id="nosotros-title" eyebrow={ui.home.aboutKicker} title={title}>
+          <SectionHeading id="nosotros-title" title={title}>
             <TextBlock
               text={text}
               className="mt-[18px] max-w-[650px] text-lead text-muted-foreground"

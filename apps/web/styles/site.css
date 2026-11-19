@@ -587,3 +587,288 @@
     opacity: 0;
   }
 }
+
+/* Real photographs and short, visitor-controlled tours lead the public experience. */
+@layer components {
+  .hotel-intro {
+    max-width: 1800px;
+    margin-inline: auto;
+  }
+  .hotel-intro-copy {
+    position: absolute;
+    z-index: 2;
+    right: var(--gutter);
+    bottom: clamp(104px, 14vh, 160px);
+    left: var(--gutter);
+    max-width: 760px;
+    color: var(--color-ivory);
+  }
+  .hotel-intro-kicker {
+    margin-bottom: 18px;
+    color: rgb(255 255 255 / 88%);
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+  }
+  .hotel-intro-copy h1 {
+    max-width: 11ch;
+    font-size: clamp(3rem, 7vw, 6.75rem);
+    line-height: 0.98;
+    letter-spacing: -0.035em;
+    text-wrap: balance;
+  }
+  .hotel-intro-photo {
+    position: relative;
+    min-width: 0;
+    height: clamp(620px, calc(100svh - var(--header-h)), 900px);
+    margin: 0;
+    overflow: hidden;
+    background: var(--color-charcoal);
+  }
+  .hotel-intro-photo::after {
+    position: absolute;
+    z-index: 1;
+    inset: 0;
+    background: linear-gradient(
+      180deg,
+      rgb(13 23 19 / 8%) 12%,
+      rgb(13 23 19 / 12%) 38%,
+      rgb(13 23 19 / 76%) 100%
+    );
+    content: '';
+    pointer-events: none;
+  }
+  .hotel-intro-photo picture img {
+    object-position: center 52%;
+  }
+  .hotel-intro-photo figcaption {
+    position: absolute;
+    z-index: 2;
+    bottom: 0;
+    inset-inline: 0;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    padding: 16px var(--gutter);
+    background: rgb(13 23 19 / 34%);
+    color: var(--color-ivory);
+    font-size: 0.875rem;
+    backdrop-filter: blur(8px);
+  }
+  .hotel-intro-photo figcaption a {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    text-decoration: underline;
+    text-underline-offset: 4px;
+  }
+  .hotel-intro-subtitle {
+    max-width: 39ch;
+    margin-top: 22px;
+    color: rgb(255 255 255 / 90%);
+    font-size: clamp(1rem, 1.5vw, 1.2rem);
+    line-height: 1.55;
+    text-wrap: pretty;
+  }
+  .hotel-intro-rate {
+    margin-top: 15px;
+    color: var(--color-ivory);
+    font-weight: 600;
+  }
+  .hotel-intro-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 26px;
+  }
+  .hotel-intro-discover {
+    display: inline-flex;
+    width: 46px;
+    height: 46px;
+    align-items: center;
+    justify-content: center;
+    margin-top: 24px;
+    border: 1px solid rgb(255 255 255 / 65%);
+    border-radius: 999px;
+    color: white;
+    transition: background-color 160ms ease;
+  }
+  .hotel-intro-discover:hover {
+    background: rgb(255 255 255 / 14%);
+  }
+  .hotel-intro-fallback {
+    position: relative;
+    padding: clamp(48px, 8vw, 100px) var(--gutter);
+    color: var(--color-ink);
+  }
+  .hotel-intro-fallback .hotel-intro-kicker,
+  .hotel-intro-fallback .hotel-intro-subtitle {
+    color: var(--color-ink-muted-strong);
+  }
+  .hotel-tours-section {
+    padding-block: clamp(56px, 7vw, 100px);
+    scroll-margin-top: 100px;
+    background: var(--color-paper);
+  }
+  .hotel-section-intro {
+    display: grid;
+    gap: 24px;
+    margin-bottom: 40px;
+  }
+  .hotel-section-intro h2 {
+    font-size: clamp(2.2rem, 4.5vw, 4rem);
+    line-height: 1.08;
+    letter-spacing: -0.03em;
+  }
+  .hotel-section-intro > p {
+    max-width: 43ch;
+    align-self: end;
+    color: var(--color-ink-muted-strong);
+    font-size: 1.0625rem;
+    line-height: 1.65;
+  }
+  .hotel-tours-grid {
+    display: grid;
+    gap: 32px;
+  }
+  .hotel-tour {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 0.8fr);
+    gap: clamp(18px, 3vw, 36px);
+    align-items: center;
+  }
+  .hotel-tour-media {
+    aspect-ratio: 464 / 832;
+    overflow: hidden;
+    border-radius: 12px;
+    background: var(--color-charcoal);
+  }
+  .hotel-tour-media video,
+  .hotel-tour-play,
+  .hotel-tour-play img {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+  .hotel-tour-media video {
+    object-fit: contain;
+  }
+  .hotel-tour-play {
+    position: relative;
+    cursor: pointer;
+  }
+  .hotel-tour-play img {
+    object-fit: cover;
+  }
+  .hotel-tour-play > span {
+    position: absolute;
+    inset-inline: 10px;
+    bottom: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 48px;
+    padding: 10px;
+    border-radius: 8px;
+    background: var(--color-ivory);
+    color: var(--color-green-900);
+    font-size: 0.875rem;
+    font-weight: 600;
+  }
+  .hotel-tour-play:hover > span {
+    background: var(--color-green-50);
+  }
+  .hotel-tour-play:focus-visible {
+    outline-offset: -5px;
+  }
+  .hotel-tour-copy h3 {
+    font-size: clamp(1.65rem, 2.4vw, 2.3rem);
+  }
+  .hotel-tour-copy p {
+    margin-block: 14px 20px;
+    color: var(--color-ink-muted-strong);
+    line-height: 1.6;
+  }
+  .room-editorial-photo {
+    aspect-ratio: 4 / 5;
+  }
+  .room-editorial-content {
+    padding: 24px;
+  }
+  @media (min-width: 760px) {
+    .hotel-section-intro {
+      grid-template-columns: 1.1fr 1fr;
+      gap: 64px;
+    }
+    .hotel-tours-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 48px;
+    }
+    .room-editorial {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+    }
+    .room-editorial-photo {
+      max-height: 600px;
+    }
+    .room-editorial > div:last-child {
+      padding: clamp(28px, 4vw, 64px);
+      justify-content: center;
+    }
+  }
+  @media (min-width: 1000px) {
+    .hotel-intro-photo {
+      height: min(860px, calc(100svh - var(--header-h)));
+      min-height: 620px;
+    }
+  }
+  @media (max-width: 600px) {
+    .hotel-intro-photo {
+      height: max(680px, calc(100svh - var(--header-h)));
+      max-height: 900px;
+    }
+    .hotel-intro-copy {
+      bottom: 112px;
+    }
+    .hotel-intro-kicker {
+      margin-bottom: 13px;
+      font-size: 0.68rem;
+    }
+    .hotel-intro-copy h1 {
+      max-width: 10ch;
+      font-size: clamp(3rem, 12vw, 4.2rem);
+    }
+    .hotel-intro-subtitle {
+      max-width: 34ch;
+      margin-top: 16px;
+      font-size: 1rem;
+    }
+    .hotel-intro-actions {
+      gap: 9px;
+      margin-top: 21px;
+    }
+    .hotel-intro-actions a {
+      min-height: 44px;
+      padding-inline: 14px;
+      font-size: 0.8rem;
+    }
+    .hotel-intro-discover {
+      display: none;
+    }
+  }
+  @media (max-width: 399px) {
+    .hotel-tour {
+      grid-template-columns: 1fr 0.85fr;
+      gap: 16px;
+    }
+    .hotel-tour-play > span {
+      font-size: 0.75rem;
+      gap: 4px;
+      inset-inline: 6px;
+    }
+  }
+}

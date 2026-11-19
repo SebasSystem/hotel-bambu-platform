@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { FilterLink, PageHeader, Toolbar } from '@/components/site/page-header';
+import { HotelTours } from '@/components/site/hotel-tours';
 import { PhotoGallery } from '@/components/site/photo-gallery';
 import { container } from '@/components/site/styles';
 import { ui } from '@/lib/i18n/es';
@@ -41,7 +42,6 @@ export default async function GalleryPage({ searchParams }: PageProps<'/galeria'
       <PageHeader
         path={routes.gallery}
         title={ui.pages.gallery}
-        kicker={ui.home.galleryKicker}
         intro={ui.gallery.intro}
       />
       <Toolbar label={ui.gallery.filter} count={ui.gallery.count(visible.length)}>
@@ -73,6 +73,7 @@ export default async function GalleryPage({ searchParams }: PageProps<'/galeria'
           <p className="text-lg text-muted-foreground">{ui.empty.generic}</p>
         )}
       </section>
+      {!active ? <HotelTours /> : null}
     </>
   );
 }

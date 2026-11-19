@@ -78,7 +78,7 @@ export function PageHeader({
   children,
 }: PageHeaderProps) {
   return (
-    <div className="border-b border-line bg-sand">
+    <div className="border-b border-line bg-background">
       {path ? (
         <JsonLd
           data={breadcrumbJsonLd([
